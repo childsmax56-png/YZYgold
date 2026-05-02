@@ -169,9 +169,6 @@ export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHom
             >
               <SiLastdotfm className="w-5 h-5" />
             </button>
-            <a href="https://streamelements.com/yzygold/tip" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center p-2.5 rounded-full bg-green-500/10 text-green-500 hover:bg-green-500/20 transition-all cursor-pointer" title="Tip">
-              <DollarSign className="w-5 h-5" />
-            </a>
           </div>
         </div>
       </div>
@@ -235,15 +232,6 @@ export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHom
             )}
           </span>
         </button>
-        <a
-          href="https://streamelements.com/yzygold/tip"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center justify-center p-2 rounded-full bg-green-500/10 text-green-500 hover:bg-green-500/20 hover:scale-110 transition-all duration-300"
-          title="Tip"
-        >
-          <DollarSign className="w-5 h-5" />
-        </a>
         <button
           onClick={() => {
             onCategoryChange('settings');
