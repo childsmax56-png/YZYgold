@@ -1769,12 +1769,6 @@ if (wolvesIndex !== -1 && turboIndex !== -1) {
             <p className="text-[10px] text-white/30 leading-relaxed mt-1">
               <a href="https://docs.google.com/spreadsheets/d/12nGHPPh5dVTfLuBLVQYzC3QgPxKfvp-jgCoNccvEasM/" target="_blank" rel="noopener noreferrer" className="text-[var(--theme-color)]/50 hover:text-[var(--theme-color)] transition-colors underline">Link For The Sheet</a>
             </p>
-            <p className="text-[10px] text-white/30 leading-relaxed mt-1">
-              <a href="https://www.reddit.com/r/yzygold/" target="_blank" rel="noopener noreferrer" className="text-[var(--theme-color)]/50 hover:text-[var(--theme-color)] transition-colors underline">Reddit r/yzygold</a>
-            </p>
-            <p className="text-[10px] text-white/30 leading-relaxed mt-2">
-              Contact: <a href="mailto:theyali@duck.com" className="text-[var(--theme-color)]/50 hover:text-[var(--theme-color)] transition-colors underline">theyali@duck.com</a>
-            </p>
           </div>
         </main>
       </div>
@@ -1914,7 +1908,7 @@ if (wolvesIndex !== -1 && turboIndex !== -1) {
                   Vercel (The Hosting of yzygold) had a data breach, including my last.fm api keys! I needed to reset the keys, and now the old last.fm api key that you are using is not working!
                 </p>
                 <p>
-                  dont worry, you are not infected, and the site is not infected. Passwords from last.fm, emails & ips are protected.
+                  dont worry, you are not infected, and the site is not infected. Passwords from last.fm are protected.
                 </p>
               </div>
 
@@ -1957,11 +1951,6 @@ if (wolvesIndex !== -1 && turboIndex !== -1) {
               <li><strong>Fixed Art Preview:</strong> Added support for more domains to show albums art on the tracker!</li>
             </ul>
 
-            <div className="pt-4 border-t border-white/10 mt-2 space-y-2">
-              <p>Join the new subreddit: <a href="https://www.reddit.com/r/yzygold" target="_blank" rel="noopener noreferrer" className="text-[var(--theme-color)]/50 hover:text-[var(--theme-color)] transition-colors underline">r/yzygold</a></p>
-              <p>Enjoying the site? A <a href="https://streamelements.com/yzygold/tip" target="_blank" rel="noopener noreferrer" className="text-[var(--theme-color)]/50 hover:text-[var(--theme-color)] transition-colors underline">donation</a> will help keep it alive and bring more big updates.</p>
-              <p>Click <a href="https://wolfgold.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-[var(--theme-color)]/50 hover:text-[var(--theme-color)] transition-colors underline">here</a> to open Tyler Tracker (WØLFGOLD v1.4.4).</p>
-            </div>
           </div>
         </div>
               <button
