@@ -1,0 +1,620 @@
+import { useSettings } from '../SettingsContext';
+import { AlignLeft, AlignCenter, AlignRight, History, Trash2, RotateCcw, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Category } from './Navbar';
+import { useState } from 'react';
+import { createPortal } from 'react-dom';
+import { SiLastdotfm } from 'react-icons/si';
+import { isLastfmLoggedIn } from '../lastfm';
+
+interface SettingsViewProps {
+  onCategoryChange: (cat: Category) => void;
+  searchQuery: string;
+}
+
+export function SettingsView({ onCategoryChange, searchQuery }: SettingsViewProps) {
+  const { settings, updateSettings, resetSettings } = useSettings();
+  const [isConfirmingReset, setIsConfirmingReset] = useState(false);
+  const [isConfirmingClear, setIsConfirmingClear] = useState(false);
+  const [showShortcutsModal, setShowShortcutsModal] = useState(false);
+
+  const handleEasterEgg = () => {
+    window.dispatchEvent(new CustomEvent('play-easter-egg'));
+  };
+
+  const handleClearCache = () => {
+    if (isConfirmingClear) {
+      localStorage.clear();
+      window.location.reload();
+    } else {
+      setIsConfirmingClear(true);
+      setTimeout(() => setIsConfirmingClear(false), 3000);
+    }
+  };
+
+  const handleResetSettings = () => {
+    if (isConfirmingReset) {
+      resetSettings();
+      setIsConfirmingReset(false);
+    } else {
+      setIsConfirmingReset(true);
+      setTimeout(() => setIsConfirmingReset(false), 3000);
+    }
+  };
+
+  const matchesSearch = (text: string) => {
+    if (!searchQuery) return true;
+    return text.toLowerCase().includes(searchQuery.toLowerCase());
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20, filter: 'blur(10px)' }}
+      animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+      exit={{ opacity: 0, y: -20, filter: 'blur(10px)' }}
+      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-12 bg-[#050505]"
+    >
+      <div className="max-w-4xl mx-auto space-y-4">
+        
+        {matchesSearch('tags as emojis') && (
+          <div className="flex items-center justify-between p-4 bg-[#111] border border-white/5 rounded-xl">
+            <span className="text-sm font-medium text-white/90">Tags as Emojis</span>
+            <button
+              onClick={() => updateSettings({ tagsAsEmojis: !settings.tagsAsEmojis })}
+              className={`w-11 h-6 rounded-full transition-colors relative shrink-0 ${settings.tagsAsEmojis ? 'bg-[var(--theme-color)]' : 'bg-white/10'}`}
+            >
+              <div className={`w-5 h-5 rounded-full bg-white absolute top-0.5 transition-transform ${settings.tagsAsEmojis ? 'translate-x-5.5' : 'translate-x-0.5'}`} />
+            </button>
+          </div>
+        )}
+
+        {matchesSearch('keyboard shortcuts') && (
+          <div className="hidden md:flex items-center justify-between p-4 bg-[#111] border border-white/5 rounded-xl">
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-white/90">Keyboard Shortcuts</span>
+            </div>
+            <button
+              onClick={() => updateSettings({ keyboardShortcuts: !settings.keyboardShortcuts })}
+              className={`w-11 h-6 rounded-full transition-colors relative shrink-0 ${settings.keyboardShortcuts ? 'bg-[var(--theme-color)]' : 'bg-white/10'}`}
+            >
+              <div className={`w-5 h-5 rounded-full bg-white absolute top-0.5 transition-transform ${settings.keyboardShortcuts ? 'translate-x-5.5' : 'translate-x-0.5'}`} />
+            </button>
+          </div>
+        )}
+
+        {matchesSearch('keyboard shortcuts list') && (
+          <div className="hidden md:flex items-center justify-between p-4 bg-[#111] border border-white/5 rounded-xl">
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-white/90">Keyboard Shortcuts List</span>
+              <span className="text-xs text-white/40">View all available keyboard shortcuts</span>
+            </div>
+            <button
+              onClick={() => setShowShortcutsModal(true)}
+              className="text-xs font-medium bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-md transition-colors cursor-pointer shrink-0"
+            >
+              View List
+            </button>
+          </div>
+        )}
+
+        {matchesSearch('notification when playing') && (
+          <div className="flex items-center justify-between p-4 bg-[#111] border border-white/5 rounded-xl">
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-white/90">Notification When Playing</span>
+              <span className="text-xs text-white/40">Show browser notification on song change when tab is hidden</span>
+            </div>
+            <button
+              onClick={async () => {
+                if (!settings.notificationWhenPlaying) {
+                  if (Notification.permission !== 'granted') {
+                    const permission = await Notification.requestPermission();
+                    if (permission === 'granted') {
+                      updateSettings({ notificationWhenPlaying: true });
+                    } else {
+                      alert('Notification permission denied by browser.');
+                    }
+                  } else {
+                    updateSettings({ notificationWhenPlaying: true });
+                  }
+                } else {
+                  updateSettings({ notificationWhenPlaying: false });
+                }
+              }}
+              className={`w-11 h-6 rounded-full transition-colors relative shrink-0 ${settings.notificationWhenPlaying ? 'bg-[var(--theme-color)]' : 'bg-white/10'}`}
+            >
+              <div className={`w-5 h-5 rounded-full bg-white absolute top-0.5 transition-transform ${settings.notificationWhenPlaying ? 'translate-x-5.5' : 'translate-x-0.5'}`} />
+            </button>
+          </div>
+        )}
+
+        {matchesSearch('remember search') && (
+          <div className="flex items-center justify-between p-4 bg-[#111] border border-white/5 rounded-xl">
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-white/90">Remember Search</span>
+              <span className="text-xs text-white/40">Keep search query active when returning to home</span>
+            </div>
+            <button
+              onClick={() => updateSettings({ rememberSearch: !settings.rememberSearch })}
+              className={`w-11 h-6 rounded-full transition-colors relative shrink-0 ${settings.rememberSearch ? 'bg-[var(--theme-color)]' : 'bg-white/10'}`}
+            >
+              <div className={`w-5 h-5 rounded-full bg-white absolute top-0.5 transition-transform ${settings.rememberSearch ? 'translate-x-5.5' : 'translate-x-0.5'}`} />
+            </button>
+          </div>
+        )}
+
+        {matchesSearch('full screen volume') && (
+          <div className="hidden md:flex items-center justify-between p-4 bg-[#111] border border-white/5 rounded-xl">
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-white/90">Full Screen Volume Slider</span>
+              <span className="text-xs text-white/40">Show the volume bar in full screen mode</span>
+            </div>
+            <button
+              onClick={() => updateSettings({ fullScreenVolume: !settings.fullScreenVolume })}
+              className={`w-11 h-6 rounded-full transition-colors relative shrink-0 ${settings.fullScreenVolume ? 'bg-[var(--theme-color)]' : 'bg-white/10'}`}
+            >
+              <div className={`w-5 h-5 rounded-full bg-white absolute top-0.5 transition-transform ${settings.fullScreenVolume ? 'translate-x-5.5' : 'translate-x-0.5'}`} />
+            </button>
+          </div>
+        )}
+
+        {matchesSearch('not open in a new tab') && (
+          <div className="flex items-center justify-between p-4 bg-[#111] border border-white/5 rounded-xl">
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-white/90">Not Open In A New Tab</span>
+              <span className="text-xs text-white/40">Open unplayable songs in a popup window instead of a new tab</span>
+            </div>
+            <button
+              onClick={() => updateSettings({ notOpenInNewTab: !settings.notOpenInNewTab })}
+              className={`w-11 h-6 rounded-full transition-colors relative shrink-0 ${settings.notOpenInNewTab ? 'bg-[var(--theme-color)]' : 'bg-white/10'}`}
+            >
+              <div className={`w-5 h-5 rounded-full bg-white absolute top-0.5 transition-transform ${settings.notOpenInNewTab ? 'translate-x-5.5' : 'translate-x-0.5'}`} />
+            </button>
+          </div>
+        )}
+
+        {matchesSearch('save listening history') && (
+          <div className="flex items-center justify-between p-4 bg-[#111] border border-white/5 rounded-xl">
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-white/90">Save Listening History</span>
+              <span className="text-xs text-white/40">Keep track of your most played songs</span>
+            </div>
+            <div className="flex items-center gap-4">
+              {settings.saveListeningHistory && (
+                <button
+                  onClick={() => onCategoryChange('history')}
+                  className="text-xs font-medium bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-md transition-colors flex items-center gap-1.5"
+                >
+                  <History className="w-3.5 h-3.5" />
+                  View History
+                </button>
+              )}
+              <button
+                onClick={() => updateSettings({ saveListeningHistory: !settings.saveListeningHistory })}
+                className={`w-11 h-6 rounded-full transition-colors relative shrink-0 ${settings.saveListeningHistory ? 'bg-[var(--theme-color)]' : 'bg-white/10'}`}
+              >
+                <div className={`w-5 h-5 rounded-full bg-white absolute top-0.5 transition-transform ${settings.saveListeningHistory ? 'translate-x-5.5' : 'translate-x-0.5'}`} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {matchesSearch('show random song button') && (
+          <div className="flex items-center justify-between p-4 bg-[#111] border border-white/5 rounded-xl">
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-white/90">Show Random Song Button</span>
+              <span className="text-xs text-white/40">Display the dice button in Music tab</span>
+            </div>
+            <button
+              onClick={() => updateSettings({ showRandomSongButton: !settings.showRandomSongButton })}
+              className={`w-11 h-6 rounded-full transition-colors relative shrink-0 ${settings.showRandomSongButton ? 'bg-[var(--theme-color)]' : 'bg-white/10'}`}
+            >
+              <div className={`w-5 h-5 rounded-full bg-white absolute top-0.5 transition-transform ${settings.showRandomSongButton ? 'translate-x-5.5' : 'translate-x-0.5'}`} />
+            </button>
+          </div>
+        )}
+
+        {isLastfmLoggedIn() && matchesSearch('last.fm formatting') && (
+          <div className="flex flex-col gap-4 p-4 bg-[#111] border border-white/10 rounded-xl">
+            <div className="flex items-center gap-2 mb-2">
+              <SiLastdotfm className="w-5 h-5 text-[#d51007]" />
+              <span className="text-sm font-bold text-white/90">Last.fm Formatting</span>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div className="flex flex-col">
+                <span className="text-sm font-medium text-white/90">Show Version</span>
+                <span className="text-xs text-white/40">Include version in the song name</span>
+              </div>
+              <button
+                onClick={() => updateSettings({ lastfmShowVersion: !settings.lastfmShowVersion })}
+                className={`w-11 h-6 rounded-full transition-colors relative shrink-0 ${settings.lastfmShowVersion ? 'bg-[#d51007]' : 'bg-white/10'}`}
+              >
+                <div className={`w-5 h-5 rounded-full bg-white absolute top-0.5 transition-transform ${settings.lastfmShowVersion ? 'translate-x-5.5' : 'translate-x-0.5'}`} />
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between mt-2">
+              <div className="flex flex-col">
+                <span className="text-sm font-medium text-white/90">Show Tags</span>
+                <span className="text-xs text-white/40">Include tags like Best Of, Ai, etc. in the song name</span>
+              </div>
+              <button
+                onClick={() => updateSettings({ lastfmShowTags: !settings.lastfmShowTags })}
+                className={`w-11 h-6 rounded-full transition-colors relative shrink-0 ${settings.lastfmShowTags ? 'bg-[#d51007]' : 'bg-white/10'}`}
+              >
+                <div className={`w-5 h-5 rounded-full bg-white absolute top-0.5 transition-transform ${settings.lastfmShowTags ? 'translate-x-5.5' : 'translate-x-0.5'}`} />
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between mt-2">
+              <div className="flex flex-col">
+                <span className="text-sm font-medium text-white/90">Show More Info</span>
+                <span className="text-xs text-white/40">Include features, producers, refs and alternative names in the song name</span>
+              </div>
+              <button
+                onClick={() => updateSettings({ lastfmShowFeats: !settings.lastfmShowFeats })}
+                className={`w-11 h-6 rounded-full transition-colors relative shrink-0 ${settings.lastfmShowFeats ? 'bg-[#d51007]' : 'bg-white/10'}`}
+              >
+                <div className={`w-5 h-5 rounded-full bg-white absolute top-0.5 transition-transform ${settings.lastfmShowFeats ? 'translate-x-5.5' : 'translate-x-0.5'}`} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {matchesSearch('start volume') && (
+          <div className="hidden md:flex items-center justify-between p-4 bg-[#111] border border-white/5 rounded-xl">
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-white/90">Start Volume</span>
+              <span className="text-xs text-white/40">Set a default volume when you return to the site</span>
+            </div>
+            <div className="flex items-center gap-4">
+              {settings.startVolume !== null && (
+                <div className="flex items-center gap-3">
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={settings.startVolume}
+                    onChange={(e) => updateSettings({ startVolume: parseInt(e.target.value) })}
+                    className="w-24 accent-[var(--theme-color)]"
+                  />
+                  <span className="text-xs text-white/60 w-8 text-right">{settings.startVolume}%</span>
+                </div>
+              )}
+              <button
+                onClick={() => updateSettings({ startVolume: settings.startVolume !== null ? null : 100 })}
+                className={`w-11 h-6 rounded-full transition-colors relative shrink-0 ${settings.startVolume !== null ? 'bg-[var(--theme-color)]' : 'bg-white/10'}`}
+              >
+                <div className={`w-5 h-5 rounded-full bg-white absolute top-0.5 transition-transform ${settings.startVolume !== null ? 'translate-x-5.5' : 'translate-x-0.5'}`} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {matchesSearch('startup shuffle') && (
+          <div className="flex items-center justify-between p-4 bg-[#111] border border-white/5 rounded-xl">
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-white/90">Startup Shuffle</span>
+              <span className="text-xs text-white/40">Enable shuffle automatically when opening the site</span>
+            </div>
+            <button
+              onClick={() => updateSettings({ startupShuffle: !settings.startupShuffle })}
+              className={`w-11 h-6 rounded-full transition-colors relative shrink-0 ${settings.startupShuffle ? 'bg-[var(--theme-color)]' : 'bg-white/10'}`}
+            >
+              <div className={`w-5 h-5 rounded-full bg-white absolute top-0.5 transition-transform ${settings.startupShuffle ? 'translate-x-5.5' : 'translate-x-0.5'}`} />
+            </button>
+          </div>
+        )}
+
+        {matchesSearch('startup loop') && (
+          <div className="flex items-center justify-between p-4 bg-[#111] border border-white/5 rounded-xl">
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-white/90">Startup Loop</span>
+              <span className="text-xs text-white/40">Enable loop automatically when opening the site</span>
+            </div>
+            <div className="flex items-center gap-3">
+              {settings.startupLoop > 0 && (
+                <select
+                  value={settings.startupLoop}
+                  onChange={(e) => updateSettings({ startupLoop: parseInt(e.target.value) })}
+                  className="bg-white/10 text-xs text-white px-2 py-1 rounded border border-white/10 outline-none"
+                >
+                  <option value={2} className="bg-[#111]">Loop All</option>
+                  <option value={1} className="bg-[#111]">Loop One</option>
+                </select>
+              )}
+              <button
+                onClick={() => updateSettings({ startupLoop: settings.startupLoop > 0 ? 0 : 1 })}
+                className={`w-11 h-6 rounded-full transition-colors relative shrink-0 ${settings.startupLoop > 0 ? 'bg-[var(--theme-color)]' : 'bg-white/10'}`}
+              >
+                <div className={`w-5 h-5 rounded-full bg-white absolute top-0.5 transition-transform ${settings.startupLoop > 0 ? 'translate-x-5.5' : 'translate-x-0.5'}`} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {matchesSearch('show album art in mini player') && (
+          <div className="flex items-center justify-between p-4 bg-[#111] border border-white/5 rounded-xl">
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-white/90">Show Album Art in Mini Player</span>
+            </div>
+            <button
+              onClick={() => updateSettings({ showMiniPlayerArt: !settings.showMiniPlayerArt })}
+              className={`w-11 h-6 rounded-full transition-colors relative shrink-0 ${settings.showMiniPlayerArt ? 'bg-[var(--theme-color)]' : 'bg-white/10'}`}
+            >
+              <div className={`w-5 h-5 rounded-full bg-white absolute top-0.5 transition-transform ${settings.showMiniPlayerArt ? 'translate-x-5.5' : 'translate-x-0.5'}`} />
+            </button>
+          </div>
+        )}
+
+        {matchesSearch('notification settings show next song') && (
+          <div className="flex items-center justify-between p-4 bg-[#111] border border-white/5 rounded-xl">
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-white/90">Show Next Song 10 Sec Before End Song</span>
+              <span className="text-xs text-white/40">Shows a popup in Full Screen Mode</span>
+            </div>
+            <button
+              onClick={() => updateSettings({ showNextSongNotification: !settings.showNextSongNotification })}
+              className={`w-11 h-6 rounded-full transition-colors relative shrink-0 ${settings.showNextSongNotification ? 'bg-[var(--theme-color)]' : 'bg-white/10'}`}
+            >
+              <div className={`w-5 h-5 rounded-full bg-white absolute top-0.5 transition-transform ${settings.showNextSongNotification ? 'translate-x-5.5' : 'translate-x-0.5'}`} />
+            </button>
+          </div>
+        )}
+
+        {matchesSearch('theme color') && (
+          <div className="flex items-center justify-between p-4 bg-[#111] border border-white/5 rounded-xl">
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-white/90">Theme Color</span>
+              <span className="text-xs text-white/40">Change the gold color</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <input
+                type="color"
+                value={settings.themeColor}
+                onChange={(e) => updateSettings({ themeColor: e.target.value })}
+                className="w-8 h-8 rounded cursor-pointer border-0 p-0 bg-transparent"
+              />
+            </div>
+          </div>
+        )}
+
+        {matchesSearch('lyrics font size mini alignment opacity') && (
+          <div className="border border-white/5 rounded-2xl p-2 bg-[#0a0a0a] mt-8">
+            <div className="text-center py-8">
+              <h3 className="text-xl font-bold text-white mb-1">Lyrics & Display</h3>
+              <p className="text-sm text-white/50">
+                Change the style <span onClick={handleEasterEgg} className="cursor-pointer">of</span> the site and lyrics.
+              </p>
+            </div>
+            
+            <div className="space-y-2">
+              {matchesSearch('synced lyrics only') && (
+                <div className="flex items-center justify-between p-4 bg-[#111] border border-white/5 rounded-xl">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-white/90">Synced Lyrics Only</span>
+                    <span className="text-xs text-white/40">Hide plain text lyrics if synced are unavailable</span>
+                  </div>
+                  <button
+                    onClick={() => updateSettings({ syncedLyricsOnly: !settings.syncedLyricsOnly })}
+                    className={`w-11 h-6 rounded-full transition-colors relative shrink-0 ${settings.syncedLyricsOnly ? 'bg-[var(--theme-color)]' : 'bg-white/10'}`}
+                  >
+                    <div className={`w-5 h-5 rounded-full bg-white absolute top-0.5 transition-transform ${settings.syncedLyricsOnly ? 'translate-x-5.5' : 'translate-x-0.5'}`} />
+                  </button>
+                </div>
+              )}
+
+              {matchesSearch('mini lyrics alignment') && (
+                <div className="flex items-center justify-between p-4 bg-[#111] border border-white/5 rounded-xl">
+                  <span className="text-sm font-medium text-white/90">Mini lyrics alignment</span>
+                  <div className="flex items-center bg-white/5 rounded-full p-1 border border-white/5">
+                    <button
+                      onClick={() => updateSettings({ miniLyricsAlignment: 'left' })}
+                      className={`p-2 rounded-full transition-colors ${settings.miniLyricsAlignment === 'left' ? 'bg-white/10 text-white' : 'text-white/50 hover:text-white/80'}`}
+                    >
+                      <AlignLeft className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => updateSettings({ miniLyricsAlignment: 'center' })}
+                      className={`p-2 rounded-full transition-colors ${settings.miniLyricsAlignment === 'center' ? 'bg-white/10 text-white' : 'text-white/50 hover:text-white/80'}`}
+                    >
+                      <AlignCenter className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => updateSettings({ miniLyricsAlignment: 'right' })}
+                      className={`p-2 rounded-full transition-colors ${settings.miniLyricsAlignment === 'right' ? 'bg-white/10 text-white' : 'text-white/50 hover:text-white/80'}`}
+                    >
+                      <AlignRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {matchesSearch('font size') && (
+                <div className="flex items-center justify-between p-4 bg-[#111] border border-white/5 rounded-xl">
+                  <span className="text-sm font-medium text-white/90">Global Font Size</span>
+                  <div className="flex items-center bg-white/5 rounded-full p-1 border border-white/5">
+                    <button
+                      onClick={() => updateSettings({ globalFontSize: 'small' })}
+                      className={`px-3 py-1 text-xs rounded-full transition-colors ${settings.globalFontSize === 'small' ? 'bg-white/10 text-white' : 'text-white/50 hover:text-white/80'}`}
+                    >
+                      Small
+                    </button>
+                    <button
+                      onClick={() => updateSettings({ globalFontSize: 'medium' })}
+                      className={`px-3 py-1 text-xs rounded-full transition-colors ${settings.globalFontSize === 'medium' ? 'bg-white/10 text-white' : 'text-white/50 hover:text-white/80'}`}
+                    >
+                      Medium
+                    </button>
+                    <button
+                      onClick={() => updateSettings({ globalFontSize: 'large' })}
+                      className={`px-3 py-1 text-xs rounded-full transition-colors ${settings.globalFontSize === 'large' ? 'bg-white/10 text-white' : 'text-white/50 hover:text-white/80'}`}
+                    >
+                      Large
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {matchesSearch('show album art in mini lyrics') && (
+                <div className="flex items-center justify-between p-4 bg-[#111] border border-white/5 rounded-xl">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-white/90">Show Album Art in Mini Lyrics</span>
+                  </div>
+                  <button
+                    onClick={() => updateSettings({ showMiniLyricsArt: !settings.showMiniLyricsArt })}
+                    className={`w-11 h-6 rounded-full transition-colors relative shrink-0 ${settings.showMiniLyricsArt ? 'bg-[var(--theme-color)]' : 'bg-white/10'}`}
+                  >
+                    <div className={`w-5 h-5 rounded-full bg-white absolute top-0.5 transition-transform ${settings.showMiniLyricsArt ? 'translate-x-5.5' : 'translate-x-0.5'}`} />
+                  </button>
+                </div>
+              )}
+
+              {matchesSearch('mini lyrics opacity') && (
+                <div className="flex items-center justify-between p-4 bg-[#111] border border-white/5 rounded-xl">
+                  <span className="text-sm font-medium text-white/90">Mini Lyrics Opacity</span>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="range"
+                      min="10"
+                      max="100"
+                      value={settings.miniLyricsOpacity}
+                      onChange={(e) => updateSettings({ miniLyricsOpacity: parseInt(e.target.value) })}
+                      className="w-24 accent-[var(--theme-color)]"
+                    />
+                    <span className="text-xs text-white/60 w-8 text-right">{settings.miniLyricsOpacity}%</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {matchesSearch('clear cache data reset all settings') && (
+          <div className="border border-red-500/20 rounded-2xl p-2 bg-[#0a0a0a] mt-8">
+            <div className="text-center py-8">
+              <h3 className="text-xl font-bold text-red-400 mb-1">Danger Zone</h3>
+            </div>
+            
+            <div className="space-y-2">
+              {matchesSearch('clear cache data') && (
+                <div className="flex items-center justify-between p-4 bg-[#111] border border-red-500/10 rounded-xl">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-white/90">Clear Cache & Data</span>
+                    <span className="text-xs text-white/40">Removes all local data and reloads</span>
+                  </div>
+                  <button
+                    onClick={handleClearCache}
+                    className={`text-xs font-bold px-4 py-2 rounded-md transition-colors flex items-center gap-2 ${isConfirmingClear ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-red-500/10 hover:bg-red-500/20 text-red-400'}`}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    {isConfirmingClear ? 'Are you sure?' : 'Clear Data'}
+                  </button>
+                </div>
+              )}
+
+              {matchesSearch('reset all settings') && (
+                <div className="flex items-center justify-between p-4 bg-[#111] border border-red-500/10 rounded-xl">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-white/90">Reset All Settings</span>
+                    <span className="text-xs text-white/40">Restore to the default settings</span>
+                  </div>
+                  <button
+                    onClick={handleResetSettings}
+                    className={`text-xs font-bold px-4 py-2 rounded-md transition-colors flex items-center gap-2 ${isConfirmingReset ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-red-500/10 hover:bg-red-500/20 text-red-400'}`}
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    {isConfirmingReset ? 'Are you sure?' : 'Reset Settings'}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+      </div>
+
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {showShortcutsModal && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setShowShortcutsModal(false)}>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                onClick={(e) => e.stopPropagation()}
+                className="bg-[#111] border border-white/10 rounded-xl max-w-md w-full p-6 shadow-2xl max-h-[80vh] overflow-y-auto custom-scrollbar"
+              >
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-lg font-bold text-white">Keyboard Shortcuts</h3>
+                  <button onClick={() => setShowShortcutsModal(false)} className="text-white/50 hover:text-white cursor-pointer">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                    <span className="text-sm text-white/80 font-medium">Play / Pause</span>
+                    <div className="flex gap-2">
+                      <kbd className="px-2 py-1 bg-white/10 rounded text-xs text-white font-mono border border-white/10">Space</kbd>
+                      <kbd className="px-2 py-1 bg-white/10 rounded text-xs text-white font-mono border border-white/10">K</kbd>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                    <span className="text-sm text-white/80 font-medium">Next Song</span>
+                    <div className="flex gap-2">
+                      <kbd className="px-2 py-1 bg-white/10 rounded text-xs text-white font-mono border border-white/10">Right Arrow</kbd>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                    <span className="text-sm text-white/80 font-medium">Previous Song</span>
+                    <div className="flex gap-2">
+                      <kbd className="px-2 py-1 bg-white/10 rounded text-xs text-white font-mono border border-white/10">Left Arrow</kbd>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                    <span className="text-sm text-white/80 font-medium">Toggle Full Screen</span>
+                    <div className="flex gap-2">
+                      <kbd className="px-2 py-1 bg-white/10 rounded text-xs text-white font-mono border border-white/10">F</kbd>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                    <span className="text-sm text-white/80 font-medium">Toggle Lyrics</span>
+                    <div className="flex gap-2">
+                      <kbd className="px-2 py-1 bg-white/10 rounded text-xs text-white font-mono border border-white/10">L</kbd>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                    <span className="text-sm text-white/80 font-medium">Toggle Shuffle</span>
+                    <div className="flex gap-2">
+                      <kbd className="px-2 py-1 bg-white/10 rounded text-xs text-white font-mono border border-white/10">S</kbd>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                    <span className="text-sm text-white/80 font-medium">Toggle Loop</span>
+                    <div className="flex gap-2">
+                      <kbd className="px-2 py-1 bg-white/10 rounded text-xs text-white font-mono border border-white/10">O</kbd>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                    <span className="text-sm text-white/80 font-medium">Toggle Favorite</span>
+                    <div className="flex gap-2">
+                      <kbd className="px-2 py-1 bg-white/10 rounded text-xs text-white font-mono border border-white/10">G</kbd>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                    <span className="text-sm text-white/80 font-medium">Download Song</span>
+                    <div className="flex gap-2">
+                      <kbd className="px-2 py-1 bg-white/10 rounded text-xs text-white font-mono border border-white/10">D</kbd>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
+    </motion.div>
+  );
+}
