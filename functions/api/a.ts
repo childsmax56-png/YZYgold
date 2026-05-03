@@ -21,18 +21,28 @@ export const onRequestGet: PagesFunction = async (context) => {
 
     const NAME_KEY = 'Name\n(Join The Discord!)';
     const eras: Record<string, any> = {};
-    let eraOrder: string[] = [];
 
+    // First pass: collect real era names from header rows.
+    // Header rows have newlines in the Era field (file counts). Stats rows also have newlines
+    // but their Name field starts with a digit — skip those.
+    const validEraNames = new Set<string>();
+    for (const row of rows) {
+      const eraField = row['Era'] ?? '';
+      if (!eraField.includes('\n')) continue;
+      const { name: eraName } = parseSongName(row[NAME_KEY] ?? '');
+      if (eraName && !/^\d/.test(eraName)) validEraNames.add(eraName);
+    }
+
+    // Second pass: build eras and songs, ignoring anything outside known eras.
     for (const row of rows) {
       const eraField = row['Era'] ?? '';
       const nameField = row[NAME_KEY] ?? '';
 
-      // Era header rows have file counts separated by newlines in the Era column
       if (eraField.includes('\n')) {
+        // Era header row
         const { name: eraName, extra } = parseSongName(nameField);
-        if (!eraName) continue;
+        if (!eraName || !validEraNames.has(eraName)) continue;
 
-        eraOrder.push(eraName);
         eras[eraName] = {
           name: eraName,
           extra: extra ?? undefined,
@@ -40,12 +50,11 @@ export const onRequestGet: PagesFunction = async (context) => {
           fileInfo: eraField.split('\n').map((l: string) => l.trim()).filter(Boolean),
           data: { 'Unreleased Tracks': [] },
         };
-      } else if (eraField) {
-        // Regular song row
+      } else if (eraField && validEraNames.has(eraField.trim())) {
+        // Regular song row — only if it belongs to a known era
         const eraName = eraField.trim();
         if (!eras[eraName]) {
           eras[eraName] = { name: eraName, data: { 'Unreleased Tracks': [] } };
-          eraOrder.push(eraName);
         }
 
         const { name, extra } = parseSongName(nameField);
