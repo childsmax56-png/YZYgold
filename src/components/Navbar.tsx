@@ -173,24 +173,17 @@ export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHom
         </div>
       </div>
 
-      <div className="hidden md:flex flex-1 justify-center" onMouseLeave={handleLogoLeave}>
+      <div className="hidden md:flex flex-1 justify-center">
         <div className="flex items-center justify-center">
           <h1
             onClick={onHomeClick}
-            onMouseEnter={handleLogoHover}
             className="text-2xl font-display font-bold tracking-tight text-white cursor-pointer hover:opacity-80 transition-all duration-[2000ms] ease-[cubic-bezier(0.2,0,0,1)] shrink-0"
           >
             YƵY<span className="text-[var(--theme-color)]">GOLD</span>
           </h1>
 
           <div
-            className="flex items-center overflow-hidden transition-all duration-[2000ms] ease-[cubic-bezier(0.2,0,0,1)]"
-            style={{
-              maxWidth: isMenuOpen ? '700px' : '0px',
-              opacity: isMenuOpen ? 1 : 0,
-              marginLeft: isMenuOpen ? '1.5rem' : '0px',
-              pointerEvents: isMenuOpen ? 'auto' : 'none',
-            }}
+            className="flex items-center ml-6"
           >
             <div className="flex items-center gap-6 min-w-max pr-2">
               {NAV_CATEGORIES.map(({ key, label }) => (
