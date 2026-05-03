@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronDown, ChevronUp, ExternalLink, Play, Pause } from 'lucide-react';
 import { Era, Song } from '../types';
@@ -27,7 +27,6 @@ const QUALITY_COLORS: Record<string, string> = {
   Clear: 'text-emerald-400',
   'Not Clear': 'text-red-400',
   Secondary: 'text-yellow-400',
-  Unknown: 'text-white/40',
 };
 
 function qualityColor(q: string) {
@@ -38,12 +37,13 @@ function qualityColor(q: string) {
   return 'text-white/40';
 }
 
-// Strip emoji / unicode symbols, lowercase, collapse whitespace
-const EMOJI_RE = /[\p{Emoji_Presentation}\p{Extended_Pictographic}‍️]/gu;
+const EMOJI_RE = /[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu;
+
 function normalizeName(s: string): string {
   return s
     .replace(EMOJI_RE, '')
-    .replace(/\[.*?\]/g, '')   // [OG], [V1], etc.
+    .replace(/️/g, '')
+    .replace(/\[.*?\]/g, '')
     .replace(/\(feat\..*?\)/gi, '')
     .replace(/\(ft\..*?\)/gi, '')
     .toLowerCase()
@@ -52,96 +52,115 @@ function normalizeName(s: string): string {
     .trim();
 }
 
-function namesMatch(trackName: string, songName: string): boolean {
-  const a = normalizeName(trackName);
-  const b = normalizeName(songName);
+function namesMatch(a: string, b: string): boolean {
   if (!a || !b) return false;
   if (a === b) return true;
-  // One contains the other (handles "All Falls Down" matching "All Falls Down (Feat…)")
-  if (b.startsWith(a) || a.startsWith(b)) return true;
-  // Allow if one is a substring of the other and the shorter is >= 5 chars
-  const shorter = a.length < b.length ? a : b;
-  if (shorter.length >= 5 && (a.includes(b) || b.includes(a))) return true;
+  if (a.length >= 5 && b.startsWith(a)) return true;
+  if (b.length >= 5 && a.startsWith(b)) return true;
   return false;
 }
 
-// Build flat song index from all eras for quick lookup
-function buildSongIndex(eras: Era[]): Map<string, { song: Song; era: Era }[]> {
-  const index = new Map<string, { song: Song; era: Era }[]>();
-  for (const era of eras) {
-    const norm = normalizeName(era.name);
-    if (!index.has(norm)) index.set(norm, []);
-    for (const songs of Object.values(era.data || {})) {
-      for (const song of songs as Song[]) {
-        index.get(norm)!.push({ song, era });
-      }
-    }
-  }
-  return index;
+interface SongMatch { song: Song; era: Era }
+
+interface SongIndexes {
+  // era key → songs in that era (playable only)
+  byEra: Map<string, SongMatch[]>;
+  // exact normalized name → first playable match
+  byName: Map<string, SongMatch>;
 }
 
-function findSongMatch(
-  trackName: string,
-  albumEra: string,
-  index: Map<string, { song: Song; era: Era }[]>
-): { song: Song; era: Era } | null {
-  const eraKey = normalizeName(albumEra);
-  const candidates = index.get(eraKey) || [];
+function buildIndexes(eras: Era[]): SongIndexes {
+  const byEra = new Map<string, SongMatch[]>();
+  const byName = new Map<string, SongMatch>();
 
-  // Prefer exact era match first
-  for (const c of candidates) {
-    const rawUrl = c.song.url || (c.song.urls && c.song.urls[0]) || '';
-    if (isSongNotAvailable(c.song, rawUrl)) continue;
-    if (!rawUrl) continue;
-    if (namesMatch(trackName, c.song.name)) return c;
+  for (const era of eras) {
+    const eraKey = normalizeName(era.name);
+    const eraMatches: SongMatch[] = [];
+
+    for (const songs of Object.values(era.data || {})) {
+      for (const song of songs as Song[]) {
+        const rawUrl = song.url || (song.urls?.[0]) || '';
+        if (isSongNotAvailable(song, rawUrl) || !rawUrl) continue;
+
+        const match: SongMatch = { song, era };
+        eraMatches.push(match);
+
+        const normSong = normalizeName(song.name);
+        if (normSong && !byName.has(normSong)) {
+          byName.set(normSong, match);
+        }
+      }
+    }
+
+    if (eraMatches.length) byEra.set(eraKey, eraMatches);
   }
 
-  // Fall back: search all eras
-  for (const entries of index.values()) {
-    for (const c of entries) {
-      const rawUrl = c.song.url || (c.song.urls && c.song.urls[0]) || '';
-      if (isSongNotAvailable(c.song, rawUrl)) continue;
-      if (!rawUrl) continue;
-      if (namesMatch(trackName, c.song.name)) return c;
+  return { byEra, byName };
+}
+
+function findMatch(trackName: string, albumEra: string, idx: SongIndexes): SongMatch | null {
+  const normTrack = normalizeName(trackName);
+  if (!normTrack) return null;
+
+  // 1. Era-specific search
+  const eraCandidates = idx.byEra.get(normalizeName(albumEra)) || [];
+  for (const c of eraCandidates) {
+    if (namesMatch(normTrack, normalizeName(c.song.name))) return c;
+  }
+
+  // 2. Exact global name lookup — O(1)
+  const exact = idx.byName.get(normTrack);
+  if (exact) return exact;
+
+  // 3. Prefix scan over byName keys — only if we haven't matched yet
+  //    Limit to first 5 chars prefix to keep it fast
+  if (normTrack.length >= 5) {
+    for (const [key, match] of idx.byName) {
+      if (namesMatch(normTrack, key)) return match;
     }
   }
 
   return null;
 }
 
+// Pre-compute matches for every track in every album — runs once when eras load
+function precomputeMatches(
+  data: TracklistAlbum[],
+  idx: SongIndexes
+): Map<number, (SongMatch | null)[]> {
+  const result = new Map<number, (SongMatch | null)[]>();
+  for (let ai = 0; ai < data.length; ai++) {
+    const album = data[ai];
+    result.set(ai, album.tracks.map(t => findMatch(t.name, album.era, idx)));
+  }
+  return result;
+}
+
+// ── AlbumCard ────────────────────────────────────────────────────────────────
+
 interface AlbumCardProps {
   album: TracklistAlbum;
+  matches: (SongMatch | null)[];
   defaultOpen: boolean;
-  songIndex: Map<string, { song: Song; era: Era }[]>;
   onPlaySong: (song: Song, era: Era, contextTracks?: Song[]) => void;
   currentSong?: Song | null;
   isPlaying?: boolean;
 }
 
-function AlbumCard({ album, defaultOpen, songIndex, onPlaySong, currentSong, isPlaying }: AlbumCardProps) {
+function AlbumCard({ album, matches, defaultOpen, onPlaySong, currentSong, isPlaying }: AlbumCardProps) {
   const [open, setOpen] = useState(defaultOpen);
 
-  // Pre-resolve matches for all tracks
-  const resolved = useMemo(() =>
-    album.tracks.map(t => ({
-      ...t,
-      match: findSongMatch(t.name, album.era, songIndex),
-    })),
-    [album, songIndex]
+  const playableSongs = useMemo(
+    () => matches.filter((m): m is SongMatch => m !== null).map(m => m.song),
+    [matches]
   );
 
-  const playableTracks = resolved.filter(t => t.match).map(t => t.match!.song);
-
-  const handlePlay = (match: { song: Song; era: Era }) => {
-    onPlaySong(match.song, match.era, playableTracks);
-  };
+  const handlePlay = useCallback((match: SongMatch) => {
+    onPlaySong(match.song, match.era, playableSongs);
+  }, [onPlaySong, playableSongs]);
 
   return (
-    <motion.div
-      layout
-      className="bg-white/[0.03] border border-white/[0.06] rounded-xl overflow-hidden"
-    >
-      {/* Header */}
+    <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl overflow-hidden">
       <button
         onClick={() => setOpen(p => !p)}
         className="w-full flex items-center gap-4 px-4 py-3 text-left hover:bg-white/[0.04] transition-colors cursor-pointer"
@@ -158,9 +177,9 @@ function AlbumCard({ album, defaultOpen, songIndex, onPlaySong, currentSong, isP
             {album.quality || '—'}
           </span>
           <span className="text-white/30 text-xs hidden md:inline">
-            {playableTracks.length}/{album.tracks.length} playable
+            {playableSongs.length}/{album.tracks.length}
           </span>
-          {album.links.length > 0 && (
+          {album.links[0] && (
             <a
               href={album.links[0]}
               target="_blank"
@@ -175,7 +194,6 @@ function AlbumCard({ album, defaultOpen, songIndex, onPlaySong, currentSong, isP
         </div>
       </button>
 
-      {/* Track list */}
       <AnimatePresence initial={false}>
         {open && (
           <motion.div
@@ -183,113 +201,145 @@ function AlbumCard({ album, defaultOpen, songIndex, onPlaySong, currentSong, isP
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: 'easeInOut' }}
+            transition={{ duration: 0.18, ease: 'easeInOut' }}
             className="overflow-hidden"
           >
             <div className="border-t border-white/[0.05] divide-y divide-white/[0.04]">
-              {resolved.length === 0 ? (
+              {album.tracks.length === 0 ? (
                 <p className="px-4 py-3 text-xs text-white/30 italic">No parsed tracks</p>
-              ) : (
-                resolved.map((t, i) => {
-                  const isCurrentlyPlaying =
-                    isPlaying &&
-                    currentSong &&
-                    t.match &&
-                    currentSong.name === t.match.song.name &&
-                    (currentSong.url || (currentSong.urls && currentSong.urls[0]) || '') ===
-                      (t.match.song.url || (t.match.song.urls && t.match.song.urls[0]) || '');
+              ) : album.tracks.map((t, i) => {
+                const match = matches[i] ?? null;
+                const rawUrl = match ? (match.song.url || match.song.urls?.[0] || '') : '';
+                const isCurrentlyPlaying =
+                  isPlaying && currentSong && match &&
+                  currentSong.name === match.song.name &&
+                  (currentSong.url || currentSong.urls?.[0] || '') === rawUrl;
 
-                  return (
-                    <div
-                      key={i}
-                      onClick={() => t.match && handlePlay(t.match)}
-                      className={`flex items-center gap-3 px-4 py-2 transition-colors group ${
-                        t.match
-                          ? 'hover:bg-white/[0.05] cursor-pointer'
-                          : 'opacity-50 cursor-default'
-                      } ${isCurrentlyPlaying ? 'bg-white/[0.06]' : ''}`}
-                    >
-                      {/* Track number / play indicator */}
-                      <span className="text-white/25 text-xs w-6 text-right shrink-0 font-mono relative">
-                        {t.match ? (
-                          <>
-                            <span className={`group-hover:opacity-0 transition-opacity ${isCurrentlyPlaying ? 'opacity-0' : ''}`}>
-                              {t.num === '#?' ? '?' : t.num}
-                            </span>
-                            <span className={`absolute inset-0 flex items-center justify-end transition-opacity ${isCurrentlyPlaying ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                              {isCurrentlyPlaying
-                                ? <Pause className="w-3 h-3 text-[var(--theme-color)]" />
-                                : <Play className="w-3 h-3 text-[var(--theme-color)]" />
-                              }
-                            </span>
-                          </>
-                        ) : (
-                          <span>{t.num === '#?' ? '?' : t.num}</span>
-                        )}
-                      </span>
-
-                      {/* Track name */}
-                      <span className={`text-sm leading-snug flex-1 min-w-0 truncate transition-colors ${
-                        isCurrentlyPlaying
-                          ? 'text-[var(--theme-color)] font-medium'
-                          : t.match
-                          ? 'text-white/80 group-hover:text-white'
-                          : 'text-white/40'
-                      }`}>
-                        {t.name}
-                      </span>
-
-                      {/* Era chip if match is from a different era */}
-                      {t.match && t.match.era.name !== album.era && (
-                        <span className="text-[10px] text-white/20 hidden md:inline truncate max-w-[120px]">
-                          {t.match.era.name}
-                        </span>
+                return (
+                  <div
+                    key={i}
+                    onClick={() => match && handlePlay(match)}
+                    className={`flex items-center gap-3 px-4 py-2 transition-colors group
+                      ${match ? 'hover:bg-white/[0.05] cursor-pointer' : 'cursor-default'}
+                      ${isCurrentlyPlaying ? 'bg-white/[0.06]' : ''}`}
+                  >
+                    <span className="text-white/25 text-xs w-6 text-right shrink-0 font-mono relative">
+                      {match ? (
+                        <>
+                          <span className={`transition-opacity ${isCurrentlyPlaying ? 'opacity-0' : 'group-hover:opacity-0'}`}>
+                            {t.num === '#?' ? '?' : t.num}
+                          </span>
+                          <span className={`absolute inset-0 flex items-center justify-end transition-opacity
+                            ${isCurrentlyPlaying ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                            {isCurrentlyPlaying
+                              ? <Pause className="w-3 h-3 text-[var(--theme-color)]" />
+                              : <Play className="w-3 h-3 text-[var(--theme-color)]" />}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="opacity-40">{t.num === '#?' ? '?' : t.num}</span>
                       )}
-                    </div>
-                  );
-                })
-              )}
+                    </span>
+
+                    <span className={`text-sm leading-snug flex-1 min-w-0 truncate transition-colors
+                      ${isCurrentlyPlaying
+                        ? 'text-[var(--theme-color)] font-medium'
+                        : match
+                        ? 'text-white/80 group-hover:text-white'
+                        : 'text-white/30'}`}>
+                      {t.name}
+                    </span>
+
+                    {match && match.era.name !== album.era && (
+                      <span className="text-[10px] text-white/20 hidden md:inline truncate max-w-[120px]">
+                        {match.era.name}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.div>
+    </div>
   );
 }
+
+// ── Main View ─────────────────────────────────────────────────────────────────
+
+const PAGE_SIZE = 30;
 
 export function TracklistsView({ data, searchQuery, eras, onPlaySong, currentSong, isPlaying }: TracklistsViewProps) {
   const q = searchQuery.toLowerCase().trim();
 
-  const songIndex = useMemo(() => buildSongIndex(eras), [eras]);
+  // Build indexes once when eras are ready
+  const idx = useMemo(() => buildIndexes(eras), [eras]);
 
+  // Pre-compute ALL matches once — O(albums × tracks) but only runs when eras/data change
+  const allMatches = useMemo(() => precomputeMatches(data, idx), [data, idx]);
+
+  // Filter albums
   const filtered = useMemo(() => {
-    if (!q) return data;
-    return data.filter(album => {
-      if (album.name.toLowerCase().includes(q)) return true;
-      if (album.era.toLowerCase().includes(q)) return true;
-      if (album.date.toLowerCase().includes(q)) return true;
-      if (album.tracks.some(t => t.name.toLowerCase().includes(q))) return true;
-      return false;
-    });
-  }, [data, q]);
+    if (!q) return data.map((album, i) => ({ album, origIdx: i }));
+    return data
+      .map((album, i) => ({ album, origIdx: i }))
+      .filter(({ album, origIdx }) => {
+        if (album.name.toLowerCase().includes(q)) return true;
+        if (album.era.toLowerCase().includes(q)) return true;
+        if (album.date.toLowerCase().includes(q)) return true;
+        if (album.tracks.some(t => t.name.toLowerCase().includes(q))) return true;
+        // also match if a song's actual name in db matches
+        const matches = allMatches.get(origIdx) || [];
+        if (matches.some(m => m && m.song.name.toLowerCase().includes(q))) return true;
+        return false;
+      });
+  }, [data, allMatches, q]);
 
   // Group by era
   const grouped = useMemo(() => {
-    const map = new Map<string, TracklistAlbum[]>();
-    for (const album of filtered) {
-      const era = album.era || 'Unknown';
-      if (!map.has(era)) map.set(era, []);
-      map.get(era)!.push(album);
+    const map = new Map<string, { album: TracklistAlbum; origIdx: number }[]>();
+    for (const item of filtered) {
+      const key = item.album.era || 'Unknown';
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(item);
     }
     return map;
   }, [filtered]);
 
-  const isSearching = q.length > 0;
+  // Flatten grouped for pagination
+  const flatItems = useMemo(() => {
+    const items: ({ type: 'era'; era: string } | { type: 'album'; album: TracklistAlbum; origIdx: number })[] = [];
+    for (const [era, albums] of grouped.entries()) {
+      items.push({ type: 'era', era });
+      for (const a of albums) items.push({ type: 'album', ...a });
+    }
+    return items;
+  }, [grouped]);
+
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const loaderRef = useRef<HTMLDivElement>(null);
+
+  // Reset pagination when search changes
+  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [q]);
+
+  // Infinite scroll via IntersectionObserver
+  useEffect(() => {
+    const el = loaderRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) setVisibleCount(n => n + PAGE_SIZE);
+    }, { rootMargin: '200px' });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [flatItems]);
 
   const totalPlayable = useMemo(() =>
-    filtered.reduce((sum, album) =>
-      sum + album.tracks.filter(t => findSongMatch(t.name, album.era, songIndex) !== null).length, 0
-    ), [filtered, songIndex]);
+    Array.from(allMatches.values()).reduce((sum, ms) => sum + ms.filter(Boolean).length, 0),
+    [allMatches]
+  );
+
+  const visibleFlat = flatItems.slice(0, visibleCount);
 
   return (
     <motion.div
@@ -304,7 +354,7 @@ export function TracklistsView({ data, searchQuery, eras, onPlaySong, currentSon
         <h2 className="text-white font-display font-bold text-xl tracking-tight">Album Copies</h2>
         <p className="text-white/40 text-xs mt-1">
           {filtered.length} album{filtered.length !== 1 ? 's' : ''} ·{' '}
-          {filtered.reduce((s, a) => s + a.tracks.length, 0).toLocaleString()} tracks ·{' '}
+          {filtered.reduce((s, { album }) => s + album.tracks.length, 0).toLocaleString()} tracks ·{' '}
           <span className="text-[var(--theme-color)]/70">{totalPlayable.toLocaleString()} playable</span>
         </p>
       </div>
@@ -312,27 +362,28 @@ export function TracklistsView({ data, searchQuery, eras, onPlaySong, currentSon
       {filtered.length === 0 ? (
         <div className="text-center py-20 text-white/30 text-sm">No results for "{searchQuery}"</div>
       ) : (
-        <div className="space-y-8">
-          {Array.from(grouped.entries()).map(([era, albums]) => (
-            <div key={era}>
-              <h3 className="text-[var(--theme-color)] text-xs font-bold uppercase tracking-widest mb-3 px-1">
-                {era}
+        <div className="space-y-2">
+          {visibleFlat.map((item, i) =>
+            item.type === 'era' ? (
+              <h3
+                key={`era-${item.era}-${i}`}
+                className="text-[var(--theme-color)] text-xs font-bold uppercase tracking-widest pt-4 pb-1 px-1 first:pt-0"
+              >
+                {item.era}
               </h3>
-              <div className="space-y-2">
-                {albums.map((album, i) => (
-                  <AlbumCard
-                    key={`${album.name}-${i}`}
-                    album={album}
-                    defaultOpen={isSearching}
-                    songIndex={songIndex}
-                    onPlaySong={onPlaySong}
-                    currentSong={currentSong}
-                    isPlaying={isPlaying}
-                  />
-                ))}
-              </div>
-            </div>
-          ))}
+            ) : (
+              <AlbumCard
+                key={`${item.album.name}-${item.origIdx}`}
+                album={item.album}
+                matches={allMatches.get(item.origIdx) ?? []}
+                defaultOpen={q.length > 0}
+                onPlaySong={onPlaySong}
+                currentSong={currentSong}
+                isPlaying={isPlaying}
+              />
+            )
+          )}
+          <div ref={loaderRef} className="h-4" />
         </div>
       )}
     </motion.div>
