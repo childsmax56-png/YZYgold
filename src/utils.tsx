@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
+import { saveAs } from 'file-saver';
 import { useSettings } from './SettingsContext';
 
 export const TAG_TOOLTIP_MAP: Record<string, string> = {
@@ -424,6 +425,16 @@ export function getCleanSongNameWithTags(text: string | undefined | null): strin
   return formattedText;
 }
 
+function openFallback(url: string) {
+  const a = document.createElement('a');
+  a.href = url;
+  a.target = '_blank';
+  a.rel = 'noopener noreferrer';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
 export async function handleDownloadFile(url: string, suggestedName: string, tagsAsEmojis: boolean) {
   if (!url) return;
   try {
@@ -503,22 +514,14 @@ export async function handleDownloadFile(url: string, suggestedName: string, tag
       blob = await response.blob();
     } catch (e) {
       console.error('Download failed:', e);
-      window.open(url, '_blank');
+      openFallback(url);
       return;
     }
 
-    const objectUrl = URL.createObjectURL(blob);
-
-    const a = document.createElement('a');
-    a.href = objectUrl;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(objectUrl);
+    saveAs(blob, fileName);
   } catch (e) {
     console.error('Download failed:', e);
-    window.open(url, '_blank');
+    openFallback(url);
   }
 }
 
