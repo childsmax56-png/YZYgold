@@ -75,6 +75,16 @@ export const onRequestGet: PagesFunction = async (context) => {
       }
     }
 
+    // Wolves has no CSV entry — seed it so the order list can place it correctly.
+    // App.tsx will only overwrite this if it's missing, so pre-seeding keeps the position.
+    if (!eras['Wolves']) {
+      eras['Wolves'] = {
+        name: 'Wolves',
+        extra: '(Collaboration with Drake) (New Abu Dhabi, Calabasas Is The New Abu Dhabi)',
+        data: { 'Main Tracks': [], 'Snippets & Leaks': [] },
+      };
+    }
+
     const ERA_ORDER = [
       'Before The College Dropout',
       'The College Dropout',
@@ -92,7 +102,7 @@ export const onRequestGet: PagesFunction = async (context) => {
       'So Help Me God',
       'SWISH',
       'The Life Of Pablo',
-      'TurboGrafx 16',
+      'Turbo Grafx 16',
       'Wolves',
       'Cruel Winter [V2]',
       'LOVE EVERYONE',
