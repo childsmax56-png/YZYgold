@@ -1720,6 +1720,10 @@ if (wolvesIndex !== -1 && turboIndex !== -1) {
                   key="tracklists"
                   data={tracklistsData}
                   searchQuery={searchQuery}
+                  eras={[...erasArray, ...relatedErasArray]}
+                  onPlaySong={handlePlaySong}
+                  currentSong={currentSong}
+                  isPlaying={isPlaying}
                 />
               ) : activeCategory === 'fakes' ? (
                 <FakesView
