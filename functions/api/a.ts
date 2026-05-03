@@ -8,6 +8,24 @@ function parseSongName(raw: string): { name: string; extra: string | undefined }
   return { name, extra };
 }
 
+// App.tsx ERA_MAPPINGS renames these keys after receiving the response, which moves them
+// to the end of the object and breaks ordering. Return the final names directly so
+// App.tsx sees them as already-mapped and leaves them in place.
+const ERA_NAME_MAP: Record<string, string> = {
+  'Turbo Grafx 16': 'TurboGrafx 16',
+  'Turbo Grafx-16': 'TurboGrafx 16',
+  'KIDS SEE GHOSTS': 'KIDSSEEGHOSTS',
+  'KIDS SEE GHOST': 'KIDSSEEGHOSTS',
+  'Kids See Ghosts': 'KIDSSEEGHOSTS',
+  'Donda [V1]': 'DONDA [V1]',
+  'Bully': 'BULLY [V1]',
+  'BULLY': 'BULLY [V1]',
+};
+
+function mapEraName(name: string): string {
+  return ERA_NAME_MAP[name] ?? name;
+}
+
 export const onRequestGet: PagesFunction = async (context) => {
   try {
     const url = new URL(context.request.url);
@@ -22,10 +40,10 @@ export const onRequestGet: PagesFunction = async (context) => {
     const NAME_KEY = 'Name\n(Join The Discord!)';
     const eras: Record<string, any> = {};
 
-    // First pass: collect real era names from header rows.
+    // First pass: collect real era names from header rows (mapped to final names).
     // Header rows have newlines in the Era field (file counts). Stats rows also have newlines
     // but their Name field starts with a digit — skip those.
-    const validEraNames = new Set<string>();
+    const validEraNames = new Set<string>(); // raw CSV names
     for (const row of rows) {
       const eraField = row['Era'] ?? '';
       if (!eraField.includes('\n')) continue;
@@ -40,8 +58,9 @@ export const onRequestGet: PagesFunction = async (context) => {
 
       if (eraField.includes('\n')) {
         // Era header row
-        const { name: eraName, extra } = parseSongName(nameField);
-        if (!eraName || !validEraNames.has(eraName)) continue;
+        const { name: rawName, extra } = parseSongName(nameField);
+        if (!rawName || !validEraNames.has(rawName)) continue;
+        const eraName = mapEraName(rawName);
 
         eras[eraName] = {
           name: eraName,
@@ -52,7 +71,7 @@ export const onRequestGet: PagesFunction = async (context) => {
         };
       } else if (eraField && validEraNames.has(eraField.trim())) {
         // Regular song row — only if it belongs to a known era
-        const eraName = eraField.trim();
+        const eraName = mapEraName(eraField.trim());
         if (!eras[eraName]) {
           eras[eraName] = { name: eraName, data: { 'Unreleased Tracks': [] } };
         }
@@ -102,13 +121,13 @@ export const onRequestGet: PagesFunction = async (context) => {
       'So Help Me God',
       'SWISH',
       'The Life Of Pablo',
-      'Turbo Grafx 16',
+      'TurboGrafx 16',
       'Wolves',
       'Cruel Winter [V2]',
       'LOVE EVERYONE',
       'DAYTONA',
       'ye',
-      'KIDS SEE GHOSTS',
+      'KIDSSEEGHOSTS',
       'NASIR',
       'K.T.S.E.',
       'Good Ass Job (2018)',
