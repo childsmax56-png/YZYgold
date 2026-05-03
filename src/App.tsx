@@ -609,20 +609,6 @@ export default function App() {
           setActiveCategory('settings');
         } else if (path.startsWith('/history')) {
           setActiveCategory('history');
-        } else if (path.startsWith('/tracklists')) {
-          setActiveCategory('tracklists');
-        } else if (path.startsWith('/related/')) {
-          setActiveCategory('related');
-          const slug = path.split('/related/')[1];
-          const erasValues = Object.values(json.eras || {}) as Era[];
-          const match = erasValues.find(e => createSlug(e.name) === slug);
-          if (match) {
-            setSelectedAlbum({ ...match, fileInfo: CUSTOM_ALBUM_INFO[match.name] || match.fileInfo, image: CUSTOM_IMAGES[match.name] || match.image });
-          } else {
-             window.history.replaceState({ category: 'related' }, '', '/related');
-          }
-        } else if (path.startsWith('/related')) {
-          setActiveCategory('related');
         } else if (path.startsWith('/tracklists/')) {
           setActiveCategory('tracklists');
           const slug = path.split('/tracklists/')[1];
@@ -635,6 +621,16 @@ export default function App() {
           }
         } else if (path.startsWith('/tracklists')) {
           setActiveCategory('tracklists');
+        } else if (path.startsWith('/related/')) {
+          setActiveCategory('related');
+          const slug = path.split('/related/')[1];
+          const erasValues = Object.values(json.eras || {}) as Era[];
+          const match = erasValues.find(e => createSlug(e.name) === slug);
+          if (match) {
+            setSelectedAlbum({ ...match, fileInfo: CUSTOM_ALBUM_INFO[match.name] || match.fileInfo, image: CUSTOM_IMAGES[match.name] || match.image });
+          } else {
+            window.history.replaceState({ category: 'related' }, '', '/related');
+          }
         } else if (path.startsWith('/album/')) {
           const slug = path.split('/album/')[1];
           if (slug === 'nasir' || slug === 'ktse' || slug === 'never stop' || slug === 'daytona' || slug === 'the elementary school dropout') {
@@ -1816,16 +1812,20 @@ if (wolvesIndex !== -1 && turboIndex !== -1) {
                   favoriteKeys={favoriteKeys}
                 />
 
-              ) : activeCategory === 'tracklists' ? (
+              ) : activeCategory === 'tracklists' && selectedAlbum ? (
                 <TracklistsView
-                  key="tracklists"
-                  data={tracklistsData}
+                  key={`tracklists-${selectedAlbum.name}`}
+                  data={tracklistsData.filter(t => t.era.toLowerCase() === selectedAlbum.name.toLowerCase())}
                   searchQuery={searchQuery}
                   eras={[...erasArray, ...relatedErasArray]}
                   onPlaySong={handlePlaySong}
                   currentSong={currentSong}
                   isPlaying={isPlaying}
+                  era={selectedAlbum}
+                  onBack={() => setSelectedAlbum(null)}
                 />
+              ) : activeCategory === 'tracklists' ? (
+                <EraGrid key="tracklists-grid" eras={filteredEras} onSelectEra={setSelectedAlbum} />
               ) : activeCategory === 'fakes' ? (
                 <FakesView
                   key="fakes"

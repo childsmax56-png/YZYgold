@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronDown, ChevronUp, ExternalLink, Play, Pause } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ChevronUp, ExternalLink, Play, Pause } from 'lucide-react';
 import { Era, Song } from '../types';
 import { isSongNotAvailable } from '../utils';
 
@@ -21,6 +21,8 @@ interface TracklistsViewProps {
   onPlaySong: (song: Song, era: Era, contextTracks?: Song[]) => void;
   currentSong?: Song | null;
   isPlaying?: boolean;
+  era?: Era;
+  onBack?: () => void;
 }
 
 const QUALITY_COLORS: Record<string, string> = {
@@ -270,7 +272,7 @@ function AlbumCard({ album, matches, defaultOpen, onPlaySong, currentSong, isPla
 
 const PAGE_SIZE = 30;
 
-export function TracklistsView({ data, searchQuery, eras, onPlaySong, currentSong, isPlaying }: TracklistsViewProps) {
+export function TracklistsView({ data, searchQuery, eras, onPlaySong, currentSong, isPlaying, era, onBack }: TracklistsViewProps) {
   const q = searchQuery.toLowerCase().trim();
 
   // Build indexes once when eras are ready
@@ -350,8 +352,20 @@ export function TracklistsView({ data, searchQuery, eras, onPlaySong, currentSon
       transition={{ duration: 0.25 }}
       className="px-4 md:px-8 py-6 max-w-4xl mx-auto w-full"
     >
+      {onBack && era && (
+        <button
+          onClick={onBack}
+          className="flex items-center gap-2 text-white/50 hover:text-white transition-colors mb-6 cursor-pointer group"
+        >
+          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+          <span className="text-sm font-medium">Back</span>
+        </button>
+      )}
+
       <div className="mb-6">
-        <h2 className="text-white font-display font-bold text-xl tracking-tight">Album Copies</h2>
+        <h2 className="text-white font-display font-bold text-xl tracking-tight">
+          {era ? era.name : 'Album Copies'}
+        </h2>
         <p className="text-white/40 text-xs mt-1">
           {filtered.length} album{filtered.length !== 1 ? 's' : ''} ·{' '}
           {filtered.reduce((s, { album }) => s + album.tracks.length, 0).toLocaleString()} tracks ·{' '}
