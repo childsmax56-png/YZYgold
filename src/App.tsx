@@ -618,6 +618,18 @@ export default function App() {
           }
         } else if (path.startsWith('/related')) {
           setActiveCategory('related');
+        } else if (path.startsWith('/tracklists/')) {
+          setActiveCategory('tracklists');
+          const slug = path.split('/tracklists/')[1];
+          const erasValues = Object.values(json.eras || {}) as Era[];
+          const match = erasValues.find(e => createSlug(e.name) === slug);
+          if (match) {
+            setSelectedAlbum({ ...match, fileInfo: CUSTOM_ALBUM_INFO[match.name] || match.fileInfo, image: CUSTOM_IMAGES[match.name] || match.image });
+          } else {
+            window.history.replaceState({ category: 'tracklists' }, '', '/tracklists');
+          }
+        } else if (path.startsWith('/tracklists')) {
+          setActiveCategory('tracklists');
         } else if (path.startsWith('/album/')) {
           const slug = path.split('/album/')[1];
           if (slug === 'nasir' || slug === 'ktse' || slug === 'never stop' || slug === 'daytona' || slug === 'the elementary school dropout') {
@@ -874,6 +886,17 @@ export default function App() {
           window.history.pushState({ category: 'related' }, '', '/related');
         }
       }
+    } else if (activeCategory === 'tracklists') {
+      if (selectedAlbum) {
+        const newPath = `/tracklists/${createSlug(selectedAlbum.name)}`;
+        if (currentPath !== newPath && !currentPath.includes('?song=')) {
+          window.history.pushState({ album: selectedAlbum.name, category: 'tracklists' }, '', newPath);
+        }
+      } else {
+        if (currentPath !== '/tracklists') {
+          window.history.pushState({ category: 'tracklists' }, '', '/tracklists');
+        }
+      }
     } else {
       if (selectedAlbum) {
         const newPath = `/album/${createSlug(selectedAlbum.name)}`;
@@ -919,6 +942,20 @@ export default function App() {
       } else if (path.startsWith('/related')) {
         setSelectedAlbum(null);
         setActiveCategory('related');
+      } else if (path.startsWith('/tracklists/') && data) {
+        const slug = path.split('/tracklists/')[1];
+        const erasValues = Object.values(data.eras || {}) as Era[];
+        const match = erasValues.find(e => createSlug(e.name) === slug);
+        if (match) {
+          setSelectedAlbum({ ...match, fileInfo: CUSTOM_ALBUM_INFO[match.name] || match.fileInfo, image: CUSTOM_IMAGES[match.name] || match.image });
+          setActiveCategory('tracklists');
+        } else {
+          setSelectedAlbum(null);
+          setActiveCategory('tracklists');
+        }
+      } else if (path.startsWith('/tracklists')) {
+        setSelectedAlbum(null);
+        setActiveCategory('tracklists');
       } else if (path.startsWith('/art')) {
         setActiveCategory('art');
       } else if (path.startsWith('/stems')) {
@@ -1417,6 +1454,10 @@ export default function App() {
       }
     } else if (cat === 'related' && selectedAlbum) {
       if (!relatedErasArray.find(e => e.name === selectedAlbum.name)) {
+        setSelectedAlbum(null);
+      }
+    } else if (cat === 'tracklists' && selectedAlbum) {
+      if (!finalErasArray.find(e => e.name === selectedAlbum.name)) {
         setSelectedAlbum(null);
       }
     }
