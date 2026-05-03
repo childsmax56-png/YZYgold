@@ -6,7 +6,7 @@ import { SearchFilters } from '../types';
 import { isLastfmLoggedIn, getLastfmUsername, clearLastfmSession, startLastfmAuth } from '../lastfm';
 import { useSettings } from '../SettingsContext';
 
-export type Category = 'music' | 'art' | 'recent' | 'stems' | 'misc' | 'fakes' | 'related' | 'settings' | 'history';
+export type Category = 'music' | 'art' | 'recent' | 'stems' | 'misc' | 'fakes' | 'related' | 'settings' | 'history' | 'tracklists';
 
 interface NavbarProps {
   searchQuery: string;
@@ -30,6 +30,7 @@ const NAV_CATEGORIES: { key: Category; label: string }[] = [
   { key: 'fakes', label: 'Fakes' },
   { key: 'related', label: 'Related' },
   { key: 'recent', label: 'Recent' },
+  { key: 'tracklists', label: 'Tracklists' },
 ];
 
 export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHomeClick, activeCategory, onCategoryChange, lastfmLoggedIn, onLastfmLogout, onRandomSongClick, isRandomMode }: NavbarProps) {

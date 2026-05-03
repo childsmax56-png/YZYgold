@@ -11,6 +11,7 @@ import { FullScreenPlayer } from './components/FullScreenPlayer';
 import { ArtGallery, ArtEntry } from './components/ArtGallery';
 import { StemsView, StemEntry } from './components/StemsView';
 import { MiscView, MiscEntry } from './components/MiscView';
+import { TracklistsView, TracklistAlbum } from './components/TracklistsView';
 import { QueueModal } from './components/QueueModal';
 import { handleShareSilent } from './components/EraDetail';
 
@@ -98,6 +99,7 @@ export default function App() {
   const [stemsData, setStemsData] = useState<StemEntry[]>([]);
   const [miscData, setMiscData] = useState<MiscEntry[]>([]);
   const [fakesData, setFakesData] = useState<FakesEntry[]>([]);
+  const [tracklistsData, setTracklistsData] = useState<TracklistAlbum[]>([]);
   const [isRandomMode, setIsRandomMode] = useState(false);
   const [popupUrl, setPopupUrl] = useState<string | null>(null);
 
@@ -117,6 +119,7 @@ export default function App() {
     if (path.startsWith('/recent')) return 'recent';
     if (path.startsWith('/settings')) return 'settings';
     if (path.startsWith('/history')) return 'history';
+    if (path.startsWith('/tracklists')) return 'tracklists';
     return 'music';
   });
 
@@ -546,6 +549,8 @@ export default function App() {
           setActiveCategory('settings');
         } else if (path.startsWith('/history')) {
           setActiveCategory('history');
+        } else if (path.startsWith('/tracklists')) {
+          setActiveCategory('tracklists');
         } else if (path.startsWith('/related/')) {
           setActiveCategory('related');
           const slug = path.split('/related/')[1];
@@ -675,6 +680,14 @@ export default function App() {
       })
       .catch(err => {
         console.error("Failed to fetch Samples data:", err);
+      });
+
+    axios.get('/Tracklists.json')
+      .then(res => {
+        setTracklistsData(res.data as TracklistAlbum[]);
+      })
+      .catch(err => {
+        console.error("Failed to fetch Tracklists data:", err);
       });
 
     axios.get('https://yzygold-test.vercel.app/Recent.json')
@@ -1702,6 +1715,12 @@ if (wolvesIndex !== -1 && turboIndex !== -1) {
                   favoriteKeys={favoriteKeys}
                 />
 
+              ) : activeCategory === 'tracklists' ? (
+                <TracklistsView
+                  key="tracklists"
+                  data={tracklistsData}
+                  searchQuery={searchQuery}
+                />
               ) : activeCategory === 'fakes' ? (
                 <FakesView
                   key="fakes"
