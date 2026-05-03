@@ -1,6 +1,6 @@
 export const onRequestGet: PagesFunction = async () => {
   try {
-    const response = await fetch('https://yzygold-api.vercel.app/api/a', {
+    const response = await fetch('https://yzygold.childsmax56.workers.dev/api/a', {
       headers: { 'Accept': 'application/json' },
     });
 
