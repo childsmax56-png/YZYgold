@@ -353,7 +353,7 @@ export function StemsView({ eras, stemsData, searchQuery, filters, onPlaySong, c
           animate={{ opacity: 1, filter: 'blur(0px)' }}
           exit={{ opacity: 0, filter: 'blur(10px)' }}
           transition={{ duration: 0.4, ease: "easeOut" }}
-          className="absolute inset-0 z-10 bg-yzy-black overflow-y-auto pb-52"
+          className="absolute inset-0 z-10 bg-yzy-black overflow-y-auto pb-64"
         >
           <div className="p-6 md:p-8 flex flex-col md:flex-row items-start gap-6 md:gap-8 border-b border-white/5 bg-white/5">
             <button onClick={() => setSelectedEra(null)} className="cursor-pointer mt-1 flex items-center justify-center w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors shrink-0">
