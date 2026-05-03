@@ -150,23 +150,27 @@ interface AlbumCardProps {
   isPlaying?: boolean;
 }
 
-function downloadTracklist(album: TracklistAlbum) {
-  const lines: string[] = [];
-  lines.push(album.name);
-  lines.push(`Era: ${album.era}`);
-  if (album.date) lines.push(`Date: ${album.date}`);
-  if (album.quality) lines.push(`Quality: ${album.quality}`);
-  if (album.source) lines.push(`Source: ${album.source}`);
-  lines.push('');
-  album.tracks.forEach(t => {
-    lines.push(`${t.num !== '#?' ? t.num + '. ' : ''}${t.name}`);
-  });
-  const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
-  saveAs(blob, `${album.name}.txt`);
+function sanitizeFilename(name: string): string {
+  return name.replace(/[/\\:*?"<>|]/g, '_').trim();
+}
+
+async function resolveAudioUrl(rawUrl: string): Promise<string> {
+  if (rawUrl.includes('temp.imgur.gg/f/')) {
+    const id = rawUrl.split('/f/')[1];
+    const res = await fetch(`https://temp.imgur.gg/api/file/${id}`);
+    const data = await res.json();
+    return data.cdnUrl as string;
+  }
+  if (rawUrl.includes('pillows.su/f/')) {
+    const id = rawUrl.split('/f/')[1];
+    return `https://api.pillows.su/api/get/${id}`;
+  }
+  return rawUrl;
 }
 
 function AlbumCard({ album, matches, defaultOpen, onPlaySong, currentSong, isPlaying }: AlbumCardProps) {
   const [open, setOpen] = useState(defaultOpen);
+  const [dlProgress, setDlProgress] = useState<string | null>(null);
 
   const playableSongs = useMemo(
     () => matches.filter((m): m is SongMatch => m !== null).map(m => m.song),
@@ -176,6 +180,44 @@ function AlbumCard({ album, matches, defaultOpen, onPlaySong, currentSong, isPla
   const handlePlay = useCallback((match: SongMatch) => {
     onPlaySong(match.song, match.era, playableSongs);
   }, [onPlaySong, playableSongs]);
+
+  const handleDownloadZip = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (dlProgress) return;
+
+    const playable = album.tracks
+      .map((track, i) => ({ track, match: matches[i] }))
+      .filter((x): x is { track: typeof x.track; match: SongMatch } => x.match !== null);
+
+    if (!playable.length) return;
+
+    setDlProgress(`0 / ${playable.length}`);
+    const JSZip = (await import('jszip')).default;
+    const zip = new JSZip();
+    let done = 0;
+
+    await Promise.all(playable.map(async ({ track, match }) => {
+      try {
+        const rawUrl = match.song.url || match.song.urls?.[0] || '';
+        const fetchUrl = await resolveAudioUrl(rawUrl);
+        const res = await fetch(fetchUrl);
+        if (!res.ok) throw new Error('fetch failed');
+        const blob = await res.blob();
+        const ext = blob.type.includes('wav') ? '.wav' : blob.type.includes('flac') ? '.flac' : '.mp3';
+        const num = track.num !== '#?' ? String(track.num).padStart(2, '0') : '00';
+        zip.file(`${num}. ${sanitizeFilename(track.name)}${ext}`, blob);
+      } catch {
+        // skip tracks that fail
+      } finally {
+        done++;
+        setDlProgress(`${done} / ${playable.length}`);
+      }
+    }));
+
+    const content = await zip.generateAsync({ type: 'blob' });
+    saveAs(content, `${sanitizeFilename(album.name)}.zip`);
+    setDlProgress(null);
+  }, [album, matches, dlProgress]);
 
   return (
     <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl overflow-hidden">
@@ -209,11 +251,14 @@ function AlbumCard({ album, matches, defaultOpen, onPlaySong, currentSong, isPla
             </a>
           )}
           <button
-            onClick={e => { e.stopPropagation(); downloadTracklist(album); }}
-            title="Download tracklist"
-            className="text-white/30 hover:text-[var(--theme-color)] transition-colors cursor-pointer"
+            onClick={handleDownloadZip}
+            title={playableSongs.length === 0 ? 'No playable songs' : 'Download songs as ZIP'}
+            disabled={playableSongs.length === 0}
+            className={`flex items-center gap-1 transition-colors cursor-pointer ${dlProgress ? 'text-[var(--theme-color)]' : playableSongs.length === 0 ? 'text-white/15 cursor-not-allowed' : 'text-white/30 hover:text-[var(--theme-color)]'}`}
           >
-            <Download className="w-3.5 h-3.5" />
+            {dlProgress
+              ? <span className="text-[10px] font-mono tabular-nums">{dlProgress}</span>
+              : <Download className="w-3.5 h-3.5" />}
           </button>
           {open ? <ChevronUp className="w-4 h-4 text-white/30" /> : <ChevronDown className="w-4 h-4 text-white/30" />}
         </div>
