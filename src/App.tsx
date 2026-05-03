@@ -825,7 +825,7 @@ export default function App() {
     const userAgent = navigator.userAgent.toLowerCase();
     const isBrowserSafari = userAgent.includes('safari') && !userAgent.includes('chrome') && !userAgent.includes('crios') && !userAgent.includes('android');
 
-    if (!localStorage.getItem('v1_5_4_changelog_seen')) {
+    if (!localStorage.getItem('v1_5_ownership_seen')) {
       setShowChangelog(true);
     } else if (isBrowserSafari) {
       setShowSafariWarning(true);
@@ -2061,26 +2061,44 @@ if (wolvesIndex !== -1 && turboIndex !== -1) {
               exit={{ scale: 0.95, y: 20 }}
               className="bg-[#111] border border-white/10 rounded-xl max-w-lg w-full p-6 md:p-8"
             >
-<h2 className="text-2xl font-bold text-white mb-6 tracking-tight font-display">
-          What's New in V1.5.4
-        </h2>
-        
-        <div className="space-y-4 mb-8 text-sm text-white/70 leading-relaxed font-medium">
-          <div className="space-y-4">
-            <ul className="list-disc pl-5 space-y-2">
-              <li><strong>New Category:</strong> Added "Related" Category for albums that Kanye produces, but not a fully Kanye album</li>
-              <li><strong>Fixed Fakes Names:</strong> Fixed the long ugly names: We Are Young (feat. Nate Reuss & The-Dream) (prod. Jeff Bhasker & Ken Lewis) [Fake Leak] {'->'} We Are Young [Fake Leak]</li>
-              <li><strong>Fixed Download Names:</strong> Fixed the emojies in the file name if "Tags as Emojis" is enabled you wont see a difference.</li>
-              <li><strong>New Tag:</strong> Added "Unwanted" tag to the tracker!</li>
-              <li><strong>Fixed Art Preview:</strong> Added support for more domains to show albums art on the tracker!</li>
-            </ul>
+              <h2 className="text-2xl font-bold text-white mb-1 tracking-tight font-display">
+                YZYgold Version 1.5
+              </h2>
+              <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-6">Ownership Transfer</p>
 
-          </div>
-        </div>
+              <div className="space-y-4 mb-8 text-sm text-white/70 leading-relaxed">
+                <ul className="space-y-3">
+                  <li>Site has transferred ownership to <strong className="text-white">u/yzyarchives</strong></li>
+                  <li>Most importantly — <strong className="text-white">SITE HAS NO ADS</strong></li>
+                  <li>
+                    <strong className="text-white">Tracklists tab</strong>
+                    <br />Here you can play, access and download different tracklists
+                  </li>
+                  <li>
+                    <strong className="text-white">Last.fm</strong>
+                    <br />Due to the transfer of ownership the Last.fm keys had to be reset
+                  </li>
+                </ul>
+
+                <div className="border-t border-white/10 pt-4 space-y-2 text-white/50 text-xs">
+                  <p>
+                    <a href="https://docs.google.com/document/d/1b8aidNuSLLHfzgzrJ0uGdWHPuo-uNk6wI21Vscwzid4/edit?usp=sharing" target="_blank" rel="noopener noreferrer" className="text-[var(--theme-color)] hover:underline">
+                      See the full changelog here
+                    </a>
+                  </p>
+                  <p>
+                    Report any bugs to our subreddit:{' '}
+                    <a href="https://www.reddit.com/r/yzygold/" target="_blank" rel="noopener noreferrer" className="text-[var(--theme-color)] hover:underline">
+                      r/yzygold
+                    </a>
+                  </p>
+                </div>
+              </div>
+
               <button
                 onClick={() => {
                   setShowChangelog(false);
-                  localStorage.setItem('v1_5_4_changelog_seen', 'true');
+                  localStorage.setItem('v1_5_ownership_seen', 'true');
 
                   const userAgent = navigator.userAgent.toLowerCase();
                   const isBrowserSafari = userAgent.includes('safari') && !userAgent.includes('chrome') && !userAgent.includes('crios') && !userAgent.includes('android');
