@@ -398,15 +398,72 @@ export default function App() {
     };
   }, []);
 
+  function applyLocalSongs(targetJson: any, localData: any) {
+    if (!Array.isArray(localData)) return;
+    localData.forEach((item: any) => {
+      const originalEraName = item.Era;
+      if (!originalEraName) return;
+      const matchedMapKey = Object.keys(ERA_MAPPINGS).find(k => k.toLowerCase() === originalEraName.toLowerCase());
+      const eraName = matchedMapKey ? ERA_MAPPINGS[matchedMapKey] : originalEraName;
+      if (!targetJson.eras?.[eraName]) return;
+
+      let rawUrl = item['Link(s)'] || '';
+      const linkMatch = rawUrl.match(/\]\((.*?)\)/);
+      if (linkMatch?.[1]) rawUrl = linkMatch[1];
+
+      const newSong: Song = {
+        name: item.Name,
+        extra: item.extra || item.Extra || undefined,
+        description: item.Notes || '',
+        track_length: item['Track Length'] || '',
+        leak_date: item['Leak Date'] || '',
+        file_date: item['File Date'] || '',
+        available_length: item['Available Length'] || '',
+        quality: item.Quality || '',
+        url: rawUrl,
+        urls: [rawUrl]
+      };
+
+      const categories = targetJson.eras[eraName].data || {};
+      const belowName = (item.Below || '').trim();
+      const targetCategory = item.Category;
+
+      // Try to insert below a specific song
+      if (belowName) {
+        for (const cat of Object.keys(categories)) {
+          const list = categories[cat] as Song[];
+          const idx = list.findIndex(s => s.name?.trim() === belowName || s.name?.includes(belowName));
+          if (idx !== -1) {
+            list.splice(idx + 1, 0, newSong);
+            return;
+          }
+        }
+      }
+
+      // No Below match — append to target category or first available category
+      const catKey = targetCategory && categories[targetCategory]
+        ? targetCategory
+        : Object.keys(categories)[0];
+      if (catKey) {
+        if (!categories[catKey]) categories[catKey] = [];
+        (categories[catKey] as Song[]).push(newSong);
+      }
+    });
+  }
+
   useEffect(() => {
     Promise.all([
       axios.get('https://yzygold-api.vercel.app/api/a'),
       axios.get('https://yzygold-test.vercel.app/MyK.json').catch(err => {
         console.error("Failed to fetch MyK data", err);
         return { data: [] };
+      }),
+      axios.get('/local-songs.json').catch(err => {
+        console.error("Failed to fetch local songs", err);
+        return { data: [] };
       })
     ])
-      .then(([mainRes, mykRes]) => {
+      .then(([mainRes, mykRes, localRes]) => {
         const rawJson = mainRes.data;
         const json = JSON.parse(JSON.stringify(rawJson));
 
@@ -527,9 +584,12 @@ export default function App() {
               }
             }
           });
+          applyLocalSongs(nextJson, localRes.data);
           setData(nextJson);
         } else {
-          setData(json);
+          const baseJson = JSON.parse(JSON.stringify(json));
+          applyLocalSongs(baseJson, localRes.data);
+          setData(baseJson);
         }
         setLoading(false);
 
