@@ -481,10 +481,17 @@ export async function handleDownloadFile(url: string, suggestedName: string, tag
     }
 
     // In-app browsers (Google app, Facebook, Instagram) don't support saveAs via
-    // the download attribute. Navigate directly to the file URL so the OS download
-    // manager or system browser can handle it.
+    // the download attribute. Navigate directly to the download URL so the OS
+    // download manager or system browser can handle it. Use the /api/download/
+    // path (which includes the filename) so the server sends Content-Disposition:
+    // attachment, triggering a real download instead of inline playback.
     if (isInAppBrowser()) {
-      window.location.href = finalUrl;
+      let directUrl = finalUrl;
+      if (url.includes('pillows.su/f/') || url.includes('temp.imgur.gg/f/')) {
+        const pathPart = url.split('/f/')[1];
+        if (pathPart) directUrl = `https://api.pillows.su/api/download/${pathPart}`;
+      }
+      window.location.href = directUrl;
       return;
     }
 
