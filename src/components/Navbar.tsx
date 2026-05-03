@@ -1,4 +1,3 @@
-import { useState, useRef, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Search, DollarSign, LogIn, LogOut, Settings, Dice5, X } from 'lucide-react';
 import { SiLastdotfm } from 'react-icons/si';
@@ -34,41 +33,12 @@ const NAV_CATEGORIES: { key: Category; label: string }[] = [
 ];
 
 export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHomeClick, activeCategory, onCategoryChange, lastfmLoggedIn, onLastfmLogout, onRandomSongClick, isRandomMode }: NavbarProps) {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const headerRef = useRef<HTMLElement>(null);
   const { settings } = useSettings();
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (isMenuOpen && headerRef.current && !headerRef.current.contains(event.target as Node)) {
-        setIsMenuOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isMenuOpen]);
-
-  const handleLogoHover = () => {
-    setIsMenuOpen(true);
-  };
-
-  const handleLogoLeave = () => {
-    setIsMenuOpen(false);
-  };
 
   const handleCategoryClick = (cat: Category) => {
     onCategoryChange(cat);
     if (cat === 'settings') {
       setSearchQuery('');
-    }
-    setIsMenuOpen(false);
-  };
-
-  const handleLogoClick = () => {
-    if (window.innerWidth < 768) {
-      setIsMenuOpen(!isMenuOpen);
-    } else {
-      onHomeClick();
     }
   };
 
@@ -84,12 +54,12 @@ export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHom
   const lastfmUsername = getLastfmUsername();
 
   return (
-    <header ref={headerRef} className="h-auto md:h-16 w-full glass-panel border-b border-white/5 flex flex-col md:flex-row items-center justify-between px-4 md:px-8 py-3 md:py-0 z-30 relative shrink-0 gap-3 md:gap-0">
+    <header className="h-auto md:h-16 w-full glass-panel border-b border-white/5 flex flex-col md:flex-row items-center justify-between px-4 md:px-8 py-3 md:py-0 z-30 relative shrink-0 gap-3 md:gap-0">
       <div className="flex flex-col w-full md:flex-1">
         <div className="flex-1 flex flex-row items-center justify-between md:justify-start w-full relative gap-3">
           <div className="md:hidden flex items-center shrink-0 relative z-10">
             <h1
-              onClick={handleLogoClick}
+              onClick={onHomeClick}
               className="text-2xl font-display font-bold tracking-tight text-white cursor-pointer hover:opacity-80 transition-all duration-[2000ms] ease-[cubic-bezier(0.2,0,0,1)] relative z-20 shrink-0"
             >
               YƵY<span className="text-[var(--theme-color)]">GOLD</span>
@@ -133,14 +103,9 @@ export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHom
           )}
         </div>
 
-        <div 
-          className="md:hidden w-full overflow-hidden transition-all duration-[1500ms] ease-[cubic-bezier(0.2,0,0,1)] flex flex-wrap gap-x-4 gap-y-2 items-center"
-          style={{
-            maxHeight: isMenuOpen ? '200px' : '0px',
-            opacity: isMenuOpen ? 1 : 0,
-            marginTop: isMenuOpen ? '12px' : '0px',
-            pointerEvents: isMenuOpen ? 'auto' : 'none',
-          }}
+        <div
+          className="md:hidden w-full flex flex-wrap gap-x-4 gap-y-2 items-center"
+          style={{ marginTop: '12px' }}
         >
           {NAV_CATEGORIES.map(({ key, label }) => (
             <div className="relative" key={key}>
@@ -173,25 +138,16 @@ export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHom
         </div>
       </div>
 
-      <div className="hidden md:flex flex-1 justify-center" onMouseLeave={handleLogoLeave}>
+      <div className="hidden md:flex flex-1 justify-center">
         <div className="flex items-center justify-center">
           <h1
             onClick={onHomeClick}
-            onMouseEnter={handleLogoHover}
             className="text-2xl font-display font-bold tracking-tight text-white cursor-pointer hover:opacity-80 transition-all duration-[2000ms] ease-[cubic-bezier(0.2,0,0,1)] shrink-0"
           >
             YƵY<span className="text-[var(--theme-color)]">GOLD</span>
           </h1>
 
-          <div
-            className="flex items-center overflow-hidden transition-all duration-[2000ms] ease-[cubic-bezier(0.2,0,0,1)]"
-            style={{
-              maxWidth: isMenuOpen ? '700px' : '0px',
-              opacity: isMenuOpen ? 1 : 0,
-              marginLeft: isMenuOpen ? '1.5rem' : '0px',
-              pointerEvents: isMenuOpen ? 'auto' : 'none',
-            }}
-          >
+          <div className="flex items-center ml-6">
             <div className="flex items-center gap-6 min-w-max pr-2">
               {NAV_CATEGORIES.map(({ key, label }) => (
                 <div className="relative" key={key}>

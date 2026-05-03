@@ -340,7 +340,7 @@ export function EraDetail({ era, onBack, onPlaySong, searchQuery = '', filters, 
         animate={{ opacity: 1, filter: 'blur(0px)' }}
         exit={{ opacity: 0, filter: 'blur(10px)' }}
         transition={{ duration: 0.4, ease: "easeOut" }}
-        className="absolute inset-0 z-10 bg-yzy-black overflow-y-auto pb-32"
+        className="absolute inset-0 z-10 bg-yzy-black overflow-y-auto pb-64"
       >
         <div className="p-6 md:p-8 flex flex-col md:flex-row items-start gap-6 md:gap-8 border-b border-white/5 bg-white/5">
           {onBack && (
