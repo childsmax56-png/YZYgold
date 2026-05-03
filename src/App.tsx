@@ -453,7 +453,7 @@ export default function App() {
 
   useEffect(() => {
     Promise.all([
-      axios.get('https://yzygold-api.vercel.app/api/a'),
+      axios.get('/api/a'),
       axios.get('https://yzygold-test.vercel.app/MyK.json').catch(err => {
         console.error("Failed to fetch MyK data", err);
         return { data: [] };
@@ -1492,7 +1492,15 @@ export default function App() {
   if (!data) {
     return (
       <div className="h-screen w-full flex items-center justify-center bg-yzy-black text-white">
-        <div className="text-sm text-red-500">Failed to load data.</div>
+        <div className="flex flex-col items-center gap-4">
+          <div className="text-sm text-red-500">Failed to load data.</div>
+          <button
+            onClick={() => window.location.reload()}
+            className="text-xs px-4 py-2 border border-white/20 rounded hover:bg-white/10 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     );
   }
