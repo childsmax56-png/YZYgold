@@ -435,6 +435,12 @@ function openFallback(url: string) {
   document.body.removeChild(a);
 }
 
+function isInAppBrowser(): boolean {
+  const ua = navigator.userAgent;
+  // Google app (GSA), Facebook, Instagram, and similar WebViews don't support saveAs
+  return /GSA\/|FBAN|FBAV|Instagram\//.test(ua);
+}
+
 export async function handleDownloadFile(url: string, suggestedName: string, tagsAsEmojis: boolean) {
   if (!url) return;
   try {
@@ -443,14 +449,14 @@ export async function handleDownloadFile(url: string, suggestedName: string, tag
     if (!tagsAsEmojis) {
       fileName = formatTextForNotification(suggestedName, false);
     }
-    
+
     let isImage = false;
     let ext = '.mp3';
 
     if (url.includes('pillows.su/f/') || url.includes('temp.imgur.gg/f/')) {
         const hash = url.split('/f/')[1]?.split('/')[0]?.split('?')[0];
         if (hash) {
-            finalUrl = `https://api.pillows.su/api/get/${hash}`; 
+            finalUrl = `https://api.pillows.su/api/get/${hash}`;
         }
     } else if (url.includes('ibb.co')) {
        isImage = true;
@@ -472,6 +478,14 @@ export async function handleDownloadFile(url: string, suggestedName: string, tag
         fileName += ext;
     } else if (isImage && !fileName.match(/\.(png|jpg|jpeg)$/i)) {
         fileName += ext;
+    }
+
+    // In-app browsers (Google app, Facebook, Instagram) don't support saveAs via
+    // the download attribute. Navigate directly to the file URL so the OS download
+    // manager or system browser can handle it.
+    if (isInAppBrowser()) {
+      window.location.href = finalUrl;
+      return;
     }
 
     let blob: Blob;
