@@ -1660,7 +1660,7 @@ if (wolvesIndex !== -1 && turboIndex !== -1) {
           isRandomMode={isRandomMode}
         />
 
-        <main className="flex-1 overflow-y-auto relative scroll-smooth bg-[#0a0a0a] flex flex-col">
+        <main className={`flex-1 overflow-y-auto relative scroll-smooth bg-[#0a0a0a] flex flex-col ${currentSong && !isFullScreen && !isPlayerClosed ? 'pb-44 md:pb-28' : ''}`}>
           <div className="flex-1">
             <AnimatePresence mode="wait">
               {activeCategory === 'settings' ? (
