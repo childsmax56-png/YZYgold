@@ -75,11 +75,71 @@ export const onRequestGet: PagesFunction = async (context) => {
       }
     }
 
+    const ERA_ORDER = [
+      'Before The College Dropout',
+      'The College Dropout',
+      'Late Registration',
+      'Graduation',
+      '808s & Heartbreak',
+      'Good Ass Job',
+      'My Beautiful Dark Twisted Fantasy',
+      'Watch The Throne',
+      'Cruel Summer',
+      'Thank God For Drugs',
+      'Yeezus',
+      'Cruel Winter [V1]',
+      'Yeezus 2',
+      'So Help Me God',
+      'SWISH',
+      'The Life Of Pablo',
+      'Cruel Winter [V2]',
+      'TurboGrafx 16',
+      'LOVE EVERYONE',
+      'DAYTONA',
+      'ye',
+      'KIDS SEE GHOSTS',
+      'NASIR',
+      'K.T.S.E.',
+      'Good Ass Job (2018)',
+      'Yandhi [V1]',
+      'Yandhi [V2]',
+      'JESUS IS KING',
+      "God's Country",
+      'JESUS IS KING: The Dr. Dre Version',
+      'DONDA [V1]',
+      'Donda [V2]',
+      'Donda [V3]',
+      'Donda 2',
+      'WAR',
+      'YEBU',
+      'Bad Bitch Playbook',
+      'VULTURES 1',
+      'VULTURES 2',
+      'The Elementary School Dropout',
+      'VULTURES 3',
+      'BULLY [V1]',
+      'CUCK',
+      'DONDA 2 (2025)',
+      'NEVER STOP',
+      'IN A PERFECT WORLD',
+      'BULLY [V2]',
+      'Ongoing',
+    ];
+
+    const orderedEras: Record<string, any> = {};
+    for (const name of ERA_ORDER) {
+      if (eras[name]) orderedEras[name] = eras[name];
+    }
+    // Append any eras from the CSV not in the order list
+    for (const name of Object.keys(eras)) {
+      if (!orderedEras[name]) orderedEras[name] = eras[name];
+    }
+
     const trackerData = {
       name: 'YZY Gold',
       tabs: ['eras'],
       current_tab: 'eras',
-      eras,
+      eras: orderedEras,
     };
 
     return csvResponse(trackerData);
