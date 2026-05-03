@@ -2076,7 +2076,7 @@ if (wolvesIndex !== -1 && turboIndex !== -1) {
                   </li>
                   <li>
                     <strong className="text-white">Last.fm</strong>
-                    <br />Due to the transfer of ownership the Last.fm keys had to be reset
+                    <br />Due to the transfer of ownership the Last.fm keys had to be reset, please relink your Last.fm account to YZYgold
                   </li>
                 </ul>
 
