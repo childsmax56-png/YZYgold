@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, ChevronDown, ChevronUp, ExternalLink, Play, Pause } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ChevronUp, Download, ExternalLink, Play, Pause } from 'lucide-react';
+import { saveAs } from 'file-saver';
 import { Era, Song } from '../types';
 import { isSongNotAvailable } from '../utils';
 
@@ -149,6 +150,21 @@ interface AlbumCardProps {
   isPlaying?: boolean;
 }
 
+function downloadTracklist(album: TracklistAlbum) {
+  const lines: string[] = [];
+  lines.push(album.name);
+  lines.push(`Era: ${album.era}`);
+  if (album.date) lines.push(`Date: ${album.date}`);
+  if (album.quality) lines.push(`Quality: ${album.quality}`);
+  if (album.source) lines.push(`Source: ${album.source}`);
+  lines.push('');
+  album.tracks.forEach(t => {
+    lines.push(`${t.num !== '#?' ? t.num + '. ' : ''}${t.name}`);
+  });
+  const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
+  saveAs(blob, `${album.name}.txt`);
+}
+
 function AlbumCard({ album, matches, defaultOpen, onPlaySong, currentSong, isPlaying }: AlbumCardProps) {
   const [open, setOpen] = useState(defaultOpen);
 
@@ -192,6 +208,13 @@ function AlbumCard({ album, matches, defaultOpen, onPlaySong, currentSong, isPla
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
           )}
+          <button
+            onClick={e => { e.stopPropagation(); downloadTracklist(album); }}
+            title="Download tracklist"
+            className="text-white/30 hover:text-[var(--theme-color)] transition-colors cursor-pointer"
+          >
+            <Download className="w-3.5 h-3.5" />
+          </button>
           {open ? <ChevronUp className="w-4 h-4 text-white/30" /> : <ChevronDown className="w-4 h-4 text-white/30" />}
         </div>
       </button>
