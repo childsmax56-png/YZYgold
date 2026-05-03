@@ -35,7 +35,7 @@ export const CUSTOM_IMAGES: Record<string, string> = {
   "Yandhi [V1]": "https://r2.artistgrid.cx/6392738867962638578",
   "Yandhi [V2]": "https://r2.artistgrid.cx/16077241178186864707",
   "JESUS IS KING": "https://r2.artistgrid.cx/15563101222135825089",
-  "God's Country": "https://r2.artistgrid.cx/18258567973514378297",
+  "God's Country": "https://i.ibb.co/y8MTqL8/God-s-Country-Rough-Draft-Cover-1.png",
   "JESUS IS KING: The Dr. Dre Version": "https://r2.artistgrid.cx/5338565897126344808",
   "DONDA [V1]": "https://r2.artistgrid.cx/10194753781351863336",
   "Donda [V2]": "https://r2.artistgrid.cx/1414767734423155052",
