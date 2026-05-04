@@ -1519,15 +1519,6 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
     fileInfo: CUSTOM_ALBUM_INFO[era.name] || era.fileInfo
   })) as Era[];
 
-const wolvesIndex = erasArray.findIndex(e => e.name === "Wolves");
-const turboIndex = erasArray.findIndex(e => e.name === "Turbo Grafix 16");
-
-if (wolvesIndex !== -1 && turboIndex !== -1) {
-  if (wolvesIndex > turboIndex) {
-    const wolvesEra = erasArray.splice(wolvesIndex, 1)[0];
-    erasArray.splice(turboIndex, 0, wolvesEra);
-  }
-}
 
   const favoritesEra: Era | null = favoriteKeys.length > 0 ? {
     fileInfo: [],
