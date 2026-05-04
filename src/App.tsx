@@ -358,6 +358,7 @@ export default function App() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
+  const audioBlobUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -1083,7 +1084,37 @@ export default function App() {
       songStartTimeRef.current = Math.floor(Date.now() / 1000);
 
       if (audioRef.current) {
-        audioRef.current.src = streamUrl;
+        const ua = navigator.userAgent.toLowerCase();
+        const isSafari = ua.includes('safari') && !ua.includes('chrome') && !ua.includes('crios') && !ua.includes('android');
+
+        if (audioBlobUrlRef.current) {
+          URL.revokeObjectURL(audioBlobUrlRef.current);
+          audioBlobUrlRef.current = null;
+        }
+
+        if (isSafari && streamUrl) {
+          // Safari respects Content-Disposition: attachment even on audio src assignments,
+          // triggering a file download instead of inline playback. Fetching as a blob and
+          // using a blob: URL bypasses this header entirely since blob: URLs have no
+          // HTTP response headers.
+          try {
+            const response = await fetch(streamUrl);
+            if (response.ok) {
+              const blob = await response.blob();
+              const blobUrl = URL.createObjectURL(blob);
+              audioBlobUrlRef.current = blobUrl;
+              audioRef.current.src = blobUrl;
+            } else {
+              audioRef.current.src = streamUrl;
+            }
+          } catch (err) {
+            console.error("Safari audio blob fetch failed, falling back to direct URL:", err);
+            audioRef.current.src = streamUrl;
+          }
+        } else {
+          audioRef.current.src = streamUrl;
+        }
+
         audioRef.current.volume = volume;
         if (autoPlay) {
           audioRef.current.play().catch(e => { if (e.name !== 'AbortError') console.error("Audio play failed", e) });
