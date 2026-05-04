@@ -22,7 +22,7 @@ import { isLastfmLoggedIn, saveLastfmSession, clearLastfmSession, scrobbleTrack,
 const CUSTOM_ALBUM_INFO: Record<string, string[]> = {
   "The College Dropout": ["1 OG File(s)", "49 Full", "9 Tagged", "2 Partial", "7 Snippet(s)", "0 Stem Bounce(s)", "46 Unavailable"],
   "The Life Of Pablo": ["51 OG File(s)", "23 Full", "3 Tagged", "7 Partial", "19 Snippet(s)", "2 Stem Bounce(s)", "35 Unavailable"],
-  "TurboGrafx 16": ["20 OG File(s)", "11 Full", "0 Tagged", "0 Partial", "6 Snippet(s)", "2 Stem Bounce(s)", "50 Unavailable"],
+  "Turbo Grafix 16": ["20 OG File(s)", "11 Full", "0 Tagged", "0 Partial", "6 Snippet(s)", "2 Stem Bounce(s)", "50 Unavailable"],
   "The Elementary School Dropout": ["0 OG File(s)", "0 Full", "0 Tagged", "0 Partial", "3 Snippet(s)", "0 Stem Bounce(s)", "15 Unavailable"],
   "Wolves": ["1 OG File(s)", "4 Full", "0 Tagged", "1 Partial", "0 Snippet(s)", "0 Stem Bounce(s)", "12 Unavailable"]
 };
@@ -75,12 +75,12 @@ import { useSettings } from './SettingsContext';
 import { recordListeningHistory } from './history';
 
 const ERA_MAPPINGS: Record<string, string> = {
-  "Turbo Grafx 16": "TurboGrafx 16",
-  "Turbo Grafx-16": "TurboGrafx 16",
+  "Turbo Grafx 16": "Turbo Grafix 16",
+  "Turbo Grafx-16": "Turbo Grafix 16",
   "Donda [V1]": "DONDA [V1]",
-  "Kids See Ghosts": "KIDSSEEGHOSTS",
-  "KIDS SEE GHOSTS": "KIDSSEEGHOSTS",
-  "KIDS SEE GHOST": "KIDSSEEGHOSTS",
+  "Kids See Ghosts": "KIDS SEE GHOSTS",
+  "KIDS SEE GHOSTS": "KIDS SEE GHOSTS",
+  "KIDS SEE GHOST": "KIDS SEE GHOSTS",
   "Bully": "BULLY [V1]",
   "BULLY": "BULLY [V1]"
 };
@@ -1520,7 +1520,7 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
   })) as Era[];
 
 const wolvesIndex = erasArray.findIndex(e => e.name === "Wolves");
-const turboIndex = erasArray.findIndex(e => e.name === "TurboGrafx 16");
+const turboIndex = erasArray.findIndex(e => e.name === "Turbo Grafix 16");
 
 if (wolvesIndex !== -1 && turboIndex !== -1) {
   if (wolvesIndex > turboIndex) {

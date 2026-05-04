@@ -39,8 +39,8 @@ interface MiscViewProps {
 
 const ERA_MAPPINGS: Record<string, string> = {
   "Donda [V1]": "DONDA [V1]",
-  "Kids See Ghosts": "KIDSSEEGHOSTS",
-  "KIDS SEE GHOSTS": "KIDSSEEGHOSTS",
+  "Kids See Ghosts": "KIDS SEE GHOSTS",
+  "KIDS SEE GHOSTS": "KIDS SEE GHOSTS",
   "Bully": "BULLY [V1]",
   "BULLY": "BULLY [V1]"
 };
