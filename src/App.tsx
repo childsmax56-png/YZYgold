@@ -677,7 +677,7 @@ export default function App() {
         console.error("Failed to fetch Remix data:", err);
       });
 
-    axios.get('https://yzygold-test.vercel.app/Art.json')
+    axios.get('/api/art')
       .then(res => {
         const data = normalizeEraField(res.data) as ArtEntry[];
         const filteredData = data.filter(item => {
@@ -698,7 +698,7 @@ export default function App() {
         console.error("Failed to fetch Stems data:", err);
       });
 
-    axios.get('https://yzygold-test.vercel.app/Misc.json')
+    axios.get('/api/misc')
       .then(res => {
         setMiscData(normalizeEraField(res.data) as MiscEntry[]);
       })
@@ -758,7 +758,7 @@ export default function App() {
         console.error("Failed to fetch Tracklists data:", err);
       });
 
-    axios.get('https://yzygold-test.vercel.app/Recent.json')
+    axios.get('/api/recent')
       .then(res => {
         const mapped = res.data.map((item: any) => {
           let name = item.Name || '';
