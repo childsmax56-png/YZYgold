@@ -62,10 +62,10 @@ export const CUSTOM_IMAGES: Record<string, string> = {
   "VULTURES 1": "https://i.ibb.co/5hFN28jM/cell-Image-199908479-37.png",
   "Cruel Winter [V2]": "https://i.ibb.co/bjFdyLjv/image-2026-04-28-131805413.png",
   "Ongoing": "https://i.ibb.co/dwZ4cwmd/image-2026-04-27-185921217.png",
-  "DAYTONA": "https://a5.mzstatic.com/us/r1000/0/Music122/v4/5b/14/b2/5b14b2b9-a35b-ffa6-de4c-ad685eb0aa88/18UMGIM27192.rgb",
+  "DAYTONA": "https://litter.catbox.moe/5b723h.jpg",
   "NASIR": "https://a5.mzstatic.com/us/r1000/0/Music125/v4/f9/41/a9/f941a9d4-099d-4b65-484a-e585136ca838/18UMGIM37154.rgb.jpg",
-  "K.T.S.E.": "https://a5.mzstatic.com/us/r1000/0/Music125/v4/af/35/fb/af35fb83-87dd-a809-5625-4b410d03fefa/18UMGIM39452.rgb",
-  "NEVER STOP": "https://ibb.co/rffr2frK"
+  "K.T.S.E.": "https://litter.catbox.moe/5vvk4u.jpg",
+  "NEVER STOP": "https://litter.catbox.moe/utds80.png"
 };
 
 export const ALBUM_RELEASE_DATES: Record<string, string> = {
