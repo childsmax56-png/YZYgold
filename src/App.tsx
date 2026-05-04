@@ -454,7 +454,7 @@ export default function App() {
   useEffect(() => {
     Promise.all([
       axios.get('https://yzygold-api.vercel.app/api/a'),
-      axios.get('https://yzygold-test.vercel.app/MyK.json').catch(err => {
+      axios.get('https://yzygold-api.vercel.app/MyK.json').catch(err => {
         console.error("Failed to fetch MyK data", err);
         return { data: [] };
       }),
@@ -661,7 +661,7 @@ export default function App() {
       });
     };
 
-    axios.get('https://yzygold-test.vercel.app/MV.json')
+    axios.get('https://yzygold-api.vercel.app/MV.json')
       .then(res => {
         setMvData(normalizeEraField(res.data) as MvEntry[]);
       })
@@ -669,7 +669,7 @@ export default function App() {
         console.error("Failed to fetch MV data:", err);
       });
 
-    axios.get('https://yzygold-test.vercel.app/Remixes.json')
+    axios.get('https://yzygold-api.vercel.app/Remixes.json')
       .then(res => {
         setRemixData(normalizeEraField(res.data) as RemixEntry[]);
       })
@@ -677,7 +677,7 @@ export default function App() {
         console.error("Failed to fetch Remix data:", err);
       });
 
-    axios.get('https://yzygold-test.vercel.app/Art.json')
+    axios.get('https://yzygold-api.vercel.app/Art.json')
       .then(res => {
         const data = normalizeEraField(res.data) as ArtEntry[];
         const filteredData = data.filter(item => {
@@ -690,7 +690,7 @@ export default function App() {
         console.error("Failed to fetch Art data:", err);
       });
 
-    axios.get('https://yzygold-test.vercel.app/Stems.json')
+    axios.get('https://yzygold-api.vercel.app/Stems.json')
       .then(res => {
         setStemsData(normalizeEraField(res.data) as StemEntry[]);
       })
@@ -698,7 +698,7 @@ export default function App() {
         console.error("Failed to fetch Stems data:", err);
       });
 
-    axios.get('https://yzygold-test.vercel.app/Misc.json')
+    axios.get('https://yzygold-api.vercel.app/Misc.json')
       .then(res => {
         setMiscData(normalizeEraField(res.data) as MiscEntry[]);
       })
@@ -706,7 +706,7 @@ export default function App() {
         console.error("Failed to fetch Misc data:", err);
       });
 
-    axios.get('https://yzygold-test.vercel.app/Fakes.json')
+    axios.get('https://yzygold-api.vercel.app/Fakes.json')
       .then(res => {
         const rawFakes = normalizeEraField(res.data) as any[];
         const mappedFakes = rawFakes.map(item => {
@@ -742,7 +742,7 @@ export default function App() {
         console.error("Failed to fetch Fakes data:", err);
       });
 
-    axios.get('https://yzygold-test.vercel.app/Samples.json')
+    axios.get('https://yzygold-api.vercel.app/Samples.json')
       .then(res => {
         setSamplesData(res.data as SampleEntry[]);
       })
@@ -758,7 +758,7 @@ export default function App() {
         console.error("Failed to fetch Tracklists data:", err);
       });
 
-    axios.get('https://yzygold-test.vercel.app/Recent.json')
+    axios.get('https://yzygold-api.vercel.app/Recent.json')
       .then(res => {
         const mapped = res.data.map((item: any) => {
           let name = item.Name || '';
