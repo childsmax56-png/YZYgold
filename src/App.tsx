@@ -453,7 +453,7 @@ export default function App() {
 
   useEffect(() => {
     Promise.all([
-      axios.get('/api/a'),
+      axios.get('https://yzygold-api.vercel.app/api/a'),
       axios.get('https://yzygold-test.vercel.app/MyK.json').catch(err => {
         console.error("Failed to fetch MyK data", err);
         return { data: [] };
