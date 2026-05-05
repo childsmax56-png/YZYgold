@@ -32,8 +32,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
     const searchData: any = await searchRes.json();
     const hits: any[] = searchData?.response?.hits ?? [];
-
     const hit = hits.find((h: any) => h.type === 'song') ?? hits[0];
+
     if (!hit) {
       return new Response(JSON.stringify({ lyrics: null }), {
         headers: { 'Content-Type': 'application/json' },
@@ -43,7 +43,9 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     const songUrl: string = hit.result.url;
     const pageRes = await fetch(songUrl, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; YZYgold/1.0)',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
       },
     });
 
@@ -53,8 +55,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       });
     }
 
-    const html = await pageRes.text();
-    const lyrics = extractLyrics(html);
+    const lyrics = await extractLyrics(pageRes);
 
     return new Response(JSON.stringify({ lyrics }), {
       headers: {
@@ -69,34 +70,29 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   }
 };
 
-function extractLyrics(html: string): string | null {
-  // Genius stores lyrics in data-lyrics-container divs
-  const containers: string[] = [];
-  const containerRegex = /data-lyrics-container="true"[^>]*>([\s\S]*?)<\/div>/gi;
-  let match: RegExpExecArray | null;
+async function extractLyrics(pageRes: Response): Promise<string | null> {
+  const parts: string[] = [];
+  let containerCount = 0;
 
-  while ((match = containerRegex.exec(html)) !== null) {
-    containers.push(match[1]);
-  }
+  const transformed = new HTMLRewriter()
+    .on('[data-lyrics-container="true"]', {
+      element() {
+        if (containerCount > 0) parts.push('\n\n');
+        containerCount++;
+      },
+      text(chunk) {
+        parts.push(chunk.text);
+      },
+    })
+    .on('[data-lyrics-container="true"] br', {
+      element() {
+        parts.push('\n');
+      },
+    })
+    .transform(pageRes);
 
-  if (containers.length === 0) return null;
+  await transformed.arrayBuffer();
 
-  const raw = containers.join('\n');
-
-  // Convert <br> tags to newlines, strip all other HTML tags
-  const text = raw
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<[^>]+>/g, '')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#x27;/g, "'")
-    .replace(/&#39;/g, "'")
-    .replace(/&apos;/g, "'")
-    .replace(/&#x2019;/g, '’')
-    .replace(/&#8217;/g, '’')
-    .trim();
-
-  return text || null;
+  const result = parts.join('').trim();
+  return result || null;
 }
