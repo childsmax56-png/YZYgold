@@ -44,7 +44,7 @@ function parseFakesToEras(fakesData: FakesEntry[], allEras: Era[]) {
     if (!eraOrder.includes(standardEraName)) {
       eraOrder.push(standardEraName);
       const matchingEra = allEras.find(e => e.name === standardEraName);
-      eraImages[standardEraName] = matchingEra?.image || CUSTOM_IMAGES[standardEraName] || CUSTOM_IMAGES[item.Era];
+      eraImages[standardEraName] = CUSTOM_IMAGES[standardEraName] || CUSTOM_IMAGES[item.Era] || matchingEra?.image;
     }
   }
 
