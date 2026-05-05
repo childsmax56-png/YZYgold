@@ -1519,12 +1519,12 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
     fileInfo: CUSTOM_ALBUM_INFO[era.name] || era.fileInfo
   })) as Era[];
 
-// Turbo Grafix 16 arrives renamed (was "Turbo Grafx 16") so it gets appended to the end
-// of the eras object. Wolves has no CSV entry and is seeded after the API response, also
-// landing at the end. Pull both out and reinsert right after Cruel Winter [V2].
+// Turbo Grafix 16 and Wolves can end up out of position (Turbo gets renamed from
+// "Turbo Grafx 16", Wolves has no CSV entry). Pull both out and reinsert right after
+// Cruel Winter [V2] so the order is always: CW[V2] → Turbo Grafix 16 → Wolves.
 {
   const cwV2Idx = erasArray.findIndex(e => e.name === "Cruel Winter [V2]");
-  const turboIdx = erasArray.findIndex(e => e.name === "Turbo Grafix 16");
+  const turboIdx = erasArray.findIndex(e => e.name === "Turbo Grafix 16" || e.name === "Turbo Grafx 16");
   const wolvesIdx = erasArray.findIndex(e => e.name === "Wolves");
 
   if (cwV2Idx !== -1 && turboIdx !== -1 && wolvesIdx !== -1) {

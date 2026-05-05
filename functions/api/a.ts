@@ -16,6 +16,7 @@ const ERA_NAME_MAP: Record<string, string> = {
   'Turbo Grafx-16': 'Turbo Grafix 16',
   'KIDS SEE GHOSTS': 'KIDS SEE GHOSTS',
   'KIDS SEE GHOST': 'KIDS SEE GHOSTS',
+  'KIDSSEEGHOSTS': 'KIDS SEE GHOSTS',
   'Kids See Ghosts': 'KIDS SEE GHOSTS',
   'Donda [V1]': 'DONDA [V1]',
   'Bully': 'BULLY [V1]',
