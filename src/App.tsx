@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { createPortal } from 'react-dom';
 import { XCircle, ChevronUp, X } from 'lucide-react';
@@ -360,6 +360,11 @@ export default function App() {
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioBlobUrlRef = useRef<string | null>(null);
 
+  const isSafari = useMemo(() => {
+    const ua = navigator.userAgent.toLowerCase();
+    return ua.includes('safari') && !ua.includes('chrome') && !ua.includes('crios') && !ua.includes('android');
+  }, []);
+
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.volume = volume;
@@ -370,7 +375,7 @@ export default function App() {
     const initAudio = () => {
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-      if (!audioContextRef.current && audioRef.current && !isIOS) {
+      if (!audioContextRef.current && audioRef.current && !isIOS && !isSafari) {
         const windowAny = window as any;
         const AudioContext = window.AudioContext || windowAny.webkitAudioContext;
         if (!AudioContext) return;
@@ -1084,9 +1089,6 @@ export default function App() {
       songStartTimeRef.current = Math.floor(Date.now() / 1000);
 
       if (audioRef.current) {
-        const ua = navigator.userAgent.toLowerCase();
-        const isSafari = ua.includes('safari') && !ua.includes('chrome') && !ua.includes('crios') && !ua.includes('android');
-
         if (audioBlobUrlRef.current) {
           URL.revokeObjectURL(audioBlobUrlRef.current);
           audioBlobUrlRef.current = null;
@@ -1759,7 +1761,7 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
         onPlay={() => setIsPlaying(true)}
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
-        crossOrigin="anonymous"
+        {...(!isSafari && { crossOrigin: "anonymous" })}
         playsInline
       />
 
