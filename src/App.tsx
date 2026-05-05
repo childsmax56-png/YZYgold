@@ -471,41 +471,42 @@ export default function App() {
         const rawJson = mainRes.data;
         const json = JSON.parse(JSON.stringify(rawJson));
 
+        // Rebuild each category object in the same key-insertion order so that
+        // renaming an era (e.g. "TurboGrafx 16" → "Turbo Grafix 16") does NOT
+        // move it to the end of the object and break the display order.
         const categoriesToNormalize = ['eras', 'art', 'misc', 'stems', 'fakes', 'reference_track'];
         categoriesToNormalize.forEach(category => {
-          if (json[category]) {
-            Object.keys(json[category]).forEach(key => {
-              const matchedMapKey = Object.keys(ERA_MAPPINGS).find(k => k.toLowerCase() === key.toLowerCase());
-              const mappedKey = matchedMapKey ? ERA_MAPPINGS[matchedMapKey] : undefined;
+          if (!json[category]) return;
+          const rebuilt: Record<string, any> = {};
+          Object.keys(json[category]).forEach(key => {
+            const matchedMapKey = Object.keys(ERA_MAPPINGS).find(k => k.toLowerCase() === key.toLowerCase());
+            const mappedKey = matchedMapKey ? ERA_MAPPINGS[matchedMapKey] : key;
+            const isRename = mappedKey !== key;
+            const value = json[category][key];
 
-              if (mappedKey && mappedKey !== key) {
-                if (!json[category][mappedKey]) {
-                  json[category][mappedKey] = json[category][key];
-                } else {
-                  if (Array.isArray(json[category][mappedKey])) {
-                    json[category][mappedKey] = json[category][mappedKey].concat(json[category][key]);
-                  } else {
-                    const existing = json[category][mappedKey];
-                    const incoming = json[category][key];
-                    json[category][mappedKey] = { 
-                      ...existing, 
-                      ...incoming,
-                      image: existing.image || incoming.image,
-                      extra: existing.extra || incoming.extra,
-                      data: {
-                        ...existing.data,
-                        ...incoming.data
-                      }
-                    };
-                  }
+            if (!rebuilt[mappedKey]) {
+              rebuilt[mappedKey] = (isRename && category === 'eras')
+                ? { ...value, name: mappedKey }
+                : value;
+            } else {
+              if (Array.isArray(rebuilt[mappedKey])) {
+                rebuilt[mappedKey] = rebuilt[mappedKey].concat(value);
+              } else {
+                const existing = rebuilt[mappedKey];
+                rebuilt[mappedKey] = {
+                  ...existing,
+                  ...value,
+                  image: existing.image || value.image,
+                  extra: existing.extra || value.extra,
+                  data: { ...existing.data, ...value.data }
+                };
+                if (isRename && category === 'eras') {
+                  rebuilt[mappedKey].name = mappedKey;
                 }
-                if (category === 'eras' && json[category][mappedKey]) {
-                  json[category][mappedKey].name = mappedKey;
-                }
-                delete json[category][key];
               }
-            });
-          }
+            }
+          });
+          json[category] = rebuilt;
         });
 
         const mykData = mykRes.data;
@@ -522,6 +523,15 @@ export default function App() {
                 "Main Tracks": [],
                 "Snippets & Leaks": []
               }
+            };
+          }
+
+          if (!nextJson.eras["Ongoing"]) {
+            nextJson.eras["Ongoing"] = {
+              name: "Ongoing",
+              image: "https://i.ibb.co/dwZ4cwmd/image-2026-04-27-185921217.png",
+              extra: "",
+              data: { "Unreleased Tracks": [] }
             };
           }
 
@@ -592,6 +602,22 @@ export default function App() {
           setData(nextJson);
         } else {
           const baseJson = JSON.parse(JSON.stringify(json));
+          if (!baseJson.eras["Wolves"]) {
+            baseJson.eras["Wolves"] = {
+              name: "Wolves",
+              image: "https://i.ibb.co/ydSS4sG/Wolves.png",
+              extra: "(Collaboration with Drake) (New Abu Dhabi, Calabasas Is The New Abu Dhabi)",
+              data: { "Main Tracks": [], "Snippets & Leaks": [] }
+            };
+          }
+          if (!baseJson.eras["Ongoing"]) {
+            baseJson.eras["Ongoing"] = {
+              name: "Ongoing",
+              image: "https://i.ibb.co/dwZ4cwmd/image-2026-04-27-185921217.png",
+              extra: "",
+              data: { "Unreleased Tracks": [] }
+            };
+          }
           applyLocalSongs(baseJson, localRes.data);
           setData(baseJson);
         }
