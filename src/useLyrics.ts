@@ -126,57 +126,8 @@ export function useLyrics(currentSong: Song | null, era: Era | null) {
       let foundLyrics = false;
       let finalData: LyricsData = { plainLyrics: null, syncedLyrics: null, parsedSyncedLyrics: null };
 
-      for (const artist of artistsToTry) {
-        if (foundLyrics) break;
-        
-        for (const trackName of trackNamesToTry) {
-          if (!isMounted) return;
-          
-          try {
-            const params: any = {
-              artist_name: artist,
-              track_name: trackName
-            };
-
-            const res = await axios.get(`https://lrclib.net/api/get`, { params });
-            
-            if (res.data && (res.data.plainLyrics || res.data.syncedLyrics)) {
-              let parsedSyncedLyrics = null;
-              if (res.data.syncedLyrics) {
-                const lines = res.data.syncedLyrics.split('\n');
-                parsedSyncedLyrics = lines.map((line: string) => {
-                  const match = line.match(/\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)/);
-                  if (match) {
-                    const minutes = parseInt(match[1], 10);
-                    const seconds = parseInt(match[2], 10);
-                    const msStr = match[3];
-                    const milliseconds = msStr.length === 2 ? parseInt(msStr, 10) * 10 : parseInt(msStr, 10);
-                    const time = minutes * 60 + seconds + milliseconds / 1000;
-                    return { time, text: match[4].trim() };
-                  }
-                  return null;
-                }).filter(Boolean) as { time: number; text: string }[];
-              }
-
-              finalData = {
-                plainLyrics: res.data.plainLyrics || null,
-                syncedLyrics: res.data.syncedLyrics ? res.data.syncedLyrics.replace(/\[\d{2}:\d{2}\.\d{2,3}\]\s*/g, '') : null,
-                parsedSyncedLyrics
-              };
-
-              if (isMounted) {
-                setLyricsData(finalData);
-                foundLyrics = true;
-              }
-              break;
-            }
-          } catch (err) {
-          }
-        }
-      }
-
+      // Try Genius first
       if (!foundLyrics && isMounted) {
-        // Fall back to Genius
         try {
           const geniusRes = await axios.get('/api/lyrics', {
             params: { artist: initialArtist, track: cleanTrackName(currentSong.name) },
@@ -187,7 +138,59 @@ export function useLyrics(currentSong: Song | null, era: Era | null) {
             if (isMounted) setLyricsData(finalData);
           }
         } catch {
-          // Genius failed too — fall through to error state
+          // Genius failed — fall through to lrclib
+        }
+      }
+
+      // Fall back to lrclib (supports synced lyrics)
+      if (!foundLyrics) {
+        for (const artist of artistsToTry) {
+          if (foundLyrics) break;
+
+          for (const trackName of trackNamesToTry) {
+            if (!isMounted) return;
+
+            try {
+              const params: any = {
+                artist_name: artist,
+                track_name: trackName
+              };
+
+              const res = await axios.get(`https://lrclib.net/api/get`, { params });
+
+              if (res.data && (res.data.plainLyrics || res.data.syncedLyrics)) {
+                let parsedSyncedLyrics = null;
+                if (res.data.syncedLyrics) {
+                  const lines = res.data.syncedLyrics.split('\n');
+                  parsedSyncedLyrics = lines.map((line: string) => {
+                    const match = line.match(/\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)/);
+                    if (match) {
+                      const minutes = parseInt(match[1], 10);
+                      const seconds = parseInt(match[2], 10);
+                      const msStr = match[3];
+                      const milliseconds = msStr.length === 2 ? parseInt(msStr, 10) * 10 : parseInt(msStr, 10);
+                      const time = minutes * 60 + seconds + milliseconds / 1000;
+                      return { time, text: match[4].trim() };
+                    }
+                    return null;
+                  }).filter(Boolean) as { time: number; text: string }[];
+                }
+
+                finalData = {
+                  plainLyrics: res.data.plainLyrics || null,
+                  syncedLyrics: res.data.syncedLyrics ? res.data.syncedLyrics.replace(/\[\d{2}:\d{2}\.\d{2,3}\]\s*/g, '') : null,
+                  parsedSyncedLyrics
+                };
+
+                if (isMounted) {
+                  setLyricsData(finalData);
+                  foundLyrics = true;
+                }
+                break;
+              }
+            } catch (err) {
+            }
+          }
         }
       }
 
