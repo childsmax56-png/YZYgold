@@ -175,6 +175,22 @@ export function useLyrics(currentSong: Song | null, era: Era | null) {
         }
       }
 
+      if (!foundLyrics && isMounted) {
+        // Fall back to Genius
+        try {
+          const geniusRes = await axios.get('/api/lyrics', {
+            params: { artist: initialArtist, track: cleanTrackName(currentSong.name) },
+          });
+          if (geniusRes.data?.lyrics) {
+            finalData = { plainLyrics: geniusRes.data.lyrics, syncedLyrics: null, parsedSyncedLyrics: null };
+            foundLyrics = true;
+            if (isMounted) setLyricsData(finalData);
+          }
+        } catch {
+          // Genius failed too — fall through to error state
+        }
+      }
+
       if (isMounted) {
         if (!foundLyrics) {
           setError("No lyrics found for this track.");
