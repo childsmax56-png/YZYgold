@@ -1540,6 +1540,31 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
   }
 }
 
+// KIDS SEE GHOSTS can land at the end of the array when the API returns the old
+// "KIDSSEEGHOSTS" name and ERA_MAPPINGS renames it (new JS key goes to the end).
+// Always move it to sit directly after "ye".
+{
+  const yeIdx = erasArray.findIndex(e => e.name === "ye");
+  const ksgIdx = erasArray.findIndex(e => e.name === "KIDS SEE GHOSTS");
+
+  if (yeIdx !== -1 && ksgIdx !== -1 && ksgIdx !== yeIdx + 1) {
+    const ksgEra = erasArray[ksgIdx];
+    erasArray.splice(ksgIdx, 1);
+    const newYeIdx = erasArray.findIndex(e => e.name === "ye");
+    erasArray.splice(newYeIdx + 1, 0, ksgEra);
+  }
+}
+
+// Ongoing should always be the last era. Re-pin it in case it shifted.
+{
+  const ongoingIdx = erasArray.findIndex(e => e.name === "Ongoing");
+  if (ongoingIdx !== -1 && ongoingIdx !== erasArray.length - 1) {
+    const ongoingEra = erasArray[ongoingIdx];
+    erasArray.splice(ongoingIdx, 1);
+    erasArray.push(ongoingEra);
+  }
+}
+
 
   const favoritesEra: Era | null = favoriteKeys.length > 0 ? {
     fileInfo: [],
