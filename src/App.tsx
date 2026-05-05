@@ -1761,8 +1761,9 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
         onPlay={() => setIsPlaying(true)}
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
-        {...(!isSafari && { crossOrigin: "anonymous" })}
+        crossOrigin={isSafari ? undefined : "anonymous"}
         playsInline
+        hidden
       />
 
       <AnimatePresence>
