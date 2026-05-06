@@ -38,7 +38,10 @@ export function EraGrid({ eras, onSelectEra }: { key?: string, eras: Era[], onSe
                 <div className="truncate">{formatTextWithTags(era.name)}</div>
                 {ALBUM_RELEASE_DATES[era.name] && <div className="text-white/40 font-medium text-[10px] shrink-0 bg-white/5 px-1.5 py-0.5 rounded uppercase tracking-wider">{ALBUM_RELEASE_DATES[era.name]}</div>}
               </h3>
-              {era.extra && <p className="text-white/50 text-xs mt-0.5 truncate">{formatTextWithTags(era.extra)}</p>}
+              <div className="flex items-center gap-2 mt-0.5">
+                {era.extra && <p className="text-white/50 text-xs truncate">{formatTextWithTags(era.extra)}</p>}
+                <p className="text-white/30 text-xs shrink-0">{Object.values(era.data).reduce((sum, songs) => sum + songs.length, 0)} songs</p>
+              </div>
             </div>
           </motion.div>
         );
