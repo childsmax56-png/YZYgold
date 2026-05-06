@@ -68,8 +68,8 @@ export const CUSTOM_IMAGES: Record<string, string> = {
   "NASIR": "https://a5.mzstatic.com/us/r1000/0/Music125/v4/f9/41/a9/f941a9d4-099d-4b65-484a-e585136ca838/18UMGIM37154.rgb.jpg",
   "K.T.S.E.": "https://i.ibb.co/rfZM2kCp/K-T-S-E.jpg",
   "NEVER STOP": "https://i.ibb.co/vC9c5qFM/never-stop.png",
-  "Jesus Is Born": "https://i.ibb.co/VcJJqK9H/JIB.jpg",
-  "Sunday Service Choir": "https://i.ibb.co/mCrJM7q8/SSC.jpg"
+  "Jesus Is Born": "https://api.pillows.su/api/get/61be2288632189d710fc6865f5efd9c7",
+  "Sunday Service Choir": "https://ibb.co/mNPFJd3"
 };
 
 export const ALBUM_RELEASE_DATES: Record<string, string> = {

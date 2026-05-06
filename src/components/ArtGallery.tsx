@@ -29,12 +29,14 @@ function getUseBadgeColor(_use: string) {
   return 'border-white/10 text-white/50 bg-white/5';
 }
 
-function ArtImage({ url, alt, contain = false }: { url: string; alt: string; contain?: boolean }) {
+export function ArtImage({ url, alt, className, contain = false }: { url: string; alt: string; className?: string; contain?: boolean }) {
   const [imgSrc, setImgSrc] = useState<string | null>(null);
   const [error, setError] = useState(false);
 
   useEffect(() => {
     let mounted = true;
+    setImgSrc(null);
+    setError(false);
     if (url.includes('ibb.co') && !url.includes('i.ibb.co')) {
       axios.get(`https://imgbb-file-get-api.vercel.app/api?url=${url}`)
         .then(res => {
@@ -81,7 +83,7 @@ function ArtImage({ url, alt, contain = false }: { url: string; alt: string; con
     <img
       src={imgSrc}
       alt={alt}
-      className={`w-full h-full group-hover:scale-105 transition-transform duration-500 bg-white/5 ${contain ? 'object-contain' : 'object-cover'}`}
+      className={className ?? `w-full h-full group-hover:scale-105 transition-transform duration-500 bg-white/5 ${contain ? 'object-contain' : 'object-cover'}`}
       loading="lazy"
       referrerPolicy="no-referrer"
     />
@@ -245,11 +247,10 @@ export function ArtGallery({ eras, artData, searchQuery, filters }: ArtGalleryPr
 
           <div className="group relative w-full aspect-square rounded-lg md:rounded-xl overflow-hidden shadow-2xl mb-6 md:mb-8 bg-white/5 border border-white/10">
             {eraImageSrc ? (
-              <img
-                src={eraImageSrc}
+              <ArtImage
+                url={eraImageSrc}
                 alt={selectedEra.name}
                 className="w-full h-full object-cover opacity-90 transition-opacity"
-                referrerPolicy="no-referrer"
               />
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center text-white/20">
@@ -502,7 +503,7 @@ export function ArtGallery({ eras, artData, searchQuery, filters }: ArtGalleryPr
           >
             <div className="relative aspect-square rounded-md overflow-hidden bg-white/5 border border-white/5 group-hover:border-white/20 transition-colors">
               {imageSrc ? (
-                <img src={imageSrc} alt={era.name} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" referrerPolicy="no-referrer" />
+                <ArtImage url={imageSrc} alt={era.name} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-white/5 text-white/20 font-bold text-2xl text-center p-4">
                   {era.name}

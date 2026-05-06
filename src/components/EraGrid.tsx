@@ -1,6 +1,7 @@
 import { motion } from 'motion/react';
 import { Era } from '../types';
 import { formatTextWithTags, ALBUM_RELEASE_DATES, CUSTOM_IMAGES } from '../utils';
+import { ArtImage } from './ArtGallery';
 
 export function EraGrid({ eras, onSelectEra }: { key?: string, eras: Era[], onSelectEra: (era: Era) => void }) {
   return (
@@ -25,7 +26,7 @@ export function EraGrid({ eras, onSelectEra }: { key?: string, eras: Era[], onSe
           >
             <div className="relative aspect-square rounded-md overflow-hidden bg-white/5 border border-white/5 group-hover:border-white/20 transition-colors">
               {imageSrc ? (
-                <img src={imageSrc} alt={era.name} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" referrerPolicy="no-referrer" />
+                <ArtImage url={imageSrc} alt={era.name} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-white/5 text-white/20 font-bold text-2xl text-center p-4">
                   {era.name}
