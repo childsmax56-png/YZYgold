@@ -68,8 +68,8 @@ export const CUSTOM_IMAGES: Record<string, string> = {
   "NASIR": "https://a5.mzstatic.com/us/r1000/0/Music125/v4/f9/41/a9/f941a9d4-099d-4b65-484a-e585136ca838/18UMGIM37154.rgb.jpg",
   "K.T.S.E.": "https://i.ibb.co/rfZM2kCp/K-T-S-E.jpg",
   "NEVER STOP": "https://i.ibb.co/vC9c5qFM/never-stop.png",
-  "Jesus Is Born": "https://a5.mzstatic.com/us/r1000/0/Music113/v4/59/06/ae/5906ae6f-f8e9-b3b5-edac-bd65ede0e0f4/19UMGIM24756.rgb.jpg",
-  "Sunday Service Choir": "https://i.ibb.co/6cPT40L6/image-2026-05-04-075046079.png"
+  "Jesus Is Born": "https://i.ibb.co/VcJJqK9H/JIB.jpg",
+  "Sunday Service Choir": "https://i.ibb.co/mCrJM7q8/SSC.jpg"
 };
 
 export const ALBUM_RELEASE_DATES: Record<string, string> = {
@@ -125,7 +125,7 @@ export const ALBUM_RELEASE_DATES: Record<string, string> = {
   "IN A PERFECT WORLD": "06/22/2025"
 };
 
-export const HIDDEN_ALBUMS = ['NASIR', 'K.T.S.E.', 'NEVER STOP', 'DAYTONA', 'The Elementary School Dropout'];
+export const HIDDEN_ALBUMS = ['NASIR', 'K.T.S.E.', 'NEVER STOP', 'DAYTONA', 'The Elementary School Dropout', 'Jesus Is Born', 'Sunday Service Choir'];
 
 export const ALBUM_DESCRIPTIONS: Record<string, string> = {
   "DAYTONA": "DAYTONA is the third studio album by American rapper Pusha T. It was released on May 25, 2018, by G.O.O.D. Music and Def Jam Recordings. DAYTONA was announced by Kanye West via Twitter on April 19, 2018, alongside the album's release date. It was one of the Wyoming projects worked on during 2018 by Kanye.",

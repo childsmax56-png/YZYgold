@@ -1611,29 +1611,6 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
   }
 }
 
-// Jesus Is Born (12/25/2019) always sits directly after JESUS IS KING.
-// Sunday Service Choir always sits directly after Jesus Is Born.
-{
-  const jikIdx = erasArray.findIndex(e => e.name === "JESUS IS KING");
-  const jibIdx = erasArray.findIndex(e => e.name === "Jesus Is Born");
-  const sscIdx = erasArray.findIndex(e => e.name === "Sunday Service Choir");
-
-  if (jikIdx !== -1 && jibIdx !== -1) {
-    const jibEra = erasArray[jibIdx];
-    erasArray.splice(jibIdx, 1);
-    const newJikIdx = erasArray.findIndex(e => e.name === "JESUS IS KING");
-    erasArray.splice(newJikIdx + 1, 0, jibEra);
-  }
-
-  if (sscIdx !== -1) {
-    const sscEra = erasArray[sscIdx];
-    erasArray.splice(erasArray.indexOf(sscEra), 1);
-    const newJibIdx = erasArray.findIndex(e => e.name === "Jesus Is Born");
-    const insertAfter = newJibIdx !== -1 ? newJibIdx : erasArray.findIndex(e => e.name === "JESUS IS KING");
-    if (insertAfter !== -1) erasArray.splice(insertAfter + 1, 0, sscEra);
-  }
-}
-
 // Ongoing should always be the last era. Re-pin it in case it shifted.
 {
   const ongoingIdx = erasArray.findIndex(e => e.name === "Ongoing");
