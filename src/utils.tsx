@@ -69,7 +69,7 @@ export const CUSTOM_IMAGES: Record<string, string> = {
   "K.T.S.E.": "https://i.ibb.co/rfZM2kCp/K-T-S-E.jpg",
   "NEVER STOP": "https://i.ibb.co/vC9c5qFM/never-stop.png",
   "Jesus Is Born": "https://api.pillows.su/api/get/61be2288632189d710fc6865f5efd9c7",
-  "Sunday Service Choir": "https://ibb.co/mNPFJd3"
+  "Sunday Service Choir": "https://ibb.co/q3GrRwT3"
 };
 
 export const ALBUM_RELEASE_DATES: Record<string, string> = {
