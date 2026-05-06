@@ -67,7 +67,9 @@ export const CUSTOM_IMAGES: Record<string, string> = {
   "DAYTONA": "https://i.ibb.co/1fX0N137/Daytona.jpg",
   "NASIR": "https://a5.mzstatic.com/us/r1000/0/Music125/v4/f9/41/a9/f941a9d4-099d-4b65-484a-e585136ca838/18UMGIM37154.rgb.jpg",
   "K.T.S.E.": "https://i.ibb.co/rfZM2kCp/K-T-S-E.jpg",
-  "NEVER STOP": "https://i.ibb.co/vC9c5qFM/never-stop.png"
+  "NEVER STOP": "https://i.ibb.co/vC9c5qFM/never-stop.png",
+  "Jesus Is Born": "https://a5.mzstatic.com/us/r1000/0/Music113/v4/59/06/ae/5906ae6f-f8e9-b3b5-edac-bd65ede0e0f4/19UMGIM24756.rgb.jpg",
+  "Sunday Service Choir": "https://i.ibb.co/6cPT40L6/image-2026-05-04-075046079.png"
 };
 
 export const ALBUM_RELEASE_DATES: Record<string, string> = {
@@ -101,6 +103,7 @@ export const ALBUM_RELEASE_DATES: Record<string, string> = {
   "Yandhi [V1]": "??/??/2018",
   "Yandhi [V2]": "??/??/????",
   "JESUS IS KING": "10/25/2019",
+  "Jesus Is Born": "12/25/2019",
   "God's Country": "??/??/????",
   "JESUS IS KING: The Dr. Dre Version": "??/??/????",
   "DONDA [V1]": "07/18/2020",

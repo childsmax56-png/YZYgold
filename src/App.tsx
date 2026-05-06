@@ -535,6 +535,22 @@ export default function App() {
             };
           }
 
+          if (!nextJson.eras["Jesus Is Born"]) {
+            nextJson.eras["Jesus Is Born"] = {
+              name: "Jesus Is Born",
+              extra: "Sunday Service Choir",
+              data: { "Released Tracks": [] }
+            };
+          }
+
+          if (!nextJson.eras["Sunday Service Choir"]) {
+            nextJson.eras["Sunday Service Choir"] = {
+              name: "Sunday Service Choir",
+              extra: "Yandhi / JESUS IS KING / JESUS IS LORD / DONDA",
+              data: { "Featured": [] }
+            };
+          }
+
           mykData.forEach((mykItem: any) => {
             const originalEraName = mykItem.Era;
             const matchedMapKey = Object.keys(ERA_MAPPINGS).find(k => k.toLowerCase() === originalEraName?.toLowerCase());
@@ -616,6 +632,20 @@ export default function App() {
               image: "https://i.ibb.co/dwZ4cwmd/image-2026-04-27-185921217.png",
               extra: "",
               data: { "Unreleased Tracks": [] }
+            };
+          }
+          if (!baseJson.eras["Jesus Is Born"]) {
+            baseJson.eras["Jesus Is Born"] = {
+              name: "Jesus Is Born",
+              extra: "Sunday Service Choir",
+              data: { "Released Tracks": [] }
+            };
+          }
+          if (!baseJson.eras["Sunday Service Choir"]) {
+            baseJson.eras["Sunday Service Choir"] = {
+              name: "Sunday Service Choir",
+              extra: "Yandhi / JESUS IS KING / JESUS IS LORD / DONDA",
+              data: { "Featured": [] }
             };
           }
           applyLocalSongs(baseJson, localRes.data);
@@ -1578,6 +1608,29 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
     erasArray.splice(ksgIdx, 1);
     const newYeIdx = erasArray.findIndex(e => e.name === "ye");
     erasArray.splice(newYeIdx + 1, 0, ksgEra);
+  }
+}
+
+// Jesus Is Born (12/25/2019) always sits directly after JESUS IS KING.
+// Sunday Service Choir always sits directly after Jesus Is Born.
+{
+  const jikIdx = erasArray.findIndex(e => e.name === "JESUS IS KING");
+  const jibIdx = erasArray.findIndex(e => e.name === "Jesus Is Born");
+  const sscIdx = erasArray.findIndex(e => e.name === "Sunday Service Choir");
+
+  if (jikIdx !== -1 && jibIdx !== -1) {
+    const jibEra = erasArray[jibIdx];
+    erasArray.splice(jibIdx, 1);
+    const newJikIdx = erasArray.findIndex(e => e.name === "JESUS IS KING");
+    erasArray.splice(newJikIdx + 1, 0, jibEra);
+  }
+
+  if (sscIdx !== -1) {
+    const sscEra = erasArray[sscIdx];
+    erasArray.splice(erasArray.indexOf(sscEra), 1);
+    const newJibIdx = erasArray.findIndex(e => e.name === "Jesus Is Born");
+    const insertAfter = newJibIdx !== -1 ? newJibIdx : erasArray.findIndex(e => e.name === "JESUS IS KING");
+    if (insertAfter !== -1) erasArray.splice(insertAfter + 1, 0, sscEra);
   }
 }
 
