@@ -3,7 +3,7 @@ import { Play, Pause, Volume2, Maximize2, MoreHorizontal, Download, X, SkipBack,
 import { parseArtistFromSong } from '../lastfm';
 import { Song, Era } from '../types';
 import { useState, useRef, useEffect } from 'react';
-import { formatTextWithTags, CUSTOM_IMAGES, handleDownloadFile } from '../utils';
+import { formatTextWithTags, CUSTOM_IMAGES, handleDownloadFile, useResolvedImageUrl } from '../utils';
 import { LyricsModal } from './LyricsModal';
 import { useSettings } from '../SettingsContext';
 
@@ -138,6 +138,10 @@ export function PlayerBar({
   const artistName = parseArtistFromSong(currentSong.name, currentSong.extra, era?.name);
   const titleDisplay = currentSong.name.includes(' - ') ? currentSong.name.substring(currentSong.name.indexOf(' - ') + 3) : currentSong.name;
 
+  const _miniPlayerEraName = (currentSong as any).realEra?.name || era?.name || '';
+  const _miniPlayerRawImg = currentSong.image || CUSTOM_IMAGES[_miniPlayerEraName] || (currentSong as any).realEra?.image || era?.image;
+  const miniPlayerImgUrl = useResolvedImageUrl(_miniPlayerRawImg);
+
   const rawUrl = currentSong.url || (currentSong.urls && currentSong.urls.length > 0 ? currentSong.urls[0] : '');
   const downloadUrl = rawUrl.includes('pillows.su/f/')
     ? `https://api.pillows.su/api/download/${rawUrl.split('/f/')[1]}`
@@ -154,11 +158,9 @@ export function PlayerBar({
       >
         <div className="flex items-center gap-4 min-w-0 md:flex-1 col-start-1 col-end-2 row-start-1 pr-4 md:pr-0">
           {settings.showMiniPlayerArt && (() => {
-            const actualEraName = (currentSong as any).realEra?.name || era?.name || '';
-            const imgUrl = currentSong.image || CUSTOM_IMAGES[actualEraName] || (currentSong as any).realEra?.image || era?.image;
             return (
               <div className="w-14 h-14 rounded-md overflow-hidden shrink-0 bg-white/10 relative group shadow-lg">
-                {imgUrl && <img src={imgUrl} alt="Cover" className="w-full h-full object-cover cursor-pointer" referrerPolicy="no-referrer" onClick={onFullScreen} />}
+                {miniPlayerImgUrl && <img src={miniPlayerImgUrl} alt="Cover" className="w-full h-full object-cover cursor-pointer" referrerPolicy="no-referrer" onClick={onFullScreen} />}
                 {toggleFavorite && 
                currentSong.name !== "Alright but the beat is Father Stretch My Hands Pt. 1" && 
                !currentSong.name.endsWith('[Fake Leak]') && 

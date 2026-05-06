@@ -3,7 +3,8 @@ import { Play, Pause, X, SkipBack, SkipForward, Shuffle, Repeat, Repeat1, Mic2, 
 import { parseArtistFromSong, cleanTrackName } from '../lastfm';
 import { Song, Era } from '../types';
 import { useEffect, useRef, useState } from 'react';
-import { formatTextWithTags, getCleanSongNameWithTags, CUSTOM_IMAGES } from '../utils';
+import { formatTextWithTags, getCleanSongNameWithTags, CUSTOM_IMAGES, useResolvedImageUrl } from '../utils';
+import { ArtImage } from './ArtGallery';
 import { useLyrics } from '../useLyrics';
 
 function formatTime(seconds: number) {
@@ -258,10 +259,12 @@ export function FullScreenPlayer({
   const isLyricsDisabled = currentSong.name.includes('???') || currentSong.name.toLowerCase().includes('remix') || currentSong.extra?.toLowerCase().includes('remix') || era?.name.toLowerCase().includes('remix');
 
   const actualEraName = (currentSong as any).realEra?.name || era?.name || '';
-  const currentImgUrl = currentSong.image || CUSTOM_IMAGES[actualEraName] || (currentSong as any).realEra?.image || era?.image;
-  
+  const rawCurrentImgUrl = currentSong.image || CUSTOM_IMAGES[actualEraName] || (currentSong as any).realEra?.image || era?.image;
+  const currentImgUrl = useResolvedImageUrl(rawCurrentImgUrl);
+
   const nextActualEraName = nextSong ? ((nextSong as any).realEra?.name || era?.name || '') : '';
-  const nextImgUrl = nextSong ? (nextSong.image || CUSTOM_IMAGES[nextActualEraName] || (nextSong as any).realEra?.image || era?.image) : null;
+  const rawNextImgUrl = nextSong ? (nextSong.image || CUSTOM_IMAGES[nextActualEraName] || (nextSong as any).realEra?.image || era?.image) : null;
+  const nextImgUrl = useResolvedImageUrl(rawNextImgUrl);
 
   return (
     <motion.div
@@ -373,18 +376,18 @@ export function FullScreenPlayer({
                         const itemEraName = (item.song as any).realEra?.name || era?.name || '';
                         const itemImgUrl = item.song.image || CUSTOM_IMAGES[itemEraName] || (item.song as any).realEra?.image || era?.image;
                         return (
-                        <motion.div 
+                        <motion.div
                           layout
                           initial={{ opacity: 0, filter: 'blur(8px)', y: 20 }}
                           animate={{ opacity: 1, filter: 'blur(0px)', y: 0 }}
                           exit={{ opacity: 0, filter: 'blur(8px)' }}
                           transition={{ duration: 0.4, ease: [0.25, 1, 0.5, 1] }}
-                          key={item.queueId} 
+                          key={item.queueId}
                           className="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 transition-colors group"
                         >
                         <div className="w-12 h-12 rounded overflow-hidden bg-white/5 shrink-0 relative group-hover:block transition-all shadow-lg border border-white/5">
                           {itemImgUrl && (
-                            <img src={itemImgUrl} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                            <ArtImage url={itemImgUrl} alt="" className="w-full h-full object-cover" />
                           )}
                           <button
                             onClick={() => {

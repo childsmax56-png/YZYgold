@@ -3,6 +3,28 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { saveAs } from 'file-saver';
 import { useSettings } from './SettingsContext';
+import axios from 'axios';
+
+export function useResolvedImageUrl(url: string | null | undefined): string | null {
+  const [resolved, setResolved] = useState<string | null>(null);
+  useEffect(() => {
+    if (!url) { setResolved(null); return; }
+    let mounted = true;
+    if (url.includes('ibb.co') && !url.includes('i.ibb.co')) {
+      setResolved(null);
+      axios.get(`https://imgbb-file-get-api.vercel.app/api?url=${url}`)
+        .then(res => { if (mounted) setResolved(res.data?.direct_link || null); })
+        .catch(() => { if (mounted) setResolved(null); });
+    } else if (url.includes('pillows.su/f/')) {
+      const hash = url.split('/f/')[1]?.split('/')[0]?.split('?')[0];
+      setResolved(hash ? `https://api.pillows.su/api/get/${hash}` : url);
+    } else {
+      setResolved(url);
+    }
+    return () => { mounted = false; };
+  }, [url]);
+  return resolved;
+}
 
 export const TAG_TOOLTIP_MAP: Record<string, string> = {
   'Best Of': 'some of the best leaks hosted on the tracker.',
