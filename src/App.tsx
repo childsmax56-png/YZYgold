@@ -1579,6 +1579,26 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
     fileInfo: CUSTOM_ALBUM_INFO[era.name] || era.fileInfo
   })) as Era[];
 
+// Jesus Is Born and Sunday Service Choir always sit between
+// The Elementary School Dropout and K.T.S.E. in the Related tab.
+{
+  const esd = relatedErasArray.findIndex(e => e.name === "The Elementary School Dropout");
+  const ktse = relatedErasArray.findIndex(e => e.name === "K.T.S.E.");
+  const jibIdx = relatedErasArray.findIndex(e => e.name === "Jesus Is Born");
+  const sscIdx = relatedErasArray.findIndex(e => e.name === "Sunday Service Choir");
+
+  // Remove both from wherever they currently sit
+  const toInsert: Era[] = [];
+  if (jibIdx !== -1) toInsert.push(relatedErasArray[jibIdx]);
+  if (sscIdx !== -1) toInsert.push(relatedErasArray[sscIdx]);
+  [jibIdx, sscIdx].filter(i => i !== -1).sort((a, b) => b - a).forEach(i => relatedErasArray.splice(i, 1));
+
+  // Reinsert after The Elementary School Dropout (or before K.T.S.E. as fallback)
+  const anchor = relatedErasArray.findIndex(e => e.name === "The Elementary School Dropout");
+  const insertAt = anchor !== -1 ? anchor + 1 : relatedErasArray.findIndex(e => e.name === "K.T.S.E.");
+  if (insertAt !== -1 && toInsert.length > 0) relatedErasArray.splice(insertAt, 0, ...toInsert);
+}
+
 // Turbo Grafix 16 and Wolves can end up out of position (Turbo gets renamed from
 // "Turbo Grafx 16", Wolves has no CSV entry). Pull both out and reinsert right after
 // Cruel Winter [V2] so the order is always: CW[V2] → Turbo Grafix 16 → Wolves.
