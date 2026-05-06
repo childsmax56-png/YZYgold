@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { ArrowLeft, Play, ExternalLink, X, Share2, Volume2, Check, Download, Loader2, Film, Disc3, Layers, Star } from 'lucide-react';
 import { Era, Song, SearchFilters } from '../types';
 import { useState, useMemo, useEffect } from 'react';
-import { formatTextWithTags, getCleanSongNameWithTags, matchesFilters, createSlug, getSongSlug, ALBUM_RELEASE_DATES, isSongNotAvailable, ALBUM_DESCRIPTIONS, HIDDEN_ALBUMS, handleDownloadFile } from '../utils';
+import { formatTextWithTags, getCleanSongNameWithTags, matchesFilters, createSlug, getSongSlug, ALBUM_RELEASE_DATES, isSongNotAvailable, ALBUM_DESCRIPTIONS, HIDDEN_ALBUMS, handleDownloadFile, useResolvedImageUrl } from '../utils';
 import { useSettings } from '../SettingsContext';
 import { MvEntry, RemixEntry, SampleEntry } from '../App';
 
@@ -183,6 +183,7 @@ export const handleShareSilent = (song: Song, era: Era): string => {
 export function EraDetail({ era, onBack, onPlaySong, searchQuery = '', filters, currentSong, isPlaying, mvData = [], remixData = [], samplesData = [], favoriteKeys = [], toggleFavorite }: { key?: string, era: Era, onBack?: () => void, onPlaySong: (song: Song, era: Era, contextTracks?: Song[]) => void, searchQuery?: string, filters: SearchFilters, currentSong?: Song | null, isPlaying?: boolean, mvData?: MvEntry[], remixData?: RemixEntry[], samplesData?: SampleEntry[], favoriteKeys?: { songName: string, eraName: string, url: string }[], toggleFavorite?: (song: Song, eraName: string) => void }) {
   const { settings } = useSettings();
   const [zoomedImage, setZoomedImage] = useState(false);
+  const resolvedEraImage = useResolvedImageUrl(era.image);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showLatestOnly, setShowLatestOnly] = useState(false);
   const [showFirstOnly, setShowFirstOnly] = useState(false);
@@ -354,8 +355,8 @@ export function EraDetail({ era, onBack, onPlaySong, searchQuery = '', filters, 
             onClick={() => setZoomedImage(true)}
             title="Click to zoom"
           >
-            {era.image ? (
-              <img src={era.image} alt={era.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+            {resolvedEraImage ? (
+              <img src={resolvedEraImage} alt={era.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-4xl font-bold text-white/20 text-center p-4">{era.name}</div>
             )}
@@ -766,7 +767,7 @@ export function EraDetail({ era, onBack, onPlaySong, searchQuery = '', filters, 
             </motion.div>
           )}
 
-          {zoomedImage && era.image && (
+          {zoomedImage && resolvedEraImage && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -774,7 +775,7 @@ export function EraDetail({ era, onBack, onPlaySong, searchQuery = '', filters, 
               onClick={() => setZoomedImage(false)}
               className="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center p-4 cursor-zoom-out backdrop-blur-sm"
             >
-              <img src={era.image} alt={era.name} className="max-w-full max-h-full object-contain shadow-2xl rounded-md" referrerPolicy="no-referrer" />
+              <img src={resolvedEraImage!} alt={era.name} className="max-w-full max-h-full object-contain shadow-2xl rounded-md" referrerPolicy="no-referrer" />
             </motion.div>
           )}
         </AnimatePresence>,
