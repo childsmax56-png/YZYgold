@@ -25,7 +25,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     );
 
     if (!searchRes.ok) {
-      return new Response(JSON.stringify({ lyrics: null }), {
+      return new Response(JSON.stringify({ lyrics: null, _debug: `search_fail:${searchRes.status}` }), {
         headers: { 'Content-Type': 'application/json' },
       });
     }
@@ -35,7 +35,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     const hit = hits.find((h: any) => h.type === 'song') ?? hits[0];
 
     if (!hit) {
-      return new Response(JSON.stringify({ lyrics: null }), {
+      return new Response(JSON.stringify({ lyrics: null, _debug: 'no_hit' }), {
         headers: { 'Content-Type': 'application/json' },
       });
     }
@@ -50,14 +50,14 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     });
 
     if (!pageRes.ok) {
-      return new Response(JSON.stringify({ lyrics: null }), {
+      return new Response(JSON.stringify({ lyrics: null, _debug: `page_fail:${pageRes.status}:${songUrl}` }), {
         headers: { 'Content-Type': 'application/json' },
       });
     }
 
     const lyrics = await extractLyrics(pageRes);
 
-    return new Response(JSON.stringify({ lyrics }), {
+    return new Response(JSON.stringify({ lyrics, _debug: `page_ok:${pageRes.status}:${songUrl}:lyrics_len=${lyrics?.length ?? 0}` }), {
       headers: {
         'Content-Type': 'application/json',
         'Cache-Control': 'public, max-age=86400',
