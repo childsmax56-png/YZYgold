@@ -17,7 +17,7 @@ interface LyricsModalProps {
 import { useSettings } from '../SettingsContext';
 
 export function LyricsModal({ isOpen, onClose, currentSong, era, currentTime = 0, onSeek }: LyricsModalProps) {
-  const { plainLyrics, parsedSyncedLyrics, loading, error } = useLyrics(currentSong, era);
+  const { plainLyrics, parsedSyncedLyrics, source, loading, error } = useLyrics(currentSong, era);
   const { settings } = useSettings();
   const [viewMode, setViewMode] = useState<'sync' | 'plain'>('sync');
   const containerRef = useRef<HTMLDivElement>(null);
@@ -146,7 +146,7 @@ export function LyricsModal({ isOpen, onClose, currentSong, era, currentTime = 0
                   Lyrics may not be accurate
                 </div>
                 <div className="mt-1 text-[10px] text-white/30 text-center">
-                  Source: lrclib.net
+                  Sourced from {source === 'genius' ? 'Genius' : 'lrclib'}
                 </div>
               </div>
             ) : settings.syncedLyricsOnly && !hasSynced ? (
@@ -162,7 +162,7 @@ export function LyricsModal({ isOpen, onClose, currentSong, era, currentTime = 0
                   Lyrics may not be accurate
                 </div>
                 <div className="mt-1 text-[10px] text-white/30 text-center">
-                  Source: lrclib.net
+                  Sourced from {source === 'genius' ? 'Genius' : 'lrclib'}
                 </div>
               </div>
             ) : null}
