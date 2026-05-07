@@ -18,25 +18,23 @@ interface LyricsModalProps {
 import { useSettings } from '../SettingsContext';
 
 function buildAnnotatedSegments(text: string, annotations: Annotation[]) {
-  if (!annotations.length) return [{ text, annIdx: -1 }];
+  // Filter out junk fragments (zero-width spaces, whitespace-only, very short)
+  const valid = annotations.filter(a => a.fragment.replace(/[​\s]/g, '').length > 2);
+  if (!valid.length) return [{ text, annIdx: -1 }];
 
-  // Find non-overlapping matches sorted by position
+  const lowerText = text.toLowerCase();
   const matches: { start: number; end: number; annIdx: number }[] = [];
 
-  for (let i = 0; i < annotations.length; i++) {
-    const fragment = annotations[i].fragment;
-    let searchFrom = 0;
-    const lowerText = text.toLowerCase();
-    const lowerFrag = fragment.toLowerCase();
-    const idx = lowerText.indexOf(lowerFrag, searchFrom);
+  for (let i = 0; i < valid.length; i++) {
+    const lowerFrag = valid[i].fragment.toLowerCase();
+    const idx = lowerText.indexOf(lowerFrag);
     if (idx !== -1) {
-      matches.push({ start: idx, end: idx + fragment.length, annIdx: i });
+      matches.push({ start: idx, end: idx + valid[i].fragment.length, annIdx: i });
     }
   }
 
   matches.sort((a, b) => a.start - b.start);
 
-  // Remove overlapping spans (keep first one)
   const nonOverlapping = matches.filter((m, i) => {
     if (i === 0) return true;
     return m.start >= matches[i - 1].end;
@@ -102,30 +100,6 @@ export function LyricsModal({ isOpen, onClose, currentSong, era, currentTime = 0
   const handleAnnotationClick = useCallback((ann: Annotation) => {
     setSelectedAnnotation(prev => prev?.fragment === ann.fragment ? null : ann);
   }, []);
-
-  const renderAnnotatedLine = useCallback((lineText: string) => {
-    if (!hasAnnotations || source !== 'genius' || !annotations) {
-      return <span>{lineText}</span>;
-    }
-    const segments = buildAnnotatedSegments(lineText, annotations);
-    return (
-      <>
-        {segments.map((seg, i) =>
-          seg.annIdx >= 0 ? (
-            <span
-              key={i}
-              onClick={(e) => { e.stopPropagation(); handleAnnotationClick(annotations[seg.annIdx]); }}
-              className="cursor-pointer border-b border-dotted border-[var(--theme-color)] text-[var(--theme-color)] hover:opacity-80 transition-opacity"
-            >
-              {seg.text}
-            </span>
-          ) : (
-            <span key={i}>{seg.text}</span>
-          )
-        )}
-      </>
-    );
-  }, [annotations, hasAnnotations, source, handleAnnotationClick]);
 
   if (!isOpen) return null;
 
@@ -229,13 +203,22 @@ export function LyricsModal({ isOpen, onClose, currentSong, era, currentTime = 0
               </div>
             ) : plainLyrics ? (
               <div className="flex-1 flex flex-col">
-                <div className={`text-white/90 text-sm md:text-base leading-relaxed font-medium ${settings.miniLyricsAlignment === 'left' ? 'text-left' : settings.miniLyricsAlignment === 'right' ? 'text-right' : 'text-center'}`}>
-                  {plainLyrics.split('\n').map((line, i) => (
-                    <span key={i}>
-                      {renderAnnotatedLine(line)}
-                      {'\n'}
-                    </span>
-                  ))}
+                <div className={`text-white/90 text-sm md:text-base leading-relaxed font-medium whitespace-pre-wrap ${settings.miniLyricsAlignment === 'left' ? 'text-left' : settings.miniLyricsAlignment === 'right' ? 'text-right' : 'text-center'}`}>
+                  {hasAnnotations && source === 'genius' && annotations
+                    ? buildAnnotatedSegments(plainLyrics, annotations).map((seg, i) =>
+                        seg.annIdx >= 0 ? (
+                          <span
+                            key={i}
+                            onClick={() => handleAnnotationClick(annotations[seg.annIdx])}
+                            className="cursor-pointer border-b border-dotted border-[var(--theme-color)] text-[var(--theme-color)] hover:opacity-80 transition-opacity"
+                          >
+                            {seg.text}
+                          </span>
+                        ) : (
+                          <span key={i}>{seg.text}</span>
+                        )
+                      )
+                    : plainLyrics}
                 </div>
                 {hasAnnotations && source === 'genius' && (
                   <p className="mt-4 text-[10px] text-white/30 text-center">
@@ -244,9 +227,6 @@ export function LyricsModal({ isOpen, onClose, currentSong, era, currentTime = 0
                 )}
                 <div className="mt-4 text-xs text-white/40 text-center uppercase tracking-wider">
                   Lyrics may not be accurate
-                </div>
-                <div className="mt-1 text-[10px] text-white/30 text-center">
-                  Sourced from {source === 'genius' ? 'Genius' : 'lrclib'}
                 </div>
               </div>
             ) : null}
