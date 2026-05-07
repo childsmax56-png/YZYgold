@@ -70,20 +70,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       lyrics = await extractLyrics(pageRes);
     }
 
-    // If main page was blocked or returned no lyrics, try the AMP version
-    if (!lyrics) {
-      const ampRes = await fetch(ampUrl, { headers: pageHeaders });
-      if (ampRes.ok) {
-        lyrics = await extractLyrics(ampRes);
-      }
-    }
-
-    if (!lyrics) {
-      return new Response(JSON.stringify({ lyrics: null }), {
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-
+    // Always return whatever we have — lyrics may be null if the page is blocked,
+    // but annotations/songInfo from the API still work and are useful to the client.
     return new Response(JSON.stringify({ lyrics, annotations, geniusUrl: songUrl, songInfo }), {
       headers: {
         'Content-Type': 'application/json',

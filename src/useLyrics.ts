@@ -147,8 +147,12 @@ export function useLyrics(currentSong: Song | null, era: Era | null) {
       let foundLyrics = false;
       let finalData: LyricsData = { plainLyrics: null, syncedLyrics: null, parsedSyncedLyrics: null, source: null, annotations: null, geniusUrl: null, songInfo: null };
 
+      // Genius metadata (annotations, song info) fetched via API — works even when
+      // HTML scraping is blocked. Save it to attach to lrclib lyrics if scraping fails.
+      let geniusMeta: { annotations: LyricsData['annotations']; geniusUrl: string | null; songInfo: LyricsData['songInfo'] } | null = null;
+
       // Try Genius first
-      if (!foundLyrics && isMounted) {
+      if (isMounted) {
         try {
           const geniusRes = await axios.get('/api/lyrics', {
             params: { artist: initialArtist, track: cleanTrackName(currentSong.name) },
@@ -165,9 +169,16 @@ export function useLyrics(currentSong: Song | null, era: Era | null) {
             };
             foundLyrics = true;
             if (isMounted) setLyricsData(finalData);
+          } else if (geniusRes.data?.geniusUrl) {
+            // Lyrics scraping blocked but API metadata still came through — save for lrclib merge
+            geniusMeta = {
+              annotations: geniusRes.data.annotations ?? null,
+              geniusUrl: geniusRes.data.geniusUrl,
+              songInfo: geniusRes.data.songInfo ?? null,
+            };
           }
         } catch {
-          // Genius failed — fall through to lrclib
+          // Genius entirely unreachable — fall through to lrclib only
         }
       }
 
@@ -209,9 +220,11 @@ export function useLyrics(currentSong: Song | null, era: Era | null) {
                   plainLyrics: res.data.plainLyrics || null,
                   syncedLyrics: res.data.syncedLyrics ? res.data.syncedLyrics.replace(/\[\d{2}:\d{2}\.\d{2,3}\]\s*/g, '') : null,
                   parsedSyncedLyrics,
-                  source: 'lrclib',
-                  annotations: null,
-                  geniusUrl: null,
+                  // Attach Genius metadata if we got it, so annotations/song info still show
+                  source: geniusMeta ? 'genius' : 'lrclib',
+                  annotations: geniusMeta?.annotations ?? null,
+                  geniusUrl: geniusMeta?.geniusUrl ?? null,
+                  songInfo: geniusMeta?.songInfo ?? null,
                 };
 
                 if (isMounted) {
