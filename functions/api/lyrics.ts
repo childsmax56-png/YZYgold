@@ -25,7 +25,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     );
 
     if (!searchRes.ok) {
-      return new Response(JSON.stringify({ lyrics: null }), {
+      return new Response(JSON.stringify({ lyrics: null, _debug: `search_failed_${searchRes.status}` }), {
         headers: { 'Content-Type': 'application/json' },
       });
     }
@@ -35,7 +35,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     const hit = hits.find((h: any) => h.type === 'song') ?? hits[0];
 
     if (!hit) {
-      return new Response(JSON.stringify({ lyrics: null }), {
+      return new Response(JSON.stringify({ lyrics: null, _debug: 'no_hit' }), {
         headers: { 'Content-Type': 'application/json' },
       });
     }
@@ -78,8 +78,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
         'Cache-Control': 'public, max-age=3600',
       },
     });
-  } catch {
-    return new Response(JSON.stringify({ lyrics: null }), {
+  } catch (e: any) {
+    return new Response(JSON.stringify({ lyrics: null, _debug: `caught: ${e?.message ?? 'unknown'}` }), {
       headers: { 'Content-Type': 'application/json' },
     });
   }
