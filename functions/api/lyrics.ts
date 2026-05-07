@@ -25,7 +25,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     );
 
     if (!searchRes.ok) {
-      return new Response(JSON.stringify({ lyrics: null, _debug: `search_fail:${searchRes.status}` }), {
+      return new Response(JSON.stringify({ lyrics: null }), {
         headers: { 'Content-Type': 'application/json' },
       });
     }
@@ -35,7 +35,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     const hit = hits.find((h: any) => h.type === 'song') ?? hits[0];
 
     if (!hit) {
-      return new Response(JSON.stringify({ lyrics: null, _debug: 'no_hit' }), {
+      return new Response(JSON.stringify({ lyrics: null }), {
         headers: { 'Content-Type': 'application/json' },
       });
     }
@@ -50,14 +50,14 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     });
 
     if (!pageRes.ok) {
-      return new Response(JSON.stringify({ lyrics: null, _debug: `page_fail:${pageRes.status}:${songUrl}` }), {
+      return new Response(JSON.stringify({ lyrics: null }), {
         headers: { 'Content-Type': 'application/json' },
       });
     }
 
     const lyrics = await extractLyrics(pageRes);
 
-    return new Response(JSON.stringify({ lyrics, _debug: `ok:${songUrl}:len=${lyrics?.length ?? 0}` }), {
+    return new Response(JSON.stringify({ lyrics }), {
       headers: {
         'Content-Type': 'application/json',
         'Cache-Control': 'public, max-age=86400',
@@ -73,6 +73,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 async function extractLyrics(pageRes: Response): Promise<string | null> {
   const parts: string[] = [];
   let containerCount = 0;
+  let skipDepth = 0;
 
   const transformed = new HTMLRewriter()
     .on('[data-lyrics-container="true"]', {
@@ -80,19 +81,38 @@ async function extractLyrics(pageRes: Response): Promise<string | null> {
         if (containerCount > 0) parts.push('\n\n');
         containerCount++;
       },
+    })
+    .on('[data-lyrics-container="true"] [data-exclude-from-selection="true"]', {
+      element(el) {
+        skipDepth++;
+        el.onEndTag(() => { skipDepth--; });
+      },
+    })
+    .on('[data-lyrics-container="true"] *', {
       text(chunk) {
-        parts.push(chunk.text);
+        if (skipDepth === 0) parts.push(chunk.text);
       },
     })
     .on('[data-lyrics-container="true"] br', {
       element() {
-        parts.push('\n');
+        if (skipDepth === 0) parts.push('\n');
       },
     })
     .transform(pageRes);
 
   await transformed.arrayBuffer();
 
-  const result = parts.join('').trim();
-  return result || null;
+  const raw = parts.join('').trim();
+  if (!raw) return null;
+
+  // Decode HTML entities
+  const decoded = raw
+    .replace(/&amp;/g, '&')
+    .replace(/&#x27;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>');
+
+  return decoded;
 }
