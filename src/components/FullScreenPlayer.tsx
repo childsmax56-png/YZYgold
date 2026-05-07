@@ -183,16 +183,29 @@ export function FullScreenPlayer({
   };
 
   useEffect(() => {
-    const elem = document.documentElement;
-    if (elem.requestFullscreen) {
-      elem.requestFullscreen().catch((err) => {
+    const elem = document.documentElement as HTMLElement & {
+      mozRequestFullScreen?: () => Promise<void>;
+      webkitRequestFullscreen?: () => Promise<void>;
+    };
+    const docAny = document as Document & {
+      mozCancelFullScreen?: () => Promise<void>;
+      webkitExitFullscreen?: () => Promise<void>;
+      mozFullScreenElement?: Element;
+      webkitFullscreenElement?: Element;
+    };
+    const requestFS = elem.requestFullscreen || elem.mozRequestFullScreen || elem.webkitRequestFullscreen;
+    const isFullscreen = () => document.fullscreenElement || docAny.mozFullScreenElement || docAny.webkitFullscreenElement;
+    const exitFS = document.exitFullscreen || docAny.mozCancelFullScreen || docAny.webkitExitFullscreen;
+
+    if (requestFS) {
+      requestFS.call(elem).catch((err: Error) => {
         console.warn(`Error attempting to enable fullscreen: ${err.message}`);
       });
     }
 
     return () => {
-      if (document.fullscreenElement && document.exitFullscreen) {
-        document.exitFullscreen().catch((err) => {
+      if (isFullscreen() && exitFS) {
+        exitFS.call(document).catch((err: Error) => {
           console.warn(`Error attempting to exit fullscreen: ${err.message}`);
         });
       }
@@ -436,7 +449,7 @@ export function FullScreenPlayer({
               <div 
                 ref={lyricsContainerRef}
                 className="relative flex-1 overflow-y-auto custom-scrollbar px-4 py-12 mask-image-y"
-                style={{ maskImage: viewMode === 'sync' ? 'linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)' : 'none' }}
+                style={{ maskImage: viewMode === 'sync' ? 'linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)' : 'none', WebkitMaskImage: viewMode === 'sync' ? 'linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)' : 'none' }}
               >
                 {loading ? (
                   <div className="h-full flex flex-col items-center justify-center text-white/50 gap-4">

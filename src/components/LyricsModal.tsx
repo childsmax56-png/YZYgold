@@ -175,7 +175,7 @@ export function LyricsModal({ isOpen, onClose, currentSong, era, currentTime = 0
           <div
             ref={containerRef}
             className="relative z-10 flex-1 overflow-y-auto p-6 custom-scrollbar flex flex-col mask-image-y"
-            style={{ maskImage: viewMode === 'sync' ? 'linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)' : 'none' }}
+            style={{ maskImage: viewMode === 'sync' ? 'linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)' : 'none', WebkitMaskImage: viewMode === 'sync' ? 'linear-gradient(to bottom, transparent, black 10%, black 90%, transparent)' : 'none' }}
           >
             {loading ? (
               <div className="flex-1 flex flex-col items-center justify-center text-white/50 gap-3">
