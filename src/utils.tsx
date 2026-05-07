@@ -544,6 +544,12 @@ export async function handleDownloadFile(url: string, suggestedName: string, tag
         }
       }
       blob = await response.blob();
+      if (!isImage) {
+        const actualExt = blob.type.includes('wav') ? '.wav' : blob.type.includes('flac') ? '.flac' : '.mp3';
+        if (actualExt !== '.mp3' && fileName.endsWith('.mp3')) {
+          fileName = fileName.slice(0, -4) + actualExt;
+        }
+      }
     } catch (e) {
       console.error('Download failed:', e);
       openFallback(url);
