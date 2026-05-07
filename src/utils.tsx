@@ -464,7 +464,16 @@ export async function handleDownloadFile(url: string, suggestedName: string, tag
     let isImage = false;
     let ext = '.mp3';
 
-    if (url.includes('pillows.su/f/') || url.includes('temp.imgur.gg/f/')) {
+    if (url.includes('temp.imgur.gg/f/')) {
+        const id = url.split('/f/')[1];
+        if (id) {
+            const res = await fetch(`https://temp.imgur.gg/api/file/${id}`).catch(() => null);
+            if (res && res.ok) {
+                const data = await res.json().catch(() => null);
+                if (data?.cdnUrl) finalUrl = data.cdnUrl;
+            }
+        }
+    } else if (url.includes('pillows.su/f/')) {
         const hash = url.split('/f/')[1]?.split('/')[0]?.split('?')[0];
         if (hash) {
             finalUrl = `https://api.pillows.su/api/get/${hash}`;
@@ -498,7 +507,7 @@ export async function handleDownloadFile(url: string, suggestedName: string, tag
     // attachment, triggering a real download instead of inline playback.
     if (isInAppBrowser()) {
       let directUrl = finalUrl;
-      if (url.includes('pillows.su/f/') || url.includes('temp.imgur.gg/f/')) {
+      if (url.includes('pillows.su/f/')) {
         const pathPart = url.split('/f/')[1];
         if (pathPart) directUrl = `https://api.pillows.su/api/download/${pathPart}`;
       }
