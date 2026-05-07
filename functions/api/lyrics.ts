@@ -42,8 +42,9 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
     const songId: number = hit.result.id;
     const songUrl: string = hit.result.url;
+    const authHeaders = { Authorization: `Bearer ${token}` };
 
-    const [pageRes, referentsRes] = await Promise.all([
+    const [pageRes, referentsRes, songDetailsRes] = await Promise.all([
       fetch(songUrl, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -51,10 +52,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
           'Accept-Language': 'en-US,en;q=0.5',
         },
       }),
-      fetch(
-        `https://api.genius.com/referents?song_id=${songId}&text_format=plain&per_page=50`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      ),
+      fetch(`https://api.genius.com/referents?song_id=${songId}&text_format=plain&per_page=50`, { headers: authHeaders }),
+      fetch(`https://api.genius.com/songs/${songId}?text_format=plain`, { headers: authHeaders }),
     ]);
 
     if (!pageRes.ok) {
@@ -63,12 +62,13 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       });
     }
 
-    const [lyrics, annotations] = await Promise.all([
+    const [lyrics, annotations, songInfo] = await Promise.all([
       extractLyrics(pageRes),
       extractAnnotations(referentsRes),
+      extractSongInfo(songDetailsRes),
     ]);
 
-    return new Response(JSON.stringify({ lyrics, annotations, geniusUrl: songUrl }), {
+    return new Response(JSON.stringify({ lyrics, annotations, geniusUrl: songUrl, songInfo }), {
       headers: {
         'Content-Type': 'application/json',
         'Cache-Control': 'public, max-age=86400',
@@ -143,5 +143,51 @@ async function extractAnnotations(res: Response): Promise<{ fragment: string; bo
       .filter(Boolean) as { fragment: string; body: string }[];
   } catch {
     return [];
+  }
+}
+
+interface SongInfo {
+  description: string | null;
+  producers: string[];
+  writers: string[];
+  samples: { title: string; artist: string }[];
+  annotationCount: number;
+}
+
+async function extractSongInfo(res: Response): Promise<SongInfo | null> {
+  try {
+    if (!res.ok) return null;
+    const data: any = await res.json();
+    const song = data?.response?.song;
+    if (!song) return null;
+
+    const description = song.description?.plain?.trim() ?? '';
+
+    const customPerfs: any[] = song.custom_performances ?? [];
+    const producerPerf = customPerfs.find((p: any) => p.label?.toLowerCase().includes('produc'));
+    const writerPerf = customPerfs.find((p: any) => p.label?.toLowerCase().includes('writ'));
+
+    const producers: string[] = (producerPerf?.artists ?? song.producer_artists ?? [])
+      .map((a: any) => a.name).filter(Boolean);
+    const writers: string[] = (writerPerf?.artists ?? song.writer_artists ?? [])
+      .map((a: any) => a.name).filter(Boolean);
+
+    const samplesRel = (song.song_relationships ?? []).find((r: any) => r.type === 'samples');
+    const samples: { title: string; artist: string }[] = (samplesRel?.songs ?? []).map((s: any) => ({
+      title: s.title ?? '',
+      artist: s.primary_artist?.name ?? '',
+    }));
+
+    const annotationCount: number = song.annotation_count ?? 0;
+
+    return {
+      description: description && description !== '?' ? description : null,
+      producers,
+      writers,
+      samples,
+      annotationCount,
+    };
+  } catch {
+    return null;
   }
 }

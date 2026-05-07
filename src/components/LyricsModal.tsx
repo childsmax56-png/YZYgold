@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Loader2, Mic2, AlignLeft, Clock, ChevronDown, ExternalLink } from 'lucide-react';
+import { X, Loader2, Mic2, AlignLeft, Clock, ChevronDown, ExternalLink, Info } from 'lucide-react';
 import { Song, Era } from '../types';
 import { createPortal } from 'react-dom';
 import { useLyrics } from '../useLyrics';
@@ -52,9 +52,9 @@ function buildAnnotatedSegments(text: string, annotations: Annotation[]) {
 }
 
 export function LyricsModal({ isOpen, onClose, currentSong, era, currentTime = 0, onSeek }: LyricsModalProps) {
-  const { plainLyrics, parsedSyncedLyrics, source, annotations, geniusUrl, loading, error } = useLyrics(currentSong, era);
+  const { plainLyrics, parsedSyncedLyrics, source, annotations, geniusUrl, songInfo, loading, error } = useLyrics(currentSong, era);
   const { settings } = useSettings();
-  const [viewMode, setViewMode] = useState<'sync' | 'plain'>('sync');
+  const [viewMode, setViewMode] = useState<'sync' | 'plain' | 'info'>('sync');
   const [selectedAnnotation, setSelectedAnnotation] = useState<Annotation | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -69,10 +69,15 @@ export function LyricsModal({ isOpen, onClose, currentSong, era, currentTime = 0
     }
   }, [hasSynced, plainLyrics, loading, settings.syncedLyricsOnly]);
 
-  // Dismiss annotation panel when song or view changes
+  // Dismiss annotation panel when song or view changes; reset info tab on song change
   useEffect(() => {
     setSelectedAnnotation(null);
-  }, [currentSong, viewMode]);
+    setViewMode('sync');
+  }, [currentSong]);
+
+  useEffect(() => {
+    setSelectedAnnotation(null);
+  }, [viewMode]);
 
   const currentLineIndex = parsedSyncedLyrics
     ? parsedSyncedLyrics.findIndex((line, i) => {
@@ -133,7 +138,7 @@ export function LyricsModal({ isOpen, onClose, currentSong, era, currentTime = 0
               )}
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               {hasSynced && plainLyrics && !settings.syncedLyricsOnly && (
                 <div className="flex items-center bg-white/10 rounded-full p-0.5">
                   <button
@@ -151,6 +156,15 @@ export function LyricsModal({ isOpen, onClose, currentSong, era, currentTime = 0
                     <AlignLeft className="w-3.5 h-3.5" />
                   </button>
                 </div>
+              )}
+              {source === 'genius' && songInfo && (
+                <button
+                  onClick={() => setViewMode(v => v === 'info' ? (hasSynced ? 'sync' : 'plain') : 'info')}
+                  className={`p-1.5 rounded-full transition-colors ${viewMode === 'info' ? 'text-[var(--theme-color)]' : 'text-white/50 hover:text-white/80'}`}
+                  title="Song Info"
+                >
+                  <Info className="w-4 h-4" />
+                </button>
               )}
               <button onClick={onClose} className="text-white/50 hover:text-white transition-colors cursor-pointer">
                 <X className="w-5 h-5" />
@@ -197,13 +211,55 @@ export function LyricsModal({ isOpen, onClose, currentSong, era, currentTime = 0
                   Lyrics may not be accurate
                 </div>
               </div>
+            ) : viewMode === 'info' && songInfo ? (
+              <div className="flex-1 flex flex-col gap-5 py-2">
+                {songInfo.description && (
+                  <div>
+                    <p className="text-[10px] uppercase tracking-widest text-white/40 mb-2">About</p>
+                    <p className="text-white/80 text-sm leading-relaxed">{songInfo.description}</p>
+                  </div>
+                )}
+                {songInfo.samples.length > 0 && (
+                  <div>
+                    <p className="text-[10px] uppercase tracking-widest text-white/40 mb-2">Samples</p>
+                    {songInfo.samples.map((s, i) => (
+                      <p key={i} className="text-white/80 text-sm">
+                        "{s.title}" — <span className="text-white/50">{s.artist}</span>
+                      </p>
+                    ))}
+                  </div>
+                )}
+                {songInfo.producers.length > 0 && (
+                  <div>
+                    <p className="text-[10px] uppercase tracking-widest text-white/40 mb-2">Produced by</p>
+                    <p className="text-white/80 text-sm">{songInfo.producers.join(', ')}</p>
+                  </div>
+                )}
+                {songInfo.writers.length > 0 && (
+                  <div>
+                    <p className="text-[10px] uppercase tracking-widest text-white/40 mb-2">Written by</p>
+                    <p className="text-white/80 text-sm">{songInfo.writers.join(', ')}</p>
+                  </div>
+                )}
+                {songInfo.annotationCount > 0 && (
+                  <div>
+                    <p className="text-[10px] uppercase tracking-widest text-white/40 mb-2">Annotations</p>
+                    <p className="text-white/80 text-sm">{songInfo.annotationCount} on Genius</p>
+                  </div>
+                )}
+                {geniusUrl && (
+                  <a href={geniusUrl} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 text-[var(--theme-color)] text-xs hover:opacity-80 transition-opacity mt-auto">
+                    <ExternalLink className="w-3 h-3" /> View full page on Genius
+                  </a>
+                )}
+              </div>
             ) : settings.syncedLyricsOnly && !hasSynced ? (
               <div className="flex-1 flex items-center justify-center text-white/50 text-center text-sm font-medium">
                 No synced lyrics available for this track.
               </div>
             ) : plainLyrics ? (
               <div className="flex-1 flex flex-col">
-                {(() => { console.log('[Lyrics] source:', source, 'hasAnnotations:', hasAnnotations, 'annotationsLen:', annotations?.length); return null; })()}
                 <div className={`text-white/90 text-sm md:text-base leading-relaxed font-medium whitespace-pre-wrap ${settings.miniLyricsAlignment === 'left' ? 'text-left' : settings.miniLyricsAlignment === 'right' ? 'text-right' : 'text-center'}`}>
                   {hasAnnotations && source === 'genius' && annotations
                     ? buildAnnotatedSegments(plainLyrics, annotations).map((seg, i) =>

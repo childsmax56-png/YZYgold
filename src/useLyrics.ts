@@ -8,6 +8,14 @@ export interface Annotation {
   body: string;
 }
 
+export interface SongInfo {
+  description: string | null;
+  producers: string[];
+  writers: string[];
+  samples: { title: string; artist: string }[];
+  annotationCount: number;
+}
+
 export interface LyricsData {
   plainLyrics: string | null;
   syncedLyrics: string | null;
@@ -15,6 +23,7 @@ export interface LyricsData {
   source: 'genius' | 'lrclib' | null;
   annotations: Annotation[] | null;
   geniusUrl: string | null;
+  songInfo: SongInfo | null;
 }
 
 const lyricsCache = new Map<string, LyricsData & { error: string | null }>();
@@ -89,7 +98,7 @@ function getAlternativeNames(song: Song): string[] {
 }
 
 export function useLyrics(currentSong: Song | null, era: Era | null) {
-  const [lyricsData, setLyricsData] = useState<LyricsData>({ plainLyrics: null, syncedLyrics: null, parsedSyncedLyrics: null, source: null, annotations: null, geniusUrl: null });
+  const [lyricsData, setLyricsData] = useState<LyricsData>({ plainLyrics: null, syncedLyrics: null, parsedSyncedLyrics: null, source: null, annotations: null, geniusUrl: null, songInfo: null });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -106,6 +115,7 @@ export function useLyrics(currentSong: Song | null, era: Era | null) {
         source: cached.source,
         annotations: cached.annotations,
         geniusUrl: cached.geniusUrl,
+        songInfo: cached.songInfo,
       });
       setError(cached.error);
       setLoading(false);
@@ -117,7 +127,7 @@ export function useLyrics(currentSong: Song | null, era: Era | null) {
     const fetchLyrics = async () => {
       setLoading(true);
       setError(null);
-      setLyricsData({ plainLyrics: null, syncedLyrics: null, parsedSyncedLyrics: null, source: null, annotations: null, geniusUrl: null });
+      setLyricsData({ plainLyrics: null, syncedLyrics: null, parsedSyncedLyrics: null, source: null, annotations: null, geniusUrl: null, songInfo: null });
 
       const initialArtist = parseArtistFromSong(currentSong.name, currentSong.extra, era?.name);
       
@@ -135,7 +145,7 @@ export function useLyrics(currentSong: Song | null, era: Era | null) {
       }
 
       let foundLyrics = false;
-      let finalData: LyricsData = { plainLyrics: null, syncedLyrics: null, parsedSyncedLyrics: null, source: null, annotations: null, geniusUrl: null };
+      let finalData: LyricsData = { plainLyrics: null, syncedLyrics: null, parsedSyncedLyrics: null, source: null, annotations: null, geniusUrl: null, songInfo: null };
 
       // Try Genius first
       if (!foundLyrics && isMounted) {
@@ -151,6 +161,7 @@ export function useLyrics(currentSong: Song | null, era: Era | null) {
               source: 'genius',
               annotations: geniusRes.data.annotations ?? null,
               geniusUrl: geniusRes.data.geniusUrl ?? null,
+              songInfo: geniusRes.data.songInfo ?? null,
             };
             foundLyrics = true;
             if (isMounted) setLyricsData(finalData);
