@@ -286,7 +286,7 @@ export function LyricsModal({ isOpen, onClose, currentSong, era, currentTime = 0
                     </button>
                   </div>
                 </div>
-                <div className="overflow-y-auto px-4 py-3 custom-scrollbar">
+                <div className="overflow-y-auto px-4 py-3 pb-6 custom-scrollbar">
                   <p className="text-white/80 text-sm leading-relaxed whitespace-pre-wrap">
                     {selectedAnnotation.body}
                   </p>
