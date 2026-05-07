@@ -203,6 +203,7 @@ export function LyricsModal({ isOpen, onClose, currentSong, era, currentTime = 0
               </div>
             ) : plainLyrics ? (
               <div className="flex-1 flex flex-col">
+                {(() => { console.log('[Lyrics] source:', source, 'hasAnnotations:', hasAnnotations, 'annotationsLen:', annotations?.length); return null; })()}
                 <div className={`text-white/90 text-sm md:text-base leading-relaxed font-medium whitespace-pre-wrap ${settings.miniLyricsAlignment === 'left' ? 'text-left' : settings.miniLyricsAlignment === 'right' ? 'text-right' : 'text-center'}`}>
                   {hasAnnotations && source === 'genius' && annotations
                     ? buildAnnotatedSegments(plainLyrics, annotations).map((seg, i) =>
