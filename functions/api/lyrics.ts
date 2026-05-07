@@ -71,7 +71,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     return new Response(JSON.stringify({ lyrics, annotations, geniusUrl: songUrl, songInfo }), {
       headers: {
         'Content-Type': 'application/json',
-        'Cache-Control': 'public, max-age=86400',
+        'Cache-Control': 'public, max-age=3600',
       },
     });
   } catch {
