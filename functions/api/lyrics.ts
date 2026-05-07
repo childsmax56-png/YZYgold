@@ -40,14 +40,22 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       });
     }
 
+    const songId: number = hit.result.id;
     const songUrl: string = hit.result.url;
-    const pageRes = await fetch(songUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.5',
-      },
-    });
+
+    const [pageRes, referentsRes] = await Promise.all([
+      fetch(songUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.5',
+        },
+      }),
+      fetch(
+        `https://api.genius.com/referents?song_id=${songId}&text_format=plain&per_page=50`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      ),
+    ]);
 
     if (!pageRes.ok) {
       return new Response(JSON.stringify({ lyrics: null }), {
@@ -55,9 +63,12 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       });
     }
 
-    const lyrics = await extractLyrics(pageRes);
+    const [lyrics, annotations] = await Promise.all([
+      extractLyrics(pageRes),
+      extractAnnotations(referentsRes),
+    ]);
 
-    return new Response(JSON.stringify({ lyrics }), {
+    return new Response(JSON.stringify({ lyrics, annotations, geniusUrl: songUrl }), {
       headers: {
         'Content-Type': 'application/json',
         'Cache-Control': 'public, max-age=86400',
@@ -105,7 +116,6 @@ async function extractLyrics(pageRes: Response): Promise<string | null> {
   const raw = parts.join('').trim();
   if (!raw) return null;
 
-  // Decode HTML entities
   const decoded = raw
     .replace(/&amp;/g, '&')
     .replace(/&#x27;/g, "'")
@@ -115,4 +125,23 @@ async function extractLyrics(pageRes: Response): Promise<string | null> {
     .replace(/&gt;/g, '>');
 
   return decoded;
+}
+
+async function extractAnnotations(res: Response): Promise<{ fragment: string; body: string }[]> {
+  try {
+    if (!res.ok) return [];
+    const data: any = await res.json();
+    const referents: any[] = data?.response?.referents ?? [];
+
+    return referents
+      .filter((r: any) => r.annotations?.length > 0 && r.fragment?.trim())
+      .map((r: any) => {
+        const sorted = [...r.annotations].sort((a: any, b: any) => (b.votes_total ?? 0) - (a.votes_total ?? 0));
+        const body: string = sorted[0]?.body?.plain?.trim() ?? '';
+        return body ? { fragment: r.fragment.trim(), body } : null;
+      })
+      .filter(Boolean) as { fragment: string; body: string }[];
+  } catch {
+    return [];
+  }
 }
