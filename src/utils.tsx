@@ -3,28 +3,6 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { saveAs } from 'file-saver';
 import { useSettings } from './SettingsContext';
-import axios from 'axios';
-
-export function useResolvedImageUrl(url: string | null | undefined): string | null {
-  const [resolved, setResolved] = useState<string | null>(null);
-  useEffect(() => {
-    if (!url) { setResolved(null); return; }
-    let mounted = true;
-    if (url.includes('ibb.co') && !url.includes('i.ibb.co')) {
-      setResolved(null);
-      axios.get(`https://imgbb-file-get-api.vercel.app/api?url=${url}`)
-        .then(res => { if (mounted) setResolved(res.data?.direct_link || null); })
-        .catch(() => { if (mounted) setResolved(null); });
-    } else if (url.includes('pillows.su/f/')) {
-      const hash = url.split('/f/')[1]?.split('/')[0]?.split('?')[0];
-      setResolved(hash ? `https://api.pillows.su/api/get/${hash}` : url);
-    } else {
-      setResolved(url);
-    }
-    return () => { mounted = false; };
-  }, [url]);
-  return resolved;
-}
 
 export const TAG_TOOLTIP_MAP: Record<string, string> = {
   'Best Of': 'some of the best leaks hosted on the tracker.',
@@ -90,8 +68,8 @@ export const CUSTOM_IMAGES: Record<string, string> = {
   "NASIR": "https://a5.mzstatic.com/us/r1000/0/Music125/v4/f9/41/a9/f941a9d4-099d-4b65-484a-e585136ca838/18UMGIM37154.rgb.jpg",
   "K.T.S.E.": "https://i.ibb.co/rfZM2kCp/K-T-S-E.jpg",
   "NEVER STOP": "https://i.ibb.co/vC9c5qFM/never-stop.png",
-  "Jesus Is Born": "https://api.pillows.su/api/get/61be2288632189d710fc6865f5efd9c7",
-  "Sunday Service Choir": "https://ibb.co/q3GrRwT3"
+  "Jesus Is Born": "https://i.ibb.co/VcJJqK9H/JIB.jpg",
+  "Sunday Service Choir": "https://i.ibb.co/mCrJM7q8/SSC.jpg"
 };
 
 export const ALBUM_RELEASE_DATES: Record<string, string> = {
