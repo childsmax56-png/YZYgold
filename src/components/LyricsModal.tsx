@@ -149,9 +149,14 @@ export function LyricsModal({ isOpen, onClose, currentSong, era, currentTime = 0
           )}
 
           <div className="relative z-10 flex items-center justify-between p-4 border-b border-white/10 bg-black/40">
-            <div className="flex items-center gap-3 text-white font-bold">
+            <div className="flex items-center gap-2 text-white font-bold">
               <Mic2 className="w-4 h-4 text-[var(--theme-color)]" />
               Lyrics
+              {!loading && source && (
+                <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${source === 'genius' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-white/10 text-white/50'}`}>
+                  {source === 'genius' ? 'Genius' : 'lrclib'}
+                </span>
+              )}
             </div>
 
             <div className="flex items-center gap-3">
@@ -216,9 +221,6 @@ export function LyricsModal({ isOpen, onClose, currentSong, era, currentTime = 0
                 })}
                 <div className="mt-8 text-xs text-white/40 text-center uppercase tracking-wider">
                   Lyrics may not be accurate
-                </div>
-                <div className="mt-1 text-[10px] text-white/30 text-center">
-                  Sourced from {source === 'genius' ? 'Genius' : 'lrclib'}
                 </div>
               </div>
             ) : settings.syncedLyricsOnly && !hasSynced ? (
