@@ -2191,7 +2191,8 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.8, ease: [0.2, 0, 0, 1] } }}
               transition={{ duration: 1.5, ease: [0.2, 0, 0, 1] }}
-              className="fixed bottom-24 md:bottom-8 right-6 z-50 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform drop-shadow-2xl"
+              className="fixed right-6 z-50 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform drop-shadow-2xl"
+              style={{ bottom: 'calc(100vh - 100dvh + 1.5rem)' }}
               onClick={() => setIsPlayerClosed(false)}
               title="Restore Player"
             >
