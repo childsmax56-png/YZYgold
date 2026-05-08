@@ -2187,12 +2187,12 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.8, ease: [0.2, 0, 0, 1] } }}
             transition={{ duration: 1.5, ease: [0.2, 0, 0, 1] }}
-            className="fixed bottom-6 right-6 z-50 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform drop-shadow-2xl"
+            className="fixed bottom-24 md:bottom-8 right-6 z-50 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform drop-shadow-2xl"
             onClick={() => setIsPlayerClosed(false)}
             title="Restore Player"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 2000 2000">
-              <circle fill="#111" stroke="#1d1d1d" strokeWidth="40" cx="1000.5" cy="1000.5" r="890.5"/>
+              <circle fill="#222" stroke="rgba(255,255,255,0.15)" strokeWidth="80" cx="1000.5" cy="1000.5" r="890.5"/>
               <g transform="translate(1000.5, 1020)">
                 <path stroke="white" strokeWidth="80" strokeLinecap="round" strokeLinejoin="round" fill="none" d="M -250 125 L 0 -125 L 250 125" />
               </g>
