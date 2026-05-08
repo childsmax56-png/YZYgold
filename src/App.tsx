@@ -511,8 +511,8 @@ export default function App() {
         extra,
         description: item.Notes || '',
         track_length: item['Track Length'] || '',
-        leak_date: item['Leak Date'] || '',
-        file_date: item['File Date'] || '',
+        leak_date: item['Leak\nDate'] || item['Leak Date'] || '',
+        file_date: item['File\nDate'] || item['File Date'] || '',
         available_length: item['Available Length'] || '',
         quality: item.Quality || '',
         url: rawUrl,
@@ -537,10 +537,11 @@ export default function App() {
   }
 
   const HARDCODED_SHEET_ID = '12nGHPPh5dVTfLuBLVQYzC3QgPxKfvp-jgCoNccvEasM';
+  const HARDCODED_SHEET_GID = '1385926980'; // Recent tab
 
   useEffect(() => {
     const sheetCsvUrl = getSheetCsvExportUrl(
-      settings.googleSheetsUrl || `https://docs.google.com/spreadsheets/d/${HARDCODED_SHEET_ID}`
+      settings.googleSheetsUrl || `https://docs.google.com/spreadsheets/d/${HARDCODED_SHEET_ID}/edit#gid=${HARDCODED_SHEET_GID}`
     );
 
     Promise.all([
@@ -816,8 +817,8 @@ export default function App() {
                   extra2: eraName,
                   description: item.Notes || '',
                   track_length: item['Track Length'] || '',
-                  leak_date: item['Leak Date'] || '',
-                  file_date: item['File Date'] || '',
+                  leak_date: item['Leak\nDate'] || item['Leak Date'] || '',
+                  file_date: item['File\nDate'] || item['File Date'] || '',
                   available_length: item['Available Length'] || '',
                   quality: item.Quality || '',
                   url: rawUrl,
