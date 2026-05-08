@@ -757,8 +757,8 @@ export default function App() {
           if (extra2) {
             const m = extra2.match(/\s*\(/);
             if (m) {
-              extra2 = extra2.substring(0, m.index).trim();
               extra = extra2.substring(m.index!).trim();
+              extra2 = extra2.substring(0, m.index).trim();
             }
           }
           if (name) {
@@ -828,9 +828,23 @@ export default function App() {
               .filter((s: Song) => !!s.name)
           : [];
 
-        // Only prepend sheet songs not already in recent.csv
-        const recentNames = new Set(recentMapped.map(s => s.name?.toLowerCase().trim()));
-        const newSheetSongs = sheetRecentSongs.filter(s => !recentNames.has(s.name?.toLowerCase().trim()));
+        // Only prepend sheet songs not already in recent.csv.
+        // Dedup by name+era so songs with the same name in different eras are not
+        // incorrectly filtered, and ERA_MAPPINGS normalizes spelling variants.
+        const normalizeEraForDedup = (era: string | undefined): string => {
+          if (!era) return '';
+          const lower = era.toLowerCase().trim();
+          const mk = Object.keys(ERA_MAPPINGS).find(k => k.toLowerCase() === lower);
+          return mk ? ERA_MAPPINGS[mk].toLowerCase() : lower;
+        };
+        const recentKeys = new Set(
+          recentMapped.map(s =>
+            `${s.name?.toLowerCase().trim() ?? ''}||${normalizeEraForDedup(s.extra2)}`
+          )
+        );
+        const newSheetSongs = sheetRecentSongs.filter(s =>
+          !recentKeys.has(`${s.name?.toLowerCase().trim() ?? ''}||${normalizeEraForDedup(s.extra2)}`)
+        );
         setRecentData([...newSheetSongs, ...recentMapped]);
         setLoading(false);
 
