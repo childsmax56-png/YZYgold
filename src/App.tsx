@@ -1016,7 +1016,7 @@ export default function App() {
     const userAgent = navigator.userAgent.toLowerCase();
     const isBrowserSafari = userAgent.includes('safari') && !userAgent.includes('chrome') && !userAgent.includes('crios') && !userAgent.includes('android');
 
-    if (!localStorage.getItem('v1_5_ownership_seen')) {
+    if (!localStorage.getItem('v1_7_seen')) {
       setShowChangelog(true);
     } else if (isBrowserSafari) {
       setShowSafariWarning(true);
@@ -2135,9 +2135,13 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
               YƵYGOLD does not host or hold any illegal files. All links are external and provided as-is for educational and archival purposes only.
             </p>
             <p className="text-[10px] text-white/30 leading-relaxed">
-              YZYGOLD 2026 © [V1.5.4]
+              YZYGOLD 2026 © [V1.7]
             </p>
-            <p className="text-[10px] text-white/30 leading-relaxed mt-1">
+            <p className="text-[10px] text-white/30 leading-relaxed mt-1 space-x-3">
+              <a href="https://www.reddit.com/r/yzygold/" target="_blank" rel="noopener noreferrer" className="text-[var(--theme-color)]/50 hover:text-[var(--theme-color)] transition-colors underline">r/yzygold</a>
+              <span>·</span>
+              <a href="https://docs.google.com/document/d/1b8aidNuSLLHfzgzrJ0uGdWHPuo-uNk6wI21Vscwzid4/edit?tab=t.0#heading=h.coxp3mvb86xr" target="_blank" rel="noopener noreferrer" className="text-[var(--theme-color)]/50 hover:text-[var(--theme-color)] transition-colors underline">Changelog</a>
+              <span>·</span>
               <a href="https://docs.google.com/spreadsheets/d/12nGHPPh5dVTfLuBLVQYzC3QgPxKfvp-jgCoNccvEasM/" target="_blank" rel="noopener noreferrer" className="text-[var(--theme-color)]/50 hover:text-[var(--theme-color)] transition-colors underline">Link For The Sheet</a>
             </p>
           </div>
@@ -2309,28 +2313,30 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
               className="bg-[#111] border border-white/10 rounded-xl max-w-lg w-full p-6 md:p-8"
             >
               <h2 className="text-2xl font-bold text-white mb-1 tracking-tight font-display">
-                YZYgold Version 1.5
+                YZYgold Version 1.7
               </h2>
-              <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-6">Ownership Transfer</p>
+              <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-6">What's New</p>
 
               <div className="space-y-4 mb-8 text-sm text-white/70 leading-relaxed">
                 <ul className="space-y-3">
-                  <li>Site has transferred ownership to <strong className="text-white">u/yzyarchives</strong></li>
-                  <li>Most importantly — <strong className="text-white">SITE HAS NO ADS</strong></li>
                   <li>
-                    <strong className="text-white">Tracklists tab</strong>
-                    <br />Here you can play, access and download different tracklists
+                    <strong className="text-white">Genius Lyrics</strong>
+                    <br />Genius lyrics are now set as the default provider for lyrics. You can view annotations, read about the song, view samples and credits.
+                    <br /><span className="text-white/50 text-xs">Not all songs have Genius — we use the previous lyric provider iClib as a backup.</span>
                   </li>
                   <li>
-                    <strong className="text-white">Last.fm</strong>
-                    <br />Due to the transfer of ownership the Last.fm keys had to be reset, please relink your Last.fm account to YZYgold
+                    <strong className="text-white">Sunday Service Choir</strong>
+                    <br />You can view and listen to Sunday Service Choir songs in the "Related" tab.
+                  </li>
+                  <li>
+                    <strong className="text-white">General bug fixes</strong>
                   </li>
                 </ul>
 
                 <div className="border-t border-white/10 pt-4 space-y-2 text-white/50 text-xs">
                   <p>
-                    <a href="https://docs.google.com/document/d/1b8aidNuSLLHfzgzrJ0uGdWHPuo-uNk6wI21Vscwzid4/edit?usp=sharing" target="_blank" rel="noopener noreferrer" className="text-[var(--theme-color)] hover:underline">
-                      See the full changelog here
+                    <a href="https://docs.google.com/document/d/1b8aidNuSLLHfzgzrJ0uGdWHPuo-uNk6wI21Vscwzid4/edit?tab=t.0#heading=h.coxp3mvb86xr" target="_blank" rel="noopener noreferrer" className="text-[var(--theme-color)] hover:underline">
+                      View full changelog here
                     </a>
                   </p>
                   <p>
@@ -2345,7 +2351,7 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
               <button
                 onClick={() => {
                   setShowChangelog(false);
-                  localStorage.setItem('v1_5_ownership_seen', 'true');
+                  localStorage.setItem('v1_7_seen', 'true');
 
                   const userAgent = navigator.userAgent.toLowerCase();
                   const isBrowserSafari = userAgent.includes('safari') && !userAgent.includes('chrome') && !userAgent.includes('crios') && !userAgent.includes('android');
