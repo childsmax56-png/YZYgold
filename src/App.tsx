@@ -544,21 +544,22 @@ export default function App() {
       settings.googleSheetsUrl || `https://docs.google.com/spreadsheets/d/${HARDCODED_SHEET_ID}/edit#gid=${HARDCODED_SHEET_GID}`
     );
 
+    const FETCH_TIMEOUT = 20000;
     Promise.all([
-      axios.get('/api/a'),
-      axios.get('https://yzygold-test.vercel.app/MyK.json').catch(err => {
+      axios.get('/api/a', { timeout: FETCH_TIMEOUT }),
+      axios.get('https://yzygold-test.vercel.app/MyK.json', { timeout: FETCH_TIMEOUT }).catch(err => {
         console.error("Failed to fetch MyK data", err);
         return { data: [] };
       }),
-      axios.get('/local-songs.json').catch(err => {
+      axios.get('/local-songs.json', { timeout: FETCH_TIMEOUT }).catch(err => {
         console.error("Failed to fetch local songs", err);
         return { data: [] };
       }),
-      axios.get(`/api/sheets-proxy?url=${encodeURIComponent(sheetCsvUrl!)}`).catch(err => {
+      axios.get(`/api/sheets-proxy?url=${encodeURIComponent(sheetCsvUrl!)}`, { timeout: FETCH_TIMEOUT }).catch(err => {
         console.error("Failed to fetch Google Sheets data", err);
         return { data: [] };
       }),
-      axios.get('/api/recent').catch(err => {
+      axios.get('/api/recent', { timeout: FETCH_TIMEOUT }).catch(err => {
         console.error("Failed to fetch Recent data:", err);
         return { data: [] };
       })
