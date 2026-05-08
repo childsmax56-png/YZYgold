@@ -150,7 +150,8 @@ export function PlayerBar({
         animate={{ y: 0, opacity: 1, filter: 'blur(0px)' }}
         exit={{ y: 100, opacity: 0, filter: 'blur(10px)' }}
         transition={{ duration: 0.4, ease: "easeOut" }}
-        className="fixed bottom-0 left-0 right-0 py-3 pb-safe md:py-0 md:h-24 bg-black/70 md:bg-black/60 backdrop-blur-3xl md:backdrop-blur-2xl border-t border-white/10 z-50 grid grid-cols-[1fr_auto] md:flex items-center px-4 md:px-6 gap-y-4 gap-x-0 md:gap-0 rounded-t-3xl md:rounded-none"
+        className="fixed left-0 right-0 py-3 pb-safe md:py-0 md:h-24 bg-black/70 md:bg-black/60 backdrop-blur-3xl md:backdrop-blur-2xl border-t border-white/10 z-50 grid grid-cols-[1fr_auto] md:flex items-center px-4 md:px-6 gap-y-4 gap-x-0 md:gap-0 rounded-t-3xl md:rounded-none"
+        style={{ bottom: 'calc(100vh - 100dvh)' }}
       >
         <div className="flex items-center gap-4 min-w-0 md:flex-1 col-start-1 col-end-2 row-start-1 pr-4 md:pr-0">
           {settings.showMiniPlayerArt && (() => {
