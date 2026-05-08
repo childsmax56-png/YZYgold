@@ -26,8 +26,6 @@ export interface LyricsData {
   songInfo: SongInfo | null;
 }
 
-const GENIUS_TOKEN = (import.meta as any).env?.VITE_GENIUS_TOKEN as string | undefined;
-
 const lyricsCache = new Map<string, LyricsData & { error: string | null }>();
 
 function cleanTrackName(name: string): string {
@@ -99,58 +97,6 @@ function getAlternativeNames(song: Song): string[] {
   return [...new Set(names)];
 }
 
-function extractAnnotationsClient(data: any): Annotation[] | null {
-  try {
-    const referents: any[] = data?.response?.referents ?? [];
-    const result = referents
-      .filter((r: any) => r.annotations?.length > 0 && r.fragment?.trim())
-      .map((r: any) => {
-        const sorted = [...r.annotations].sort((a: any, b: any) => (b.votes_total ?? 0) - (a.votes_total ?? 0));
-        const body: string = sorted[0]?.body?.plain?.trim() ?? '';
-        return body ? { fragment: r.fragment.trim(), body } : null;
-      })
-      .filter(Boolean) as Annotation[];
-    return result.length > 0 ? result : null;
-  } catch {
-    return null;
-  }
-}
-
-function extractSongInfoClient(data: any): SongInfo | null {
-  try {
-    const song = data?.response?.song;
-    if (!song) return null;
-
-    const description = song.description?.plain?.trim() ?? '';
-
-    const customPerfs: any[] = song.custom_performances ?? [];
-    const producerPerf = customPerfs.find((p: any) => p.label?.toLowerCase().includes('produc'));
-    const writerPerf = customPerfs.find((p: any) => p.label?.toLowerCase().includes('writ'));
-
-    const producers: string[] = (producerPerf?.artists ?? song.producer_artists ?? [])
-      .map((a: any) => a.name).filter(Boolean);
-    const writers: string[] = (writerPerf?.artists ?? song.writer_artists ?? [])
-      .map((a: any) => a.name).filter(Boolean);
-
-    const samplesRel = (song.song_relationships ?? []).find((r: any) => r.type === 'samples');
-    const samples: { title: string; artist: string }[] = (samplesRel?.songs ?? []).map((s: any) => ({
-      title: s.title ?? '',
-      artist: s.primary_artist?.name ?? '',
-    }));
-
-    const annotationCount: number = song.annotation_count ?? 0;
-
-    return {
-      description: description && description !== '?' ? description : null,
-      producers,
-      writers,
-      samples,
-      annotationCount,
-    };
-  } catch {
-    return null;
-  }
-}
 
 export function useLyrics(currentSong: Song | null, era: Era | null) {
   const [lyricsData, setLyricsData] = useState<LyricsData>({ plainLyrics: null, syncedLyrics: null, parsedSyncedLyrics: null, source: null, annotations: null, geniusUrl: null, songInfo: null });
@@ -205,57 +151,34 @@ export function useLyrics(currentSong: Song | null, era: Era | null) {
       // Genius metadata saved here if lyrics scraping is blocked, so we can attach to lrclib results
       let geniusMeta: { annotations: LyricsData['annotations']; geniusUrl: string | null; songInfo: LyricsData['songInfo'] } | null = null;
 
-      // Try Genius first — API calls run from the browser (user's IP, not Cloudflare datacenter)
-      if (GENIUS_TOKEN && isMounted) {
+      // Try Genius first (server-side: search + scrape + metadata via CF Worker)
+      if (isMounted) {
         try {
-          const geniusHeaders = { Authorization: `Bearer ${GENIUS_TOKEN}` };
-          const searchRes = await axios.get('https://api.genius.com/search', {
-            params: { q: `${initialArtist} ${cleanTrackName(currentSong.name)}` },
-            headers: geniusHeaders,
+          const geniusRes = await axios.get('/api/lyrics', {
+            params: { artist: initialArtist, track: cleanTrackName(currentSong.name) },
           });
-
-          const hits: any[] = searchRes.data?.response?.hits ?? [];
-          const hit = hits.find((h: any) => h.type === 'song') ?? hits[0];
-
-          if (hit && isMounted) {
-            const songId: number = hit.result.id;
-            const songUrl: string = hit.result.url;
-
-            const [lyricsRes, referentsRes, songDetailsRes] = await Promise.all([
-              axios.get('/api/lyrics', { params: { url: songUrl } }).catch(() => null),
-              axios.get('https://api.genius.com/referents', {
-                params: { song_id: songId, text_format: 'plain', per_page: 50 },
-                headers: geniusHeaders,
-              }).catch(() => null),
-              axios.get(`https://api.genius.com/songs/${songId}`, {
-                params: { text_format: 'plain' },
-                headers: geniusHeaders,
-              }).catch(() => null),
-            ]);
-
-            const lyrics: string | null = lyricsRes?.data?.lyrics ?? null;
-            const annotations = extractAnnotationsClient(referentsRes?.data);
-            const songInfo = extractSongInfoClient(songDetailsRes?.data);
-
-            if (lyrics) {
-              finalData = {
-                plainLyrics: lyrics,
-                syncedLyrics: null,
-                parsedSyncedLyrics: null,
-                source: 'genius',
-                annotations,
-                geniusUrl: songUrl,
-                songInfo,
-              };
-              foundLyrics = true;
-              if (isMounted) setLyricsData(finalData);
-            } else {
-              // Lyrics page blocked but API metadata came through — save for lrclib merge
-              geniusMeta = { annotations, geniusUrl: songUrl, songInfo };
-            }
+          if (geniusRes.data?.lyrics) {
+            finalData = {
+              plainLyrics: geniusRes.data.lyrics,
+              syncedLyrics: null,
+              parsedSyncedLyrics: null,
+              source: 'genius',
+              annotations: geniusRes.data.annotations ?? null,
+              geniusUrl: geniusRes.data.geniusUrl ?? null,
+              songInfo: geniusRes.data.songInfo ?? null,
+            };
+            foundLyrics = true;
+            if (isMounted) setLyricsData(finalData);
+          } else if (geniusRes.data?.geniusUrl) {
+            // Lyrics scraping blocked but API metadata came through — save for lrclib merge
+            geniusMeta = {
+              annotations: geniusRes.data.annotations ?? null,
+              geniusUrl: geniusRes.data.geniusUrl,
+              songInfo: geniusRes.data.songInfo ?? null,
+            };
           }
         } catch {
-          // Genius unreachable — fall through to lrclib only
+          // Genius entirely unreachable — fall through to lrclib only
         }
       }
 
