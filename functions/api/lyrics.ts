@@ -19,9 +19,14 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   }
 
   try {
+    const apiHeaders = {
+      Authorization: `Bearer ${token}`,
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    };
+
     const searchRes = await fetch(
       `https://api.genius.com/search?q=${encodeURIComponent(`${artist} ${track}`)}`,
-      { headers: { Authorization: `Bearer ${token}` } }
+      { headers: apiHeaders }
     );
 
     if (!searchRes.ok) {
@@ -43,7 +48,6 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     const songId: number = hit.result.id;
     const songUrl: string = hit.result.url;
     const ampUrl: string = songUrl.replace('https://genius.com/', 'https://genius.com/amp/');
-    const authHeaders = { Authorization: `Bearer ${token}` };
     const pageHeaders = {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
       'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
@@ -56,8 +60,8 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
     const [pageRes, referentsRes, songDetailsRes] = await Promise.all([
       fetch(songUrl, { headers: pageHeaders }),
-      fetch(`https://api.genius.com/referents?song_id=${songId}&text_format=plain&per_page=50`, { headers: authHeaders }),
-      fetch(`https://api.genius.com/songs/${songId}?text_format=plain`, { headers: authHeaders }),
+      fetch(`https://api.genius.com/referents?song_id=${songId}&text_format=plain&per_page=50`, { headers: apiHeaders }),
+      fetch(`https://api.genius.com/songs/${songId}?text_format=plain`, { headers: apiHeaders }),
     ]);
 
     const [annotations, songInfo] = await Promise.all([
