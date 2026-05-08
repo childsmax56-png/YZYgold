@@ -26,7 +26,8 @@
 
 @layer base {
   body {
-    @apply bg-[var(--bg-color)] text-[var(--text-color)] font-sans overflow-hidden selection:bg-[var(--selection-bg)] selection:text-[var(--selection-text)];
+    @apply bg-[var(--bg-color)] text-[var(--text-color)] font-sans selection:bg-[var(--selection-bg)] selection:text-[var(--selection-text)];
+    overflow: clip;
   }
 
   button {

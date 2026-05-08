@@ -1951,7 +1951,7 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
   };
 
   return (
-    <div className="h-screen w-full flex overflow-hidden relative bg-yzy-black">
+    <div className="h-screen w-full flex overflow-clip relative bg-yzy-black">
       <audio
         ref={audioRef}
         onEnded={handleEnded}
