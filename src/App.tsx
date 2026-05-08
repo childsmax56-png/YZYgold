@@ -520,6 +520,14 @@ export default function App() {
       };
 
       const categories = targetJson.eras[eraName].data || {};
+
+      // Skip if a song with this name already exists anywhere in the era
+      const nameNorm = songName.toLowerCase().trim();
+      const alreadyExists = Object.values(categories).some((list: any) =>
+        (list as Song[]).some(s => s.name?.toLowerCase().trim() === nameNorm)
+      );
+      if (alreadyExists) return;
+
       const catKey = avLenToCategory(item['Available Length'] || '', categories);
       if (catKey) {
         if (!categories[catKey]) categories[catKey] = [];
@@ -819,7 +827,10 @@ export default function App() {
               .filter((s: Song) => !!s.name)
           : [];
 
-        setRecentData([...sheetRecentSongs, ...recentMapped]);
+        // Only prepend sheet songs not already in recent.csv
+        const recentNames = new Set(recentMapped.map(s => s.name?.toLowerCase().trim()));
+        const newSheetSongs = sheetRecentSongs.filter(s => !recentNames.has(s.name?.toLowerCase().trim()));
+        setRecentData([...newSheetSongs, ...recentMapped]);
         setLoading(false);
 
         const path = window.location.pathname;
