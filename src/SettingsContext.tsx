@@ -27,6 +27,7 @@ export interface AppSettings {
   lastfmShowTags: boolean;
   lastfmShowFeats: boolean;
   notOpenInNewTab: boolean;
+  googleSheetsUrl: string;
 }
 
 interface SettingsContextType {
@@ -59,6 +60,7 @@ export const defaultSettings: AppSettings = {
   lastfmShowTags: false,
   lastfmShowFeats: true,
   notOpenInNewTab: false,
+  googleSheetsUrl: '',
 };
 
 const SettingsContext = createContext<SettingsContextType>({

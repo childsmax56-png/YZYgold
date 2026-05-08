@@ -402,6 +402,15 @@ export default function App() {
     };
   }, []);
 
+  function getSheetCsvExportUrl(sheetUrl: string): string | null {
+    const idMatch = sheetUrl.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
+    if (!idMatch) return null;
+    const sheetId = idMatch[1];
+    const gidMatch = sheetUrl.match(/[#&?]gid=(\d+)/);
+    const gid = gidMatch ? gidMatch[1] : '0';
+    return `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
+  }
+
   function applyLocalSongs(targetJson: any, localData: any) {
     if (!Array.isArray(localData)) return;
     localData.forEach((item: any) => {
@@ -455,7 +464,77 @@ export default function App() {
     });
   }
 
+  function applyTrackerSheetSongs(targetJson: any, sheetData: any) {
+    if (!Array.isArray(sheetData)) return;
+
+    // Find the actual name key (header is "Name\n(Join The Discord!)")
+    const nameKey = sheetData.length > 0
+      ? Object.keys(sheetData[0]).find(k => k.startsWith('Name')) || 'Name'
+      : 'Name';
+
+    const avLenToCategory = (avLen: string, categories: Record<string, Song[]>): string => {
+      const al = avLen.toLowerCase().trim();
+      const keys = Object.keys(categories);
+      const find = (term: string) => keys.find(k => k.toLowerCase().includes(term));
+      if (al === 'og file' || al === 'og files') return find('og') || find('full') || keys[0];
+      if (al === 'full') return find('full') || keys[0];
+      if (al === 'tagged') return find('tagged') || keys[0];
+      if (al === 'partial') return find('partial') || keys[0];
+      if (al.includes('snippet')) return find('snippet') || keys[0];
+      if (al.includes('stem') || al.includes('bounce')) return find('stem') || find('bounce') || keys[0];
+      if (al === 'beat only') return find('beat') || find('full') || keys[0];
+      if (al === 'confirmed' || al === 'unavailable' || al === '') return find('unavailable') || find('confirmed') || keys[keys.length - 1];
+      return keys[0];
+    };
+
+    sheetData.forEach((item: any) => {
+      const rawEra = (item.Era || '').trim();
+      // Skip era header rows (file count summaries) — their Era cell is multiline
+      if (!rawEra || rawEra.includes('\n')) return;
+
+      const matchedMapKey = Object.keys(ERA_MAPPINGS).find(k => k.toLowerCase() === rawEra.toLowerCase());
+      const eraName = matchedMapKey ? ERA_MAPPINGS[matchedMapKey] : rawEra;
+      if (!targetJson.eras?.[eraName]) return;
+
+      const rawName = (item[nameKey] || '').trim();
+      const nameLines = rawName.split('\n');
+      const songName = nameLines[0].trim();
+      const extra = nameLines.slice(1).join('\n').trim() || undefined;
+      if (!songName) return;
+
+      let rawUrl = (item['Link(s)'] || '').trim();
+      const linkMatch = rawUrl.match(/\]\((.*?)\)/);
+      if (linkMatch?.[1]) rawUrl = linkMatch[1];
+
+      const newSong: Song = {
+        name: songName,
+        extra,
+        description: item.Notes || '',
+        track_length: item['Track Length'] || '',
+        leak_date: item['Leak Date'] || '',
+        file_date: item['File Date'] || '',
+        available_length: item['Available Length'] || '',
+        quality: item.Quality || '',
+        url: rawUrl,
+        urls: rawUrl ? [rawUrl] : [],
+      };
+
+      const categories = targetJson.eras[eraName].data || {};
+      const catKey = avLenToCategory(item['Available Length'] || '', categories);
+      if (catKey) {
+        if (!categories[catKey]) categories[catKey] = [];
+        (categories[catKey] as Song[]).push(newSong);
+      }
+    });
+  }
+
+  const HARDCODED_SHEET_ID = '12nGHPPh5dVTfLuBLVQYzC3QgPxKfvp-jgCoNccvEasM';
+
   useEffect(() => {
+    const sheetCsvUrl = getSheetCsvExportUrl(
+      settings.googleSheetsUrl || `https://docs.google.com/spreadsheets/d/${HARDCODED_SHEET_ID}`
+    );
+
     Promise.all([
       axios.get('/api/a'),
       axios.get('https://yzygold-test.vercel.app/MyK.json').catch(err => {
@@ -465,9 +544,17 @@ export default function App() {
       axios.get('/local-songs.json').catch(err => {
         console.error("Failed to fetch local songs", err);
         return { data: [] };
+      }),
+      axios.get(`/api/sheets-proxy?url=${encodeURIComponent(sheetCsvUrl!)}`).catch(err => {
+        console.error("Failed to fetch Google Sheets data", err);
+        return { data: [] };
+      }),
+      axios.get('/api/recent').catch(err => {
+        console.error("Failed to fetch Recent data:", err);
+        return { data: [] };
       })
     ])
-      .then(([mainRes, mykRes, localRes]) => {
+      .then(([mainRes, mykRes, localRes, sheetsRes, recentRes]) => {
         const rawJson = mainRes.data;
         const json = JSON.parse(JSON.stringify(rawJson));
 
@@ -615,6 +702,7 @@ export default function App() {
             }
           });
           applyLocalSongs(nextJson, localRes.data);
+          applyTrackerSheetSongs(nextJson, sheetsRes.data);
           setData(nextJson);
         } else {
           const baseJson = JSON.parse(JSON.stringify(json));
@@ -649,8 +737,89 @@ export default function App() {
             };
           }
           applyLocalSongs(baseJson, localRes.data);
+          applyTrackerSheetSongs(baseJson, sheetsRes.data);
           setData(baseJson);
         }
+        // Map recent.csv rows
+        const mapRecentItem = (item: any): Song => {
+          let name = item.Name || '';
+          let extra: string | undefined = undefined;
+          let extra2: string | undefined = item.Era || undefined;
+          if (extra2) {
+            const m = extra2.match(/\s*\(/);
+            if (m) {
+              extra2 = extra2.substring(0, m.index).trim();
+              extra = extra2.substring(m.index!).trim();
+            }
+          }
+          if (name) {
+            const m = name.match(/\s*\(/);
+            if (m) {
+              const lastIdx = name.lastIndexOf(')');
+              if (lastIdx > m.index!) {
+                const extracted = name.substring(m.index!, lastIdx + 1).trim();
+                const remainder = name.substring(lastIdx + 1).trim();
+                name = name.substring(0, m.index).trim() + (remainder ? ' ' + remainder : '');
+                extra = extracted + (extra ? ' ' + extra : '');
+              } else {
+                extra = name.substring(m.index!).trim() + (extra ? ' ' + extra : '');
+                name = name.substring(0, m.index).trim();
+              }
+            }
+          }
+          return {
+            name, extra, extra2,
+            description: item.Notes,
+            track_length: item['Track Length'],
+            leak_date: item['Leak\nDate'] || item['Leak Date'],
+            file_date: item['File\nDate'] || item['File Date'],
+            available_length: item['Available Length'],
+            quality: item.Quality,
+            url: item['Link(s)'] ? item['Link(s)'].split('\n')[0] : '',
+            urls: item['Link(s)'] ? item['Link(s)'].split('\n') : [],
+          };
+        };
+        const recentMapped: Song[] = (recentRes.data as any[]).map(mapRecentItem);
+
+        // Build sheet songs in recent format and prepend them
+        const sheetNameKey = Array.isArray(sheetsRes.data) && sheetsRes.data.length > 0
+          ? (Object.keys(sheetsRes.data[0]).find((k: string) => k.startsWith('Name')) || 'Name')
+          : 'Name';
+        const sheetRecentSongs: Song[] = Array.isArray(sheetsRes.data)
+          ? (sheetsRes.data as any[])
+              .filter((item: any) => {
+                const rawEra = (item.Era || '').trim();
+                return rawEra && !rawEra.includes('\n');
+              })
+              .map((item: any) => {
+                const rawName = (item[sheetNameKey] || '').trim();
+                const nameLines = rawName.split('\n');
+                const songName = nameLines[0].trim();
+                const songExtra = nameLines.slice(1).join('\n').trim() || undefined;
+                const rawEra = (item.Era || '').trim();
+                const mk = Object.keys(ERA_MAPPINGS).find(k => k.toLowerCase() === rawEra.toLowerCase());
+                const eraName = mk ? ERA_MAPPINGS[mk] : rawEra;
+                let rawUrl = (item['Link(s)'] || '').trim();
+                const lm = rawUrl.match(/\]\((.*?)\)/);
+                if (lm?.[1]) rawUrl = lm[1];
+                return {
+                  name: songName,
+                  extra: songExtra,
+                  extra2: eraName,
+                  description: item.Notes || '',
+                  track_length: item['Track Length'] || '',
+                  leak_date: item['Leak Date'] || '',
+                  file_date: item['File Date'] || '',
+                  available_length: item['Available Length'] || '',
+                  quality: item.Quality || '',
+                  url: rawUrl,
+                  urls: rawUrl ? [rawUrl] : [],
+                } as Song;
+              })
+              .filter((s: Song) => !!s.name)
+          : [];
+
+        setRecentData([...sheetRecentSongs, ...recentMapped]);
         setLoading(false);
 
         const path = window.location.pathname;
@@ -816,70 +985,6 @@ export default function App() {
       })
       .catch(err => {
         console.error("Failed to fetch Tracklists data:", err);
-      });
-
-    axios.get('/api/recent')
-      .then(res => {
-        const mapped = res.data.map((item: any) => {
-          let name = item.Name || '';
-          let extra = undefined;
-          let extra2 = item.Era || undefined;
-          
-          if (extra2) {
-            const match = extra2.match(/\s*\(/);
-            if (match) {
-                const idx = match.index;
-                const extractedExtra = extra2.substring(idx).trim();
-                extra2 = extra2.substring(0, idx).trim();
-                extra = extractedExtra;
-            }
-          }
-
-          if (name) {
-            const match = name.match(/\s*\(/);
-            if (match) {
-                const idx = match.index;
-                const lastIdx = name.lastIndexOf(')');
-                if (lastIdx > idx) {
-                    const extractedExtra = name.substring(idx, lastIdx + 1).trim();
-                    const remainder = name.substring(lastIdx + 1).trim();
-                    name = name.substring(0, idx).trim() + (remainder ? " " + remainder : "");
-                    if (extra) {
-                       extra = extractedExtra + ' ' + extra;
-                    } else {
-                       extra = extractedExtra;
-                    }
-                } else {
-                    const extractedExtra = name.substring(idx).trim();
-                    name = name.substring(0, idx).trim();
-                    if (extra) {
-                       extra = extractedExtra + ' ' + extra;
-                    } else {
-                       extra = extractedExtra;
-                    }
-                }
-            }
-          }
-
-          return {
-            name,
-            extra,
-            extra2,
-            description: item.Notes,
-            track_length: item["Track Length"],
-            leak_date: item["Leak\nDate"] || item["Leak Date"],
-            file_date: item["File\nDate"] || item["File Date"],
-            available_length: item["Available Length"],
-            quality: item.Quality,
-            url: item["Link(s)"] ? item["Link(s)"].split('\n')[0] : '',
-            urls: item["Link(s)"] ? item["Link(s)"].split('\n') : []
-          };
-        });
-
-        setRecentData(mapped);
-      })
-      .catch(err => {
-        console.error("Failed to fetch Recent data:", err);
       });
 
     const userAgent = navigator.userAgent.toLowerCase();

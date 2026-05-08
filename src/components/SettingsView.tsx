@@ -1,5 +1,5 @@
 import { useSettings } from '../SettingsContext';
-import { AlignLeft, AlignCenter, AlignRight, History, Trash2, RotateCcw, X } from 'lucide-react';
+import { AlignLeft, AlignCenter, AlignRight, History, Trash2, RotateCcw, X, RefreshCw, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Category } from './Navbar';
 import { useState } from 'react';
@@ -17,6 +17,14 @@ export function SettingsView({ onCategoryChange, searchQuery }: SettingsViewProp
   const [isConfirmingReset, setIsConfirmingReset] = useState(false);
   const [isConfirmingClear, setIsConfirmingClear] = useState(false);
   const [showShortcutsModal, setShowShortcutsModal] = useState(false);
+  const [sheetUrlInput, setSheetUrlInput] = useState(settings.googleSheetsUrl);
+  const [sheetSaved, setSheetSaved] = useState(false);
+
+  const handleSaveSheetUrl = () => {
+    updateSettings({ googleSheetsUrl: sheetUrlInput.trim() });
+    setSheetSaved(true);
+    setTimeout(() => window.location.reload(), 800);
+  };
 
   const handleEasterEgg = () => {
     window.dispatchEvent(new CustomEvent('play-easter-egg'));
@@ -487,6 +495,56 @@ export function SettingsView({ onCategoryChange, searchQuery }: SettingsViewProp
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {matchesSearch('custom songs google sheets import spreadsheet') && (
+          <div className="border border-white/5 rounded-2xl p-2 bg-[#0a0a0a] mt-8">
+            <div className="text-center py-8">
+              <h3 className="text-xl font-bold text-white mb-1">Custom Songs</h3>
+              <p className="text-sm text-white/50">Import songs from a public Google Sheet.</p>
+            </div>
+            <div className="space-y-2">
+              <div className="flex flex-col gap-3 p-4 bg-[#111] border border-white/5 rounded-xl">
+                <div className="flex flex-col gap-1">
+                  <span className="text-sm font-medium text-white/90">Google Sheets URL</span>
+                  <span className="text-xs text-white/40">
+                    Paste a public Google Sheets URL using the tracker format (columns: Era, Name, Notes, Track Length, File Date, Leak Date, Available Length, Quality, Link(s)). Songs are added on page load.
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    placeholder="https://docs.google.com/spreadsheets/d/..."
+                    value={sheetUrlInput}
+                    onChange={(e) => setSheetUrlInput(e.target.value)}
+                    className="flex-1 bg-white/5 text-xs text-white px-3 py-2 rounded-lg border border-white/10 outline-none focus:border-white/30 min-w-0"
+                  />
+                  <button
+                    onClick={handleSaveSheetUrl}
+                    className={`text-xs font-medium px-4 py-2 rounded-lg transition-colors flex items-center gap-1.5 shrink-0 ${
+                      sheetSaved
+                        ? 'bg-green-500/20 text-green-400'
+                        : 'bg-white/10 hover:bg-white/20 text-white'
+                    }`}
+                  >
+                    {sheetSaved ? <Check className="w-3.5 h-3.5" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                    {sheetSaved ? 'Saved!' : 'Save & Reload'}
+                  </button>
+                </div>
+                {settings.googleSheetsUrl && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-white/40 truncate max-w-xs">{settings.googleSheetsUrl}</span>
+                    <button
+                      onClick={() => { setSheetUrlInput(''); updateSettings({ googleSheetsUrl: '' }); }}
+                      className="text-xs text-red-400/70 hover:text-red-400 transition-colors shrink-0 ml-2"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
