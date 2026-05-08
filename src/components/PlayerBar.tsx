@@ -339,6 +339,26 @@ export function PlayerBar({
                         >
                           <Mic2 className="w-4 h-4" /> {tooltipText}
                         </button>
+                        {toggleFavorite &&
+                          currentSong.name !== "Alright but the beat is Father Stretch My Hands Pt. 1" &&
+                          !currentSong.name.endsWith('[Fake Leak]') &&
+                          !(era?.name || '').includes('Fake') &&
+                          !currentSong.name.endsWith('[Stems]') &&
+                          !(era?.name || '').includes('Stems') &&
+                          !currentSong.name.endsWith('[Misc]') &&
+                          !(era?.name || '').includes('Misc') && (
+                          <button
+                            onClick={() => {
+                              toggleFavorite();
+                              setShowMenu(false);
+                            }}
+                            className="md:hidden w-full flex items-center gap-3 px-4 py-2 text-sm transition-colors cursor-pointer hover:bg-white/5"
+                            style={{ color: isFavorite ? 'var(--theme-color)' : undefined }}
+                          >
+                            <Star className={`w-4 h-4 ${isFavorite ? 'fill-[var(--theme-color)] text-[var(--theme-color)]' : 'text-white/70'}`} />
+                            <span className={isFavorite ? '' : 'text-white/70'}>{isFavorite ? 'Unfavorite' : 'Favorite'}</span>
+                          </button>
+                        )}
                       </>
                     );
                   })()}
