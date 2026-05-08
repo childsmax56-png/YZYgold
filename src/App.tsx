@@ -2148,58 +2148,64 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
         </main>
       </div>
 
-      <AnimatePresence>
-        {currentSong && !isFullScreen && !isPlayerClosed && (
-          <PlayerBar
-            currentSong={currentSong}
-            isPlaying={isPlaying}
-            togglePlay={togglePlay}
-            onFullScreen={() => {
-              setIsFullScreen(true);
-              setShowQueue(false);
-            }}
-            onClose={() => setIsPlayerClosed(true)}
-            era={currentEra}
-            currentTime={currentTime}
-            duration={duration}
-            onSeek={handleSeek}
-            volume={volume}
-            onVolumeChange={setVolume}
-            onNext={playNext}
-            onPrev={playPrev}
-            isShuffle={isShuffle}
-            toggleShuffle={toggleShuffleState}
-            loopMode={loopMode}
-            toggleLoop={() => setLoopMode((prev) => (prev + 1) % 3)}
-            isFavorite={favoriteKeys.some(k => k.songName === currentSong.name && k.url === (currentSong.url || (currentSong.urls && currentSong.urls[0]) || ''))}
-            toggleFavorite={() => toggleFavorite(currentSong, currentEra?.name || '')}
-            onShowQueue={() => setShowQueue(true)}
-            showQueue={showQueue}
-            setShowQueue={setShowQueue}
-          />
-        )}
-      </AnimatePresence>
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {currentSong && !isFullScreen && !isPlayerClosed && (
+            <PlayerBar
+              currentSong={currentSong}
+              isPlaying={isPlaying}
+              togglePlay={togglePlay}
+              onFullScreen={() => {
+                setIsFullScreen(true);
+                setShowQueue(false);
+              }}
+              onClose={() => setIsPlayerClosed(true)}
+              era={currentEra}
+              currentTime={currentTime}
+              duration={duration}
+              onSeek={handleSeek}
+              volume={volume}
+              onVolumeChange={setVolume}
+              onNext={playNext}
+              onPrev={playPrev}
+              isShuffle={isShuffle}
+              toggleShuffle={toggleShuffleState}
+              loopMode={loopMode}
+              toggleLoop={() => setLoopMode((prev) => (prev + 1) % 3)}
+              isFavorite={favoriteKeys.some(k => k.songName === currentSong.name && k.url === (currentSong.url || (currentSong.urls && currentSong.urls[0]) || ''))}
+              toggleFavorite={() => toggleFavorite(currentSong, currentEra?.name || '')}
+              onShowQueue={() => setShowQueue(true)}
+              showQueue={showQueue}
+              setShowQueue={setShowQueue}
+            />
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
 
-      <AnimatePresence>
-        {isPlayerClosed && currentSong && !isFullScreen && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.8, ease: [0.2, 0, 0, 1] } }}
-            transition={{ duration: 1.5, ease: [0.2, 0, 0, 1] }}
-            className="fixed bottom-24 md:bottom-8 right-6 z-50 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform drop-shadow-2xl"
-            onClick={() => setIsPlayerClosed(false)}
-            title="Restore Player"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 2000 2000">
-              <circle fill="#222" stroke="rgba(255,255,255,0.15)" strokeWidth="80" cx="1000.5" cy="1000.5" r="890.5"/>
-              <g transform="translate(1000.5, 1020)">
-                <path stroke="white" strokeWidth="80" strokeLinecap="round" strokeLinejoin="round" fill="none" d="M -250 125 L 0 -125 L 250 125" />
-              </g>
-            </svg>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {isPlayerClosed && currentSong && !isFullScreen && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.8, ease: [0.2, 0, 0, 1] } }}
+              transition={{ duration: 1.5, ease: [0.2, 0, 0, 1] }}
+              className="fixed bottom-24 md:bottom-8 right-6 z-50 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform drop-shadow-2xl"
+              onClick={() => setIsPlayerClosed(false)}
+              title="Restore Player"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 2000 2000">
+                <circle fill="#222" stroke="rgba(255,255,255,0.15)" strokeWidth="80" cx="1000.5" cy="1000.5" r="890.5"/>
+                <g transform="translate(1000.5, 1020)">
+                  <path stroke="white" strokeWidth="80" strokeLinecap="round" strokeLinejoin="round" fill="none" d="M -250 125 L 0 -125 L 250 125" />
+                </g>
+              </svg>
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
 
       <AnimatePresence>
         {isFullScreen && currentSong && (
