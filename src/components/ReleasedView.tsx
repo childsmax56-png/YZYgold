@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, ExternalLink, ChevronDown, ChevronUp, Play } from 'lucide-react';
 import {
   SiSpotify,
   SiYoutube,
@@ -32,11 +32,12 @@ interface ReleasedViewProps {
   onPlaySpotify?: (uri: string) => void;
   youtubeReady?: boolean;
   onPlayYoutube?: (videoId: string, title?: string) => void;
+  onPlayAudio?: (url: string, name: string, eraName: string, length?: string) => void;
 }
 
 // ─── embed helpers ───────────────────────────────────────────────────────────
 
-type Platform = 'spotify' | 'youtube' | 'soundcloud' | 'apple' | 'tidal' | 'bandcamp' | 'archive' | 'other';
+type Platform = 'spotify' | 'youtube' | 'soundcloud' | 'apple' | 'tidal' | 'bandcamp' | 'archive' | 'audio' | 'other';
 
 interface LinkInfo {
   platform: Platform;
@@ -87,6 +88,10 @@ function parseLinkInfo(raw: string): LinkInfo {
   if (u.includes('music.apple.com')) {
     const embedUrl = u.replace('https://music.apple.com/', 'https://embed.music.apple.com/');
     return { platform: 'apple', url: u, embedUrl, label: 'Apple Music' };
+  }
+
+  if (u.includes('pillows.su/f/') || u.includes('temp.imgur.gg/f/')) {
+    return { platform: 'audio', url: u, label: 'Play' };
   }
 
   if (u.includes('tidal.com')) {
@@ -141,6 +146,7 @@ function PlatformIcon({ platform, className }: { platform: Platform; className?:
     case 'apple':      return <SiApplemusic className={cls} />;
     case 'tidal':      return <SiTidal className={cls} />;
     case 'bandcamp':   return <SiBandcamp className={cls} />;
+    case 'audio':      return <Play className={cls} />;
     default:           return <ExternalLink className={cls} />;
   }
 }
@@ -153,6 +159,7 @@ const PLATFORM_COLOR: Record<Platform, string> = {
   tidal:      '#00FFFF',
   bandcamp:   '#1DA0C3',
   archive:    '#739AC5',
+  audio:      '#ffffff',
   other:      '#888888',
 };
 
@@ -200,7 +207,7 @@ function groupByEra(data: ReleasedEntry[], allEras: Era[]): ReleasedEraGroup[] {
 
 // ─── main component ───────────────────────────────────────────────────────────
 
-export function ReleasedView({ eras, releasedData, searchQuery, spotifyLoggedIn, spotifyReady, onPlaySpotify, youtubeReady, onPlayYoutube }: ReleasedViewProps) {
+export function ReleasedView({ eras, releasedData, searchQuery, spotifyLoggedIn, spotifyReady, onPlaySpotify, youtubeReady, onPlayYoutube, onPlayAudio }: ReleasedViewProps) {
   const [selectedEra, setSelectedEra] = useState<string | null>(null);
   // key: `${trackIdx}-${linkIdx}`
   const [openEmbed, setOpenEmbed] = useState<string | null>(null);
@@ -353,7 +360,8 @@ export function ReleasedView({ eras, releasedData, searchQuery, spotifyLoggedIn,
                       const useYoutubeSDK = link.platform === 'youtube' && youtubeReady && onPlayYoutube && !!ytIdMatch;
                       const ytVideoId = ytIdMatch?.[1] ?? null;
 
-                      const canEmbed = !useSpotifySDK && !useYoutubeSDK && !!link.embedUrl;
+                      const useAudioSDK = link.platform === 'audio' && !!onPlayAudio;
+                      const canEmbed = !useSpotifySDK && !useYoutubeSDK && !useAudioSDK && !!link.embedUrl;
 
                       return (
                         <button
@@ -363,13 +371,15 @@ export function ReleasedView({ eras, releasedData, searchQuery, spotifyLoggedIn,
                               onPlaySpotify!(spotifyUri);
                             } else if (useYoutubeSDK && ytVideoId) {
                               onPlayYoutube!(ytVideoId, track.Name.split('\n')[0]);
+                            } else if (useAudioSDK) {
+                              onPlayAudio!(link.url, track.Name.split('\n')[0], selectedGroup.eraName, track.Length);
                             } else if (canEmbed) {
                               setOpenEmbed(isOpen ? null : key);
                             } else {
                               window.open(link.url, '_blank');
                             }
                           }}
-                          title={useSpotifySDK ? 'Play on YZYGOLD via Spotify' : useYoutubeSDK ? 'Play on YZYGOLD via YouTube' : link.label}
+                          title={useSpotifySDK ? 'Play on YZYGOLD via Spotify' : useYoutubeSDK ? 'Play on YZYGOLD via YouTube' : useAudioSDK ? 'Play' : link.label}
                           className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-semibold border border-white/10 bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
                           style={{ color: PLATFORM_COLOR[link.platform] }}
                         >
@@ -380,7 +390,7 @@ export function ReleasedView({ eras, releasedData, searchQuery, spotifyLoggedIn,
                               ? <ChevronUp className="w-2.5 h-2.5 text-white/40" />
                               : <ChevronDown className="w-2.5 h-2.5 text-white/40" />
                           )}
-                          {!canEmbed && !useSpotifySDK && !useYoutubeSDK && <ExternalLink className="w-2.5 h-2.5 opacity-40" />}
+                          {!canEmbed && !useSpotifySDK && !useYoutubeSDK && !useAudioSDK && <ExternalLink className="w-2.5 h-2.5 opacity-40" />}
                         </button>
                       );
                     })}

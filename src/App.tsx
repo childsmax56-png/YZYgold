@@ -1705,6 +1705,12 @@ export default function App() {
     await spotifyControls.playUri(uri);
   };
 
+  const handlePlayReleasedAudio = (url: string, name: string, eraName: string, length?: string) => {
+    const era = erasArray.find(e => e.name === eraName) ?? { name: eraName, image: undefined, data: {} };
+    const song: Song = { name, url, track_length: length };
+    handlePlaySong(song, era as Era, [song]);
+  };
+
   const handlePlayYoutubeTrack = (videoId: string, title?: string) => {
     if (!youtubeState.isReady) return;
     if (audioRef.current) {
@@ -2248,6 +2254,7 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
                   onPlaySpotify={handlePlaySpotifyTrack}
                   youtubeReady={youtubeState.isReady}
                   onPlayYoutube={handlePlayYoutubeTrack}
+                  onPlayAudio={handlePlayReleasedAudio}
                 />
               ) : activeCategory === 'recent' ? (
                 <EraDetail
