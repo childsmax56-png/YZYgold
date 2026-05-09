@@ -1,5 +1,7 @@
 const CLIENT_ID = '6b2d5d51cfe84fe1ac1c88bd1275e72e';
-const REDIRECT_URI = window.location.origin;
+const REDIRECT_URI = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? window.location.origin
+  : 'https://yzyarchives.org';
 const SCOPES = [
   'streaming',
   'user-read-email',
