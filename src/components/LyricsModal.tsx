@@ -62,6 +62,7 @@ export function LyricsModal({ isOpen, onClose, currentSong, era, currentTime = 0
   const hasAnnotations = !!annotations && annotations.length > 0;
 
   useEffect(() => {
+    if (viewMode === 'info') return;
     if (!loading && !hasSynced && plainLyrics && !settings.syncedLyricsOnly) {
       setViewMode('plain');
     } else if (!loading && hasSynced) {
