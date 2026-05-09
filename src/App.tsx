@@ -1837,7 +1837,7 @@ export default function App() {
       >
         <div className="w-full h-full flex items-center justify-center">
           {screen?.type === 'gif' && screen.url && (
-            <img src={screen.url} alt={screen.label} className="w-[400px] h-[400px] object-contain" onLoad={() => setGifReady(true)} />
+            <img src={screen.url} alt={screen.label} className="w-[200px] h-[200px] sm:w-[400px] sm:h-[400px] object-contain" onLoad={() => setGifReady(true)} />
           )}
           {screen?.type === 'video' && screen.url && (
             <video src={screen.url} autoPlay loop playsInline className="w-[400px] h-[400px] object-contain" ref={(el) => { if (el) el.muted = true; }} />
