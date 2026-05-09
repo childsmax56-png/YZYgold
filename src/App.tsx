@@ -1826,17 +1826,17 @@ export default function App() {
         className="h-screen w-full relative bg-black overflow-hidden transition-opacity duration-700"
         style={{ opacity: loadingFading ? 0 : 1 }}
       >
-        {screen?.type === 'gif' && screen.url && (
-          <img src={screen.url} alt={screen.label} className="w-full h-full object-cover" />
-        )}
-        {screen?.type === 'video' && screen.url && (
-          <video src={screen.url} autoPlay loop muted playsInline className="w-full h-full object-cover" />
-        )}
-        {(!screen || screen.type === 'none') && (
-          <div className="w-full h-full flex items-center justify-center">
+        <div className="w-full h-full flex items-center justify-center">
+          {screen?.type === 'gif' && screen.url && (
+            <img src={screen.url} alt={screen.label} className="w-[400px] h-[400px] object-contain" />
+          )}
+          {screen?.type === 'video' && screen.url && (
+            <video src={screen.url} autoPlay loop muted playsInline className="w-[400px] h-[400px] object-contain" />
+          )}
+          {(!screen || screen.type === 'none') && (
             <div className="animate-pulse text-sm font-bold tracking-widest uppercase text-white/50">Loading Songs...</div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     );
   }
