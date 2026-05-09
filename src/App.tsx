@@ -81,6 +81,7 @@ import { recordListeningHistory } from './history';
 
 const ERA_MAPPINGS: Record<string, string> = {
   "TurboGrafx 16": "Turbo Grafx 16",
+  "TurboGrafx16": "Turbo Grafx 16",
   "TurboGrafx-16": "Turbo Grafx 16",
   "TurboGrafix 16": "Turbo Grafx 16",
   "Turbo Grafx 16": "Turbo Grafx 16",

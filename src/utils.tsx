@@ -58,6 +58,7 @@ export const CUSTOM_IMAGES: Record<string, string> = {
   "Turbo Grafix 16": "https://i.ibb.co/q3fggHMz/image-2026-03-22-143044324.png",
   "TurboGrafx 16": "https://i.ibb.co/q3fggHMz/image-2026-03-22-143044324.png",
   "TurboGrafix 16": "https://i.ibb.co/q3fggHMz/image-2026-03-22-143044324.png",
+  "TurboGrafx16": "https://i.ibb.co/q3fggHMz/image-2026-03-22-143044324.png",
   "Wolves": "https://i.ibb.co/ydSS4sG/Wolves.png",
   "The Elementary School Dropout": "https://i.ibb.co/Z1RZYGWw/image-2026-03-22-143132521.png",
   "LOVE EVERYONE": "https://i.ibb.co/Tq7HkRKn/cell-Image-199908479-18.png",
