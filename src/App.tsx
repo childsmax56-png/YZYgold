@@ -2390,6 +2390,7 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
               showQueue={showQueue}
               setShowQueue={setShowQueue}
               allowDownload={activeCategory !== 'released'}
+              allowFullScreen={!isSpotifyActive && !isSoundCloudActive}
             />
           )}
         </AnimatePresence>,

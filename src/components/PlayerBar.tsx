@@ -16,14 +16,15 @@ function formatTime(seconds: number) {
 
 export function PlayerBar({
   currentSong, isPlaying, togglePlay, onFullScreen, onClose, era, currentTime = 0, duration = 0, onSeek, volume = 1, onVolumeChange,
-  onNext, onPrev, isShuffle, toggleShuffle, loopMode, toggleLoop, isFavorite, toggleFavorite, onShowQueue, showQueue, setShowQueue, allowDownload = true
+  onNext, onPrev, isShuffle, toggleShuffle, loopMode, toggleLoop, isFavorite, toggleFavorite, onShowQueue, showQueue, setShowQueue, allowDownload = true, allowFullScreen = true
 }: {
   currentSong: Song | null, isPlaying: boolean, togglePlay: () => void, onFullScreen: () => void, onClose: () => void, era: Era | null, currentTime?: number, duration?: number, onSeek?: (time: number) => void, volume?: number, onVolumeChange?: (vol: number) => void,
   onNext?: () => void, onPrev?: () => void, isShuffle?: boolean, toggleShuffle?: () => void, loopMode?: number, toggleLoop?: () => void,
   isFavorite?: boolean, toggleFavorite?: () => void, onShowQueue?: () => void,
   showQueue?: boolean,
   setShowQueue?: (v: boolean) => void,
-  allowDownload?: boolean
+  allowDownload?: boolean,
+  allowFullScreen?: boolean
 }) {
   const { settings } = useSettings();
   const [showMenu, setShowMenu] = useState(false);
@@ -159,7 +160,7 @@ export function PlayerBar({
             const imgUrl = currentSong.image || CUSTOM_IMAGES[actualEraName] || (currentSong as any).realEra?.image || era?.image;
             return (
               <div className="w-14 h-14 rounded-md overflow-hidden shrink-0 bg-white/10 relative group shadow-lg">
-                {imgUrl && <img src={imgUrl} alt="Cover" className="w-full h-full object-cover cursor-pointer" referrerPolicy="no-referrer" onClick={onFullScreen} />}
+                {imgUrl && <img src={imgUrl} alt="Cover" className={`w-full h-full object-cover ${allowFullScreen ? 'cursor-pointer' : ''}`} referrerPolicy="no-referrer" onClick={allowFullScreen ? onFullScreen : undefined} />}
                 {toggleFavorite && 
                currentSong.name !== "Alright but the beat is Father Stretch My Hands Pt. 1" && 
                !currentSong.name.endsWith('[Fake Leak]') && 
@@ -281,9 +282,11 @@ export function PlayerBar({
             </div>
           </div>
 
-          <button onClick={onFullScreen} className="text-white/40 hover:text-white transition-colors cursor-pointer">
-            <Maximize2 className="w-4 h-4" />
-          </button>
+          {allowFullScreen && (
+            <button onClick={onFullScreen} className="text-white/40 hover:text-white transition-colors cursor-pointer">
+              <Maximize2 className="w-4 h-4" />
+            </button>
+          )}
 
           <div className="relative" ref={menuRef}>
             <button
