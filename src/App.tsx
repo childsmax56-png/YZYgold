@@ -71,6 +71,7 @@ export interface FakesEntry {
 import { SettingsView } from './components/SettingsView';
 import { HistoryView } from './components/HistoryView';
 import { FakesView } from './components/FakesView';
+import { ReleasedView, ReleasedEntry } from './components/ReleasedView';
 import { useSettings } from './SettingsContext';
 import { recordListeningHistory } from './history';
 
@@ -104,6 +105,7 @@ export default function App() {
   const [miscData, setMiscData] = useState<MiscEntry[]>([]);
   const [fakesData, setFakesData] = useState<FakesEntry[]>([]);
   const [tracklistsData, setTracklistsData] = useState<TracklistAlbum[]>([]);
+  const [releasedData, setReleasedData] = useState<ReleasedEntry[]>([]);
   const [isRandomMode, setIsRandomMode] = useState(false);
   const [popupUrl, setPopupUrl] = useState<string | null>(null);
 
@@ -119,6 +121,7 @@ export default function App() {
     if (path.startsWith('/stems')) return 'stems';
     if (path.startsWith('/misc')) return 'misc';
     if (path.startsWith('/fakes')) return 'fakes';
+    if (path.startsWith('/released')) return 'released';
     if (path.startsWith('/related')) return 'related';
     if (path.startsWith('/recent')) return 'recent';
     if (path.startsWith('/settings')) return 'settings';
@@ -858,6 +861,8 @@ export default function App() {
           setActiveCategory('misc');
         } else if (path.startsWith('/fakes')) {
           setActiveCategory('fakes');
+        } else if (path.startsWith('/released')) {
+          setActiveCategory('released');
         } else if (path.startsWith('/recent')) {
           setActiveCategory('recent');
         } else if (path.startsWith('/settings')) {
@@ -959,6 +964,14 @@ export default function App() {
       })
       .catch(err => {
         console.error("Failed to fetch Misc data:", err);
+      });
+
+    axios.get('/api/released')
+      .then(res => {
+        setReleasedData(res.data as ReleasedEntry[]);
+      })
+      .catch(err => {
+        console.error("Failed to fetch Released data:", err);
       });
 
     axios.get('https://yzygold-test.vercel.app/Fakes.json')
@@ -1063,6 +1076,10 @@ export default function App() {
       if (!currentPath.startsWith('/fakes')) {
         window.history.pushState({ category: 'fakes' }, '', '/fakes');
       }
+    } else if (activeCategory === 'released') {
+      if (!currentPath.startsWith('/released')) {
+        window.history.pushState({ category: 'released' }, '', '/released');
+      }
     } else if (activeCategory === 'recent') {
       if (!currentPath.startsWith('/recent')) {
         window.history.pushState({ category: 'recent' }, '', '/recent');
@@ -1162,7 +1179,8 @@ export default function App() {
         setActiveCategory('stems');
       } else if (path.startsWith('/misc')) {
         setActiveCategory('misc');
-
+      } else if (path.startsWith('/released')) {
+        setActiveCategory('released');
       } else if (path.startsWith('/recent')) {
         setActiveCategory('recent');
       } else if (path.startsWith('/settings')) {
@@ -2085,6 +2103,13 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
                   isPlaying={isPlaying}
                   toggleFavorite={toggleFavorite}
                   favoriteKeys={favoriteKeys}
+                />
+              ) : activeCategory === 'released' ? (
+                <ReleasedView
+                  key="released"
+                  eras={erasArray}
+                  releasedData={releasedData}
+                  searchQuery={searchQuery}
                 />
               ) : activeCategory === 'recent' ? (
                 <EraDetail
