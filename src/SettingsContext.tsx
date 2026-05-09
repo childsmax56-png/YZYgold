@@ -2,8 +2,28 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export type MiniLyricsAlignment = 'left' | 'center' | 'right';
 export type GlobalFontSize = 'small' | 'medium' | 'large';
+export type LoadingScreenId = 'none' | 'donda2' | 'swish' | 'thankgod' | 'yandhi' | 'yeezus' | 'graduation' | 'wtt';
+
+export interface LoadingScreenOption {
+  id: LoadingScreenId;
+  label: string;
+  type: 'none' | 'gif' | 'video';
+  url?: string;
+}
+
+export const LOADING_SCREENS: LoadingScreenOption[] = [
+  { id: 'none', label: 'None', type: 'none' },
+  { id: 'donda2', label: 'Donda 2', type: 'gif', url: 'https://i.ibb.co/BH4D6dZm/Donda-2-Loading-Screen.gif' },
+  { id: 'swish', label: 'Swish', type: 'gif', url: 'https://i.ibb.co/vxrY813X/Swish-loading-screen.gif' },
+  { id: 'thankgod', label: 'Thank God for Drugs', type: 'gif', url: 'https://i.ibb.co/gMQcJwtH/TGFD-loading-screen.gif' },
+  { id: 'yandhi', label: 'Yandhi', type: 'gif', url: 'https://i.ibb.co/TMfjBmkX/Yandhi-loading-screen.gif' },
+  { id: 'yeezus', label: 'Yeezus', type: 'gif', url: 'https://i.ibb.co/kt6cT2Z/Yeezus-loading-screen.gif' },
+  { id: 'graduation', label: 'Graduation', type: 'video', url: 'https://github.com/childsmax56-png/YZYgold/releases/download/v0.1-media/Graduation.loading.screen.mp4' },
+  { id: 'wtt', label: 'Watch the Throne', type: 'video', url: 'https://github.com/childsmax56-png/YZYgold/releases/download/v0.1-media/WTT.loading.screen.mp4' },
+];
 
 export interface AppSettings {
+  loadingScreen: LoadingScreenId;
   miniLyricsAlignment: MiniLyricsAlignment;
   tagsAsEmojis: boolean;
   startVolume: number | null;
@@ -37,6 +57,7 @@ interface SettingsContextType {
 }
 
 export const defaultSettings: AppSettings = {
+  loadingScreen: 'none',
   miniLyricsAlignment: 'left',
   tagsAsEmojis: false,
   startVolume: null,

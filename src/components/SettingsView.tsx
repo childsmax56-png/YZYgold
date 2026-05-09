@@ -1,4 +1,4 @@
-import { useSettings } from '../SettingsContext';
+import { useSettings, LOADING_SCREENS } from '../SettingsContext';
 import { AlignLeft, AlignCenter, AlignRight, History, Trash2, RotateCcw, X, RefreshCw, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Category } from './Navbar';
@@ -545,6 +545,38 @@ export function SettingsView({ onCategoryChange, searchQuery }: SettingsViewProp
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+        )}
+
+        {matchesSearch('loading screen startup intro') && (
+          <div className="border border-white/5 rounded-2xl p-2 bg-[#0a0a0a] mt-8">
+            <div className="text-center py-8">
+              <h3 className="text-xl font-bold text-white mb-1">Loading Screen</h3>
+              <p className="text-sm text-white/50">Choose a loading screen shown on startup.</p>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2 pb-2">
+              {LOADING_SCREENS.map((screen) => (
+                <button
+                  key={screen.id}
+                  onClick={() => updateSettings({ loadingScreen: screen.id })}
+                  className={`relative p-4 rounded-xl border transition-all text-left cursor-pointer ${
+                    settings.loadingScreen === screen.id
+                      ? 'border-[var(--theme-color)] bg-[var(--theme-color)]/10'
+                      : 'border-white/5 bg-[#111] hover:bg-[#1a1a1a]'
+                  }`}
+                >
+                  {settings.loadingScreen === screen.id && (
+                    <div className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-[var(--theme-color)]" />
+                  )}
+                  <span className={`text-sm font-medium ${settings.loadingScreen === screen.id ? 'text-[var(--theme-color)]' : 'text-white/80'}`}>
+                    {screen.label}
+                  </span>
+                  {screen.type !== 'none' && (
+                    <span className="block text-xs text-white/30 mt-0.5">{screen.type === 'video' ? 'Video' : 'GIF'}</span>
+                  )}
+                </button>
+              ))}
             </div>
           </div>
         )}

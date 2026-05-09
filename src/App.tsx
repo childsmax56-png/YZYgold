@@ -76,7 +76,7 @@ import { SettingsView } from './components/SettingsView';
 import { HistoryView } from './components/HistoryView';
 import { FakesView } from './components/FakesView';
 import { ReleasedView, ReleasedEntry } from './components/ReleasedView';
-import { useSettings } from './SettingsContext';
+import { useSettings, LOADING_SCREENS } from './SettingsContext';
 import { recordListeningHistory } from './history';
 
 const ERA_MAPPINGS: Record<string, string> = {
@@ -101,6 +101,7 @@ export default function App() {
   const { settings } = useSettings();
   const [data, setData] = useState<TrackerData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingFading, setLoadingFading] = useState(false);
   const [showChangelog, setShowChangelog] = useState(false);
   const [showSafariWarning, setShowSafariWarning] = useState(false);
   const [mvData, setMvData] = useState<MvEntry[]>([]);
@@ -152,6 +153,14 @@ export default function App() {
     hasRemixes: null,
     hasSamples: null
   });
+
+  useEffect(() => {
+    if (!loading) {
+      setLoadingFading(true);
+      const t = setTimeout(() => setLoadingFading(false), 700);
+      return () => clearTimeout(t);
+    }
+  }, [loading]);
 
   useEffect(() => {
     setFilters({
@@ -1810,10 +1819,24 @@ export default function App() {
     setActiveCategory('music');
   };
 
-  if (loading) {
+  if (loading || loadingFading) {
+    const screen = LOADING_SCREENS.find(s => s.id === settings.loadingScreen);
     return (
-      <div className="h-screen w-full flex items-center justify-center bg-yzy-black text-white">
-        <div className="animate-pulse text-sm font-bold tracking-widest uppercase text-white/50">Loading Songs...</div>
+      <div
+        className="h-screen w-full relative bg-black overflow-hidden transition-opacity duration-700"
+        style={{ opacity: loadingFading ? 0 : 1 }}
+      >
+        {screen?.type === 'gif' && screen.url && (
+          <img src={screen.url} alt={screen.label} className="w-full h-full object-cover" />
+        )}
+        {screen?.type === 'video' && screen.url && (
+          <video src={screen.url} autoPlay loop muted playsInline className="w-full h-full object-cover" />
+        )}
+        {(!screen || screen.type === 'none') && (
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="animate-pulse text-sm font-bold tracking-widest uppercase text-white/50">Loading Songs...</div>
+          </div>
+        )}
       </div>
     );
   }
