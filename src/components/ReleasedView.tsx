@@ -33,6 +33,9 @@ interface ReleasedViewProps {
   youtubeReady?: boolean;
   onPlayYoutube?: (videoId: string, title?: string) => void;
   onPlayAudio?: (url: string, name: string, eraName: string, length?: string) => void;
+  soundcloudReady?: boolean;
+  onPlaySoundCloud?: (url: string) => void;
+  onPlayArchive?: (archiveId: string, title: string, eraName: string) => void;
 }
 
 // ─── embed helpers ───────────────────────────────────────────────────────────
@@ -207,7 +210,7 @@ function groupByEra(data: ReleasedEntry[], allEras: Era[]): ReleasedEraGroup[] {
 
 // ─── main component ───────────────────────────────────────────────────────────
 
-export function ReleasedView({ eras, releasedData, searchQuery, spotifyLoggedIn, spotifyReady, onPlaySpotify, youtubeReady, onPlayYoutube, onPlayAudio }: ReleasedViewProps) {
+export function ReleasedView({ eras, releasedData, searchQuery, spotifyLoggedIn, spotifyReady, onPlaySpotify, youtubeReady, onPlayYoutube, onPlayAudio, soundcloudReady, onPlaySoundCloud, onPlayArchive }: ReleasedViewProps) {
   const [selectedEra, setSelectedEra] = useState<string | null>(null);
   // key: `${trackIdx}-${linkIdx}`
   const [openEmbed, setOpenEmbed] = useState<string | null>(null);
@@ -361,7 +364,11 @@ export function ReleasedView({ eras, releasedData, searchQuery, spotifyLoggedIn,
                       const ytVideoId = ytIdMatch?.[1] ?? null;
 
                       const useAudioSDK = link.platform === 'audio' && !!onPlayAudio;
-                      const canEmbed = !useSpotifySDK && !useYoutubeSDK && !useAudioSDK && !!link.embedUrl;
+                      const useSoundCloudSDK = link.platform === 'soundcloud' && soundcloudReady && !!onPlaySoundCloud;
+                      const archiveIdMatch = link.platform === 'archive' && link.url.includes('archive.org/details/')
+                        ? link.url.split('archive.org/details/')[1].split('?')[0] : null;
+                      const useArchiveSDK = !!archiveIdMatch && !!onPlayArchive;
+                      const canEmbed = !useSpotifySDK && !useYoutubeSDK && !useAudioSDK && !useSoundCloudSDK && !useArchiveSDK && !!link.embedUrl;
 
                       return (
                         <button
@@ -373,13 +380,17 @@ export function ReleasedView({ eras, releasedData, searchQuery, spotifyLoggedIn,
                               onPlayYoutube!(ytVideoId, track.Name.split('\n')[0]);
                             } else if (useAudioSDK) {
                               onPlayAudio!(link.url, track.Name.split('\n')[0], selectedGroup.eraName, track.Length);
+                            } else if (useSoundCloudSDK) {
+                              onPlaySoundCloud!(link.url);
+                            } else if (useArchiveSDK && archiveIdMatch) {
+                              onPlayArchive!(archiveIdMatch, track.Name.split('\n')[0], selectedGroup.eraName);
                             } else if (canEmbed) {
                               setOpenEmbed(isOpen ? null : key);
                             } else {
                               window.open(link.url, '_blank');
                             }
                           }}
-                          title={useSpotifySDK ? 'Play on YZYGOLD via Spotify' : useYoutubeSDK ? 'Play on YZYGOLD via YouTube' : useAudioSDK ? 'Play' : link.label}
+                          title={useSpotifySDK ? 'Play via Spotify' : useYoutubeSDK ? 'Play via YouTube' : useAudioSDK ? 'Play' : useSoundCloudSDK ? 'Play via SoundCloud' : useArchiveSDK ? 'Play via Archive.org' : link.label}
                           className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-semibold border border-white/10 bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
                           style={{ color: PLATFORM_COLOR[link.platform] }}
                         >
@@ -390,7 +401,7 @@ export function ReleasedView({ eras, releasedData, searchQuery, spotifyLoggedIn,
                               ? <ChevronUp className="w-2.5 h-2.5 text-white/40" />
                               : <ChevronDown className="w-2.5 h-2.5 text-white/40" />
                           )}
-                          {!canEmbed && !useSpotifySDK && !useYoutubeSDK && !useAudioSDK && <ExternalLink className="w-2.5 h-2.5 opacity-40" />}
+                          {!canEmbed && !useSpotifySDK && !useYoutubeSDK && !useAudioSDK && !useSoundCloudSDK && !useArchiveSDK && <ExternalLink className="w-2.5 h-2.5 opacity-40" />}
                         </button>
                       );
                     })}
@@ -404,6 +415,8 @@ export function ReleasedView({ eras, releasedData, searchQuery, spotifyLoggedIn,
                     const ytId2 = link.url.match(/[?&]v=([A-Za-z0-9_-]+)/)?.[1] ?? link.url.match(/youtu\.be\/([A-Za-z0-9_-]+)/)?.[1];
                     if (openEmbed !== key || !link.embedUrl) return null;
                     if (link.platform === 'youtube' && youtubeReady && onPlayYoutube && ytId2) return null;
+                    if (link.platform === 'soundcloud' && soundcloudReady && onPlaySoundCloud) return null;
+                    if (link.platform === 'archive' && onPlayArchive && link.url.includes('archive.org/details/')) return null;
                     const h = embedHeight(link);
                     return (
                       <motion.div
