@@ -18,8 +18,8 @@ export const LOADING_SCREENS: LoadingScreenOption[] = [
   { id: 'thankgod', label: 'Thank God for Drugs', type: 'gif', url: 'https://i.ibb.co/gMQcJwtH/TGFD-loading-screen.gif' },
   { id: 'yandhi', label: 'Yandhi', type: 'gif', url: 'https://i.ibb.co/TMfjBmkX/Yandhi-loading-screen.gif' },
   { id: 'yeezus', label: 'Yeezus', type: 'gif', url: 'https://i.ibb.co/kt6cT2Z/Yeezus-loading-screen.gif' },
-  { id: 'graduation', label: 'Graduation', type: 'video', url: 'https://res.cloudinary.com/dl6e4dvhs/video/upload/v1778360848/Graduation_loading_screen_yztepe.mp4' },
-  { id: 'wtt', label: 'Watch the Throne', type: 'video', url: 'https://res.cloudinary.com/dl6e4dvhs/video/upload/v1778360798/WTT_loading_screen_mvkeee.mp4' },
+  { id: 'graduation', label: 'Graduation', type: 'gif', url: 'https://i.ibb.co/5gNfGhmZ/Graduation-loading-screen-1.gif' },
+  { id: 'wtt', label: 'Watch the Throne', type: 'gif', url: 'https://i.ibb.co/fGPV83fc/Watch-the-throne-loading-screen.gif' },
 ];
 
 export interface AppSettings {
