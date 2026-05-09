@@ -16,13 +16,14 @@ function formatTime(seconds: number) {
 
 export function PlayerBar({
   currentSong, isPlaying, togglePlay, onFullScreen, onClose, era, currentTime = 0, duration = 0, onSeek, volume = 1, onVolumeChange,
-  onNext, onPrev, isShuffle, toggleShuffle, loopMode, toggleLoop, isFavorite, toggleFavorite, onShowQueue, showQueue, setShowQueue
+  onNext, onPrev, isShuffle, toggleShuffle, loopMode, toggleLoop, isFavorite, toggleFavorite, onShowQueue, showQueue, setShowQueue, allowDownload = true
 }: {
   currentSong: Song | null, isPlaying: boolean, togglePlay: () => void, onFullScreen: () => void, onClose: () => void, era: Era | null, currentTime?: number, duration?: number, onSeek?: (time: number) => void, volume?: number, onVolumeChange?: (vol: number) => void,
   onNext?: () => void, onPrev?: () => void, isShuffle?: boolean, toggleShuffle?: () => void, loopMode?: number, toggleLoop?: () => void,
   isFavorite?: boolean, toggleFavorite?: () => void, onShowQueue?: () => void,
   showQueue?: boolean,
-  setShowQueue?: (v: boolean) => void
+  setShowQueue?: (v: boolean) => void,
+  allowDownload?: boolean
 }) {
   const { settings } = useSettings();
   const [showMenu, setShowMenu] = useState(false);
@@ -362,7 +363,7 @@ export function PlayerBar({
                       </>
                     );
                   })()}
-                {downloadUrl && (
+                {downloadUrl && allowDownload && (
                   <button onClick={() => {
                         handleDownloadFile(rawUrl, currentSong.name, settings.tagsAsEmojis);
                         setShowMenu(false);

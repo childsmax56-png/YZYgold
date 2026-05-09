@@ -2347,6 +2347,7 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
               onShowQueue={() => setShowQueue(true)}
               showQueue={showQueue}
               setShowQueue={setShowQueue}
+              allowDownload={activeCategory !== 'released'}
             />
           )}
         </AnimatePresence>,
