@@ -102,6 +102,7 @@ export default function App() {
   const [data, setData] = useState<TrackerData | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingFading, setLoadingFading] = useState(false);
+  const [gifReady, setGifReady] = useState(false);
   const [showChangelog, setShowChangelog] = useState(false);
   const [showSafariWarning, setShowSafariWarning] = useState(false);
   const [mvData, setMvData] = useState<MvEntry[]>([]);
@@ -156,11 +157,19 @@ export default function App() {
 
   useEffect(() => {
     if (!loading) {
+      const screen = LOADING_SCREENS.find(s => s.id === settings.loadingScreen);
+      if (screen?.type === 'gif' && !gifReady) {
+        const t = setTimeout(() => {
+          setLoadingFading(true);
+          setTimeout(() => setLoadingFading(false), 700);
+        }, 6000);
+        return () => clearTimeout(t);
+      }
       setLoadingFading(true);
       const t = setTimeout(() => setLoadingFading(false), 700);
       return () => clearTimeout(t);
     }
-  }, [loading]);
+  }, [loading, gifReady, settings.loadingScreen]);
 
   useEffect(() => {
     setFilters({
@@ -1828,7 +1837,7 @@ export default function App() {
       >
         <div className="w-full h-full flex items-center justify-center">
           {screen?.type === 'gif' && screen.url && (
-            <img src={screen.url} alt={screen.label} className="w-[400px] h-[400px] object-contain" />
+            <img src={screen.url} alt={screen.label} className="w-[400px] h-[400px] object-contain" onLoad={() => setGifReady(true)} />
           )}
           {screen?.type === 'video' && screen.url && (
             <video src={screen.url} autoPlay loop playsInline className="w-[400px] h-[400px] object-contain" ref={(el) => { if (el) el.muted = true; }} />
