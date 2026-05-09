@@ -1,5 +1,5 @@
 const CLIENT_ID = '6b2d5d51cfe84fe1ac1c88bd1275e72e';
-const REDIRECT_URI = 'https://yzyarchives.org';
+const REDIRECT_URI = 'https://yzyarchives.org/';
 const SCOPES = [
   'streaming',
   'user-read-email',
