@@ -57,6 +57,7 @@ export function LyricsModal({ isOpen, onClose, currentSong, era, currentTime = 0
   const [viewMode, setViewMode] = useState<'sync' | 'plain' | 'info'>('sync');
   const [selectedAnnotation, setSelectedAnnotation] = useState<Annotation | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const prevSongKeyRef = useRef<string | null>(null);
 
   const hasSynced = !!parsedSyncedLyrics && parsedSyncedLyrics.length > 0;
   const hasAnnotations = !!annotations && annotations.length > 0;
@@ -72,6 +73,9 @@ export function LyricsModal({ isOpen, onClose, currentSong, era, currentTime = 0
 
   // Dismiss annotation panel when song or view changes; reset info tab on song change
   useEffect(() => {
+    const songKey = currentSong ? `${currentSong.name}|${currentSong.url || ''}` : null;
+    if (prevSongKeyRef.current === songKey) return;
+    prevSongKeyRef.current = songKey;
     setSelectedAnnotation(null);
     setViewMode('sync');
   }, [currentSong]);
