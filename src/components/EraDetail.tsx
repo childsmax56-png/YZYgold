@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'motion/react';
 import { createPortal } from 'react-dom';
 import { ArrowLeft, Play, ExternalLink, X, Share2, Volume2, Check, Download, Loader2, Film, Disc3, Layers, Star } from 'lucide-react';
+import { SiYoutube } from 'react-icons/si';
 import { Era, Song, SearchFilters } from '../types';
 import { useState, useMemo, useEffect } from 'react';
 import { formatTextWithTags, getCleanSongNameWithTags, matchesFilters, createSlug, getSongSlug, ALBUM_RELEASE_DATES, isSongNotAvailable, ALBUM_DESCRIPTIONS, HIDDEN_ALBUMS, handleDownloadFile } from '../utils';
@@ -506,6 +507,7 @@ export function EraDetail({ era, onBack, onPlaySong, searchQuery = '', filters, 
                     const isNotAvailable = isSongNotAvailable(song, rawUrl);
                     const lowerUrl = (rawUrl || '').toLowerCase();
                     const isTrulyEmptyLink = !rawUrl || lowerUrl === 'n/a' || lowerUrl.includes('link needed') || lowerUrl.includes('source needed');
+                    const isYoutubeLink = (rawUrl.includes('youtube.com/watch') || rawUrl.includes('youtu.be/')) && !isNotAvailable;
                     const isPlayable = (rawUrl.includes('pillows.su/f/') || rawUrl.includes('temp.imgur.gg/f/')) && !isNotAvailable;
                     const isEmpty = isTrulyEmptyLink || isNotAvailable || lowerUrl.includes('n/a');
                     const isCurrentlyPlaying = (currentSong?.name === song.name && currentSong?.description === song.description) ||
@@ -528,6 +530,8 @@ export function EraDetail({ era, onBack, onPlaySong, searchQuery = '', filters, 
                             <Volume2 className="w-4 h-4 hidden group-hover:block text-[var(--theme-color)]" />
                           ) : isPlayable ? (
                             <Play className="w-4 h-4 hidden group-hover:block" />
+                          ) : isYoutubeLink ? (
+                            <SiYoutube className="w-4 h-4 hidden group-hover:block text-[#FF0000]" />
                           ) : (
                             <ExternalLink className="w-4 h-4 hidden group-hover:block" />
                           )}

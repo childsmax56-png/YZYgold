@@ -1322,6 +1322,14 @@ export default function App() {
 
       const actualEraName = (song as any).realEra?.name || era.name;
       
+    } else if (rawUrl.includes('youtube.com/watch') || rawUrl.includes('youtu.be/')) {
+      const ytMatch = rawUrl.match(/[?&]v=([A-Za-z0-9_-]+)/) ?? rawUrl.match(/youtu\.be\/([A-Za-z0-9_-]+)/);
+      const videoId = ytMatch?.[1];
+      if (videoId && youtubeState.isReady) {
+        handlePlayYoutubeTrack(videoId, song.name);
+      } else {
+        window.open(rawUrl, '_blank');
+      }
     } else {
       if (settings.notOpenInNewTab) {
           setPopupUrl(rawUrl);
