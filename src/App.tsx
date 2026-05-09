@@ -26,7 +26,7 @@ import { useSoundCloud } from './useSoundCloud';
 const CUSTOM_ALBUM_INFO: Record<string, string[]> = {
   "The College Dropout": ["1 OG File(s)", "49 Full", "9 Tagged", "2 Partial", "7 Snippet(s)", "0 Stem Bounce(s)", "46 Unavailable"],
   "The Life Of Pablo": ["51 OG File(s)", "23 Full", "3 Tagged", "7 Partial", "19 Snippet(s)", "2 Stem Bounce(s)", "35 Unavailable"],
-  "Turbo Grafix 16": ["20 OG File(s)", "11 Full", "0 Tagged", "0 Partial", "6 Snippet(s)", "2 Stem Bounce(s)", "50 Unavailable"],
+  "Turbo Grafx 16": ["20 OG File(s)", "11 Full", "0 Tagged", "0 Partial", "6 Snippet(s)", "2 Stem Bounce(s)", "50 Unavailable"],
   "The Elementary School Dropout": ["0 OG File(s)", "0 Full", "0 Tagged", "0 Partial", "3 Snippet(s)", "0 Stem Bounce(s)", "15 Unavailable"],
   "Wolves": ["1 OG File(s)", "4 Full", "0 Tagged", "1 Partial", "0 Snippet(s)", "0 Stem Bounce(s)", "12 Unavailable"]
 };
@@ -80,11 +80,11 @@ import { useSettings } from './SettingsContext';
 import { recordListeningHistory } from './history';
 
 const ERA_MAPPINGS: Record<string, string> = {
-  "TurboGrafx 16": "Turbo Grafix 16",
-  "TurboGrafx-16": "Turbo Grafix 16",
-  "TurboGrafix 16": "Turbo Grafix 16",
-  "Turbo Grafx 16": "Turbo Grafix 16",
-  "Turbo Grafx-16": "Turbo Grafix 16",
+  "TurboGrafx 16": "Turbo Grafx 16",
+  "TurboGrafx-16": "Turbo Grafx 16",
+  "TurboGrafix 16": "Turbo Grafx 16",
+  "Turbo Grafx 16": "Turbo Grafx 16",
+  "Turbo Grafx-16": "Turbo Grafx 16",
   "Donda [V1]": "DONDA [V1]",
   "KIDSSEEGHOSTS": "KIDS SEE GHOSTS",
   "Kids See Ghosts": "KIDS SEE GHOSTS",
@@ -593,7 +593,7 @@ export default function App() {
         const json = JSON.parse(JSON.stringify(rawJson));
 
         // Rebuild each category object in the same key-insertion order so that
-        // renaming an era (e.g. "TurboGrafx 16" → "Turbo Grafix 16") does NOT
+        // renaming an era (e.g. "TurboGrafx 16" → "Turbo Grafx 16") does NOT
         // move it to the end of the object and break the display order.
         const categoriesToNormalize = ['eras', 'art', 'misc', 'stems', 'fakes', 'reference_track'];
         categoriesToNormalize.forEach(category => {
@@ -1860,12 +1860,12 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
   if (anchor !== -1 && toInsert.length > 0) relatedErasArray.splice(anchor + 1, 0, ...toInsert);
 }
 
-// Turbo Grafix 16 and Wolves can end up out of position (Turbo gets renamed from
+// Turbo Grafx 16 and Wolves can end up out of position (Turbo gets renamed from
 // "Turbo Grafx 16", Wolves has no CSV entry). Pull both out and reinsert right after
-// Cruel Winter [V2] so the order is always: CW[V2] → Turbo Grafix 16 → Wolves.
+// Cruel Winter [V2] so the order is always: CW[V2] → Turbo Grafx 16 → Wolves.
 {
   const cwV2Idx = erasArray.findIndex(e => e.name === "Cruel Winter [V2]");
-  const turboIdx = erasArray.findIndex(e => e.name === "Turbo Grafix 16" || e.name === "Turbo Grafx 16");
+  const turboIdx = erasArray.findIndex(e => e.name === "Turbo Grafx 16" || e.name === "Turbo Grafx 16");
   const wolvesIdx = erasArray.findIndex(e => e.name === "Wolves");
 
   if (cwV2Idx !== -1 && turboIdx !== -1 && wolvesIdx !== -1) {
