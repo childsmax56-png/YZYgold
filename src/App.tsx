@@ -1831,7 +1831,7 @@ export default function App() {
             <img src={screen.url} alt={screen.label} className="w-[400px] h-[400px] object-contain" />
           )}
           {screen?.type === 'video' && screen.url && (
-            <video src={screen.url} autoPlay loop muted playsInline className="w-[400px] h-[400px] object-contain" />
+            <video src={screen.url} autoPlay loop playsInline className="w-[400px] h-[400px] object-contain" ref={(el) => { if (el) el.muted = true; }} />
           )}
           {(!screen || screen.type === 'none') && (
             <div className="animate-pulse text-sm font-bold tracking-widest uppercase text-white/50">Loading Songs...</div>
