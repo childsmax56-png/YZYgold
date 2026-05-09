@@ -2287,7 +2287,7 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
       </AnimatePresence>
 
       <AnimatePresence>
-        {isPlayerClosed && currentSong && !isFullScreen && (
+        {isPlayerClosed && effectiveSong && !isFullScreen && (
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -2308,9 +2308,9 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
       </AnimatePresence>
 
       <AnimatePresence>
-        {isFullScreen && currentSong && (
+        {isFullScreen && effectiveSong && !isSpotifyActive && (
           <FullScreenPlayer
-            currentSong={currentSong}
+            currentSong={currentSong!}
             nextSong={playlist.length > 0 ? playlist[(currentSongIndex + 1) % playlist.length] : null}
             isPlaying={isPlaying}
             togglePlay={togglePlay}
