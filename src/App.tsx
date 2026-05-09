@@ -1836,7 +1836,7 @@ export default function App() {
           {screen?.type === 'streamable' && screen.url && (
             <div className="relative w-[400px] h-[400px]">
               <iframe src={`${screen.url}?autoplay=1&muted=1&loop=1&controls=0`} className="w-full h-full" allowFullScreen allow="autoplay; muted" style={{ border: 'none', pointerEvents: 'none' }} />
-              <div className="absolute bottom-0 left-0 w-32 h-8 bg-black" />
+              <div className="absolute top-0 right-0 w-32 h-8 bg-black" />
             </div>
           )}
           {(!screen || screen.type === 'none') && (
