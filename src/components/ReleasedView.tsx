@@ -27,6 +27,9 @@ interface ReleasedViewProps {
   eras: Era[];
   releasedData: ReleasedEntry[];
   searchQuery: string;
+  spotifyLoggedIn?: boolean;
+  spotifyReady?: boolean;
+  onPlaySpotify?: (uri: string) => void;
 }
 
 // ─── embed helpers ───────────────────────────────────────────────────────────
@@ -195,7 +198,7 @@ function groupByEra(data: ReleasedEntry[], allEras: Era[]): ReleasedEraGroup[] {
 
 // ─── main component ───────────────────────────────────────────────────────────
 
-export function ReleasedView({ eras, releasedData, searchQuery }: ReleasedViewProps) {
+export function ReleasedView({ eras, releasedData, searchQuery, spotifyLoggedIn, spotifyReady, onPlaySpotify }: ReleasedViewProps) {
   const [selectedEra, setSelectedEra] = useState<string | null>(null);
   // key: `${trackIdx}-${linkIdx}`
   const [openEmbed, setOpenEmbed] = useState<string | null>(null);
@@ -334,19 +337,30 @@ export function ReleasedView({ eras, releasedData, searchQuery }: ReleasedViewPr
                     {links.map((link, linkIdx) => {
                       const key = `${trackIdx}-${linkIdx}`;
                       const isOpen = openEmbed === key;
-                      const canEmbed = !!link.embedUrl;
+
+                      // Spotify: use SDK player if logged in + ready, else embed/fallback
+                      const useSDK = link.platform === 'spotify' && spotifyLoggedIn && spotifyReady && onPlaySpotify;
+                      const spotifyUri = useSDK
+                        ? (link.url.match(/open\.spotify\.com(?:\/intl-[a-z]+)?\/(track|album)\/([A-Za-z0-9]+)/)
+                            ? `spotify:${link.url.match(/open\.spotify\.com(?:\/intl-[a-z]+)?\/(track|album)\/([A-Za-z0-9]+)/)![1]}:${link.url.match(/open\.spotify\.com(?:\/intl-[a-z]+)?\/(track|album)\/([A-Za-z0-9]+)/)![2]}`
+                            : null)
+                        : null;
+
+                      const canEmbed = !useSDK && !!link.embedUrl;
 
                       return (
                         <button
                           key={linkIdx}
                           onClick={() => {
-                            if (canEmbed) {
+                            if (useSDK && spotifyUri) {
+                              onPlaySpotify!(spotifyUri);
+                            } else if (canEmbed) {
                               setOpenEmbed(isOpen ? null : key);
                             } else {
                               window.open(link.url, '_blank');
                             }
                           }}
-                          title={link.label}
+                          title={useSDK ? `Play on YZYGOLD via Spotify` : link.label}
                           className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-semibold border border-white/10 bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
                           style={{ color: PLATFORM_COLOR[link.platform] }}
                         >
@@ -357,7 +371,7 @@ export function ReleasedView({ eras, releasedData, searchQuery }: ReleasedViewPr
                               ? <ChevronUp className="w-2.5 h-2.5 text-white/40" />
                               : <ChevronDown className="w-2.5 h-2.5 text-white/40" />
                           )}
-                          {!canEmbed && <ExternalLink className="w-2.5 h-2.5 opacity-40" />}
+                          {!canEmbed && !useSDK && <ExternalLink className="w-2.5 h-2.5 opacity-40" />}
                         </button>
                       );
                     })}

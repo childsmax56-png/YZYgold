@@ -1,6 +1,6 @@
 import { motion } from 'motion/react';
 import { Search, DollarSign, LogIn, LogOut, Settings, Dice5, X } from 'lucide-react';
-import { SiLastdotfm } from 'react-icons/si';
+import { SiLastdotfm, SiSpotify } from 'react-icons/si';
 import { FilterMenu } from './FilterMenu';
 import { SearchFilters } from '../types';
 import { isLastfmLoggedIn, getLastfmUsername, clearLastfmSession, startLastfmAuth } from '../lastfm';
@@ -20,6 +20,9 @@ interface NavbarProps {
   onLastfmLogout: () => void;
   onRandomSongClick?: () => void;
   isRandomMode?: boolean;
+  spotifyLoggedIn?: boolean;
+  onSpotifyLogin?: () => void;
+  onSpotifyLogout?: () => void;
 }
 
 const NAV_CATEGORIES: { key: Category; label: string }[] = [
@@ -34,7 +37,7 @@ const NAV_CATEGORIES: { key: Category; label: string }[] = [
   { key: 'tracklists', label: 'Tracklists' },
 ];
 
-export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHomeClick, activeCategory, onCategoryChange, lastfmLoggedIn, onLastfmLogout, onRandomSongClick, isRandomMode }: NavbarProps) {
+export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHomeClick, activeCategory, onCategoryChange, lastfmLoggedIn, onLastfmLogout, onRandomSongClick, isRandomMode, spotifyLoggedIn, onSpotifyLogin, onSpotifyLogout }: NavbarProps) {
   const { settings } = useSettings();
 
   const handleCategoryClick = (cat: Category) => {
@@ -127,6 +130,17 @@ export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHom
                <Settings className="w-5 h-5" />
             </button>
             <button
+              onClick={() => spotifyLoggedIn ? onSpotifyLogout?.() : onSpotifyLogin?.()}
+              className={`flex items-center justify-center p-2.5 rounded-full transition-all duration-300 cursor-pointer ${
+                spotifyLoggedIn
+                  ? 'bg-[#1DB954]/15 text-[#1DB954] hover:bg-[#1DB954]/25'
+                  : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white'
+              }`}
+              title={spotifyLoggedIn ? 'Disconnect Spotify' : 'Connect Spotify'}
+            >
+              <SiSpotify className="w-5 h-5" />
+            </button>
+            <button
               onClick={handleLastfmClick}
               className={`flex items-center justify-center p-2.5 rounded-full transition-all duration-300 cursor-pointer ${lastfmLoggedIn
                 ? 'bg-[#d51007]/15 text-[#d51007] hover:bg-[#d51007]/25'
@@ -170,6 +184,20 @@ export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHom
       </div>
 
       <div className="flex-1 hidden md:flex justify-end items-center gap-2 md:gap-3">
+        <button
+          onClick={() => spotifyLoggedIn ? onSpotifyLogout?.() : onSpotifyLogin?.()}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+            spotifyLoggedIn
+              ? 'bg-[#1DB954]/15 text-[#1DB954] hover:bg-[#1DB954]/25 hover:scale-105'
+              : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white hover:scale-105'
+          }`}
+          title={spotifyLoggedIn ? 'Disconnect Spotify' : 'Connect Spotify'}
+        >
+          <SiSpotify className="w-4 h-4" />
+          <span className="text-xs font-semibold uppercase tracking-wider whitespace-nowrap">
+            {spotifyLoggedIn ? 'Spotify' : 'Spotify'}
+          </span>
+        </button>
         <button
           onClick={handleLastfmClick}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-300 cursor-pointer ${lastfmLoggedIn

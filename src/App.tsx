@@ -18,6 +18,8 @@ import { handleShareSilent } from './components/EraDetail';
 import { TrackerData, Era, Song, SearchFilters } from './types';
 import { matchesFilters, createSlug, getSongSlug, getCleanSongNameWithTags, isSongNotAvailable, formatTextForNotification, CUSTOM_IMAGES, HIDDEN_ALBUMS, handleDownloadFile } from './utils';
 import { isLastfmLoggedIn, saveLastfmSession, clearLastfmSession, scrobbleTrack, updateNowPlaying, cleanTrackName, parseArtistFromSong, cleanAlbumName } from './lastfm';
+import { isSpotifyLoggedIn, clearSpotifySession, startSpotifyAuth, handleSpotifyCallback } from './spotify';
+import { useSpotify, SpotifyTrack } from './useSpotify';
 
 const CUSTOM_ALBUM_INFO: Record<string, string[]> = {
   "The College Dropout": ["1 OG File(s)", "49 Full", "9 Tagged", "2 Partial", "7 Snippet(s)", "0 Stem Bounce(s)", "46 Unavailable"],
@@ -359,6 +361,9 @@ export default function App() {
   }, [data, recentData]);
 
   const [lastfmLoggedIn, setLastfmLoggedIn] = useState(isLastfmLoggedIn());
+  const [spotifyLoggedIn, setSpotifyLoggedIn] = useState(isSpotifyLoggedIn());
+  const [activePlayer, setActivePlayer] = useState<'audio' | 'spotify'>('audio');
+  const { state: spotifyState, controls: spotifyControls } = useSpotify(spotifyLoggedIn);
   const scrobbledRef = useRef(false);
   const songStartTimeRef = useRef<number>(0);
 
@@ -371,6 +376,18 @@ export default function App() {
       audioRef.current.volume = volume;
     }
   }, [volume]);
+
+  useEffect(() => {
+    if (window.location.search.includes('code=')) {
+      handleSpotifyCallback().then(ok => {
+        if (ok) setSpotifyLoggedIn(true);
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (spotifyState.error) showToast(spotifyState.error);
+  }, [spotifyState.error]);
 
   useEffect(() => {
     const initAudio = () => {
@@ -1284,6 +1301,7 @@ export default function App() {
       }
       setHasLoopedOnce(false);
 
+      setActivePlayer('audio');
       setCurrentSong(song);
       setCurrentEra(era);
       setIsPlaying(autoPlay);
@@ -1665,6 +1683,38 @@ export default function App() {
     }
   };
 
+  const handlePlaySpotifyTrack = async (uri: string) => {
+    if (!spotifyState.isReady) return;
+    if (audioRef.current) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    }
+    setActivePlayer('spotify');
+    setIsPlayerClosed(false);
+    await spotifyControls.playUri(uri);
+  };
+
+  function spotifyTrackToSong(track: SpotifyTrack): Song {
+    return {
+      name: track.artists.join(', ') + ' - ' + track.name,
+      extra: track.artists[0] ?? '',
+      url: '',
+      image: track.albumArt,
+      track_length: formatTime(track.duration / 1000),
+    };
+  }
+
+  function spotifyTrackToEra(track: SpotifyTrack): Era {
+    return { name: track.albumName, image: track.albumArt, data: {} };
+  }
+
+  function formatTime(seconds: number) {
+    if (isNaN(seconds)) return '0:00';
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
   const handleCategoryChange = (cat: Category) => {
     if (cat === 'music' && selectedAlbum) {
       if (!finalErasArray.find(e => e.name === selectedAlbum.name)) {
@@ -1968,6 +2018,31 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
     handlePlaySong(randomSong, randomSong.realEra, contextPlaylist, true, true, true);
   };
 
+  const isSpotifyActive = activePlayer === 'spotify';
+  const effectiveSong = isSpotifyActive && spotifyState.currentTrack
+    ? spotifyTrackToSong(spotifyState.currentTrack)
+    : currentSong;
+  const effectiveEra = isSpotifyActive && spotifyState.currentTrack
+    ? spotifyTrackToEra(spotifyState.currentTrack)
+    : currentEra;
+  const effectiveIsPlaying = isSpotifyActive ? spotifyState.isPlaying : isPlaying;
+  const effectiveCurrentTime = isSpotifyActive ? spotifyState.position / 1000 : currentTime;
+  const effectiveDuration = isSpotifyActive && spotifyState.currentTrack
+    ? spotifyState.currentTrack.duration / 1000
+    : duration;
+  const effectiveTogglePlay = isSpotifyActive
+    ? () => { spotifyControls.togglePlay(); }
+    : togglePlay;
+  const effectiveSeek = isSpotifyActive
+    ? (t: number) => spotifyControls.seek(t * 1000)
+    : handleSeek;
+  const effectiveVolumeChange = isSpotifyActive
+    ? (v: number) => spotifyControls.setVolume(v)
+    : setVolume;
+  const effectiveNext = isSpotifyActive ? () => spotifyControls.next() : playNext;
+  const effectivePrev = isSpotifyActive ? () => spotifyControls.prev() : playPrev;
+  const showPlayer = !!effectiveSong && !isFullScreen && !isPlayerClosed;
+
   return (
     <div className="h-screen w-full flex overflow-hidden relative bg-yzy-black">
       <audio
@@ -2033,9 +2108,12 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
           onLastfmLogout={() => setLastfmLoggedIn(false)}
           onRandomSongClick={handleRandomSongClick}
           isRandomMode={isRandomMode}
+          spotifyLoggedIn={spotifyLoggedIn}
+          onSpotifyLogin={startSpotifyAuth}
+          onSpotifyLogout={() => { clearSpotifySession(); setSpotifyLoggedIn(false); setActivePlayer('audio'); }}
         />
 
-        <main className={`flex-1 overflow-y-auto relative scroll-smooth bg-[#0a0a0a] flex flex-col ${currentSong && !isFullScreen && !isPlayerClosed ? 'pb-44 md:pb-28' : ''}`}>
+        <main className={`flex-1 overflow-y-auto relative scroll-smooth bg-[#0a0a0a] flex flex-col ${showPlayer ? 'pb-44 md:pb-28' : ''}`}>
           <div className="flex-1">
             <AnimatePresence mode="wait">
               {activeCategory === 'settings' ? (
@@ -2110,6 +2188,9 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
                   eras={erasArray}
                   releasedData={releasedData}
                   searchQuery={searchQuery}
+                  spotifyLoggedIn={spotifyLoggedIn}
+                  spotifyReady={spotifyState.isReady}
+                  onPlaySpotify={handlePlaySpotifyTrack}
                 />
               ) : activeCategory === 'recent' ? (
                 <EraDetail
@@ -2174,30 +2255,30 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
       </div>
 
       <AnimatePresence>
-        {currentSong && !isFullScreen && !isPlayerClosed && (
+        {showPlayer && effectiveSong && (
           <PlayerBar
-            currentSong={currentSong}
-            isPlaying={isPlaying}
-            togglePlay={togglePlay}
+            currentSong={effectiveSong}
+            isPlaying={effectiveIsPlaying}
+            togglePlay={effectiveTogglePlay}
             onFullScreen={() => {
               setIsFullScreen(true);
               setShowQueue(false);
             }}
             onClose={() => setIsPlayerClosed(true)}
-            era={currentEra}
-            currentTime={currentTime}
-            duration={duration}
-            onSeek={handleSeek}
+            era={effectiveEra}
+            currentTime={effectiveCurrentTime}
+            duration={effectiveDuration}
+            onSeek={effectiveSeek}
             volume={volume}
-            onVolumeChange={setVolume}
-            onNext={playNext}
-            onPrev={playPrev}
+            onVolumeChange={effectiveVolumeChange}
+            onNext={effectiveNext}
+            onPrev={effectivePrev}
             isShuffle={isShuffle}
             toggleShuffle={toggleShuffleState}
             loopMode={loopMode}
             toggleLoop={() => setLoopMode((prev) => (prev + 1) % 3)}
-            isFavorite={favoriteKeys.some(k => k.songName === currentSong.name && k.url === (currentSong.url || (currentSong.urls && currentSong.urls[0]) || ''))}
-            toggleFavorite={() => toggleFavorite(currentSong, currentEra?.name || '')}
+            isFavorite={!isSpotifyActive && currentSong ? favoriteKeys.some(k => k.songName === currentSong.name && k.url === (currentSong.url || (currentSong.urls && currentSong.urls[0]) || '')) : false}
+            toggleFavorite={!isSpotifyActive && currentSong ? () => toggleFavorite(currentSong, currentEra?.name || '') : undefined}
             onShowQueue={() => setShowQueue(true)}
             showQueue={showQueue}
             setShowQueue={setShowQueue}
