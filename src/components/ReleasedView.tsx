@@ -30,6 +30,8 @@ interface ReleasedViewProps {
   spotifyLoggedIn?: boolean;
   spotifyReady?: boolean;
   onPlaySpotify?: (uri: string) => void;
+  youtubeReady?: boolean;
+  onPlayYoutube?: (videoId: string, title?: string) => void;
 }
 
 // ─── embed helpers ───────────────────────────────────────────────────────────
@@ -198,7 +200,7 @@ function groupByEra(data: ReleasedEntry[], allEras: Era[]): ReleasedEraGroup[] {
 
 // ─── main component ───────────────────────────────────────────────────────────
 
-export function ReleasedView({ eras, releasedData, searchQuery, spotifyLoggedIn, spotifyReady, onPlaySpotify }: ReleasedViewProps) {
+export function ReleasedView({ eras, releasedData, searchQuery, spotifyLoggedIn, spotifyReady, onPlaySpotify, youtubeReady, onPlayYoutube }: ReleasedViewProps) {
   const [selectedEra, setSelectedEra] = useState<string | null>(null);
   // key: `${trackIdx}-${linkIdx}`
   const [openEmbed, setOpenEmbed] = useState<string | null>(null);
@@ -338,29 +340,36 @@ export function ReleasedView({ eras, releasedData, searchQuery, spotifyLoggedIn,
                       const key = `${trackIdx}-${linkIdx}`;
                       const isOpen = openEmbed === key;
 
-                      // Spotify: use SDK player if logged in + ready, else embed/fallback
-                      const useSDK = link.platform === 'spotify' && spotifyLoggedIn && spotifyReady && onPlaySpotify;
-                      const spotifyUri = useSDK
+                      // Spotify: use SDK player if logged in + ready
+                      const useSpotifySDK = link.platform === 'spotify' && spotifyLoggedIn && spotifyReady && onPlaySpotify;
+                      const spotifyUri = useSpotifySDK
                         ? (link.url.match(/open\.spotify\.com(?:\/intl-[a-z]+)?\/(track|album)\/([A-Za-z0-9]+)/)
                             ? `spotify:${link.url.match(/open\.spotify\.com(?:\/intl-[a-z]+)?\/(track|album)\/([A-Za-z0-9]+)/)![1]}:${link.url.match(/open\.spotify\.com(?:\/intl-[a-z]+)?\/(track|album)\/([A-Za-z0-9]+)/)![2]}`
                             : null)
                         : null;
 
-                      const canEmbed = !useSDK && !!link.embedUrl;
+                      // YouTube: use background player if ready
+                      const ytIdMatch = link.url.match(/[?&]v=([A-Za-z0-9_-]+)/) ?? link.url.match(/youtu\.be\/([A-Za-z0-9_-]+)/);
+                      const useYoutubeSDK = link.platform === 'youtube' && youtubeReady && onPlayYoutube && !!ytIdMatch;
+                      const ytVideoId = ytIdMatch?.[1] ?? null;
+
+                      const canEmbed = !useSpotifySDK && !useYoutubeSDK && !!link.embedUrl;
 
                       return (
                         <button
                           key={linkIdx}
                           onClick={() => {
-                            if (useSDK && spotifyUri) {
+                            if (useSpotifySDK && spotifyUri) {
                               onPlaySpotify!(spotifyUri);
+                            } else if (useYoutubeSDK && ytVideoId) {
+                              onPlayYoutube!(ytVideoId, track.Name.split('\n')[0]);
                             } else if (canEmbed) {
                               setOpenEmbed(isOpen ? null : key);
                             } else {
                               window.open(link.url, '_blank');
                             }
                           }}
-                          title={useSDK ? `Play on YZYGOLD via Spotify` : link.label}
+                          title={useSpotifySDK ? 'Play on YZYGOLD via Spotify' : useYoutubeSDK ? 'Play on YZYGOLD via YouTube' : link.label}
                           className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-semibold border border-white/10 bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
                           style={{ color: PLATFORM_COLOR[link.platform] }}
                         >
@@ -371,7 +380,7 @@ export function ReleasedView({ eras, releasedData, searchQuery, spotifyLoggedIn,
                               ? <ChevronUp className="w-2.5 h-2.5 text-white/40" />
                               : <ChevronDown className="w-2.5 h-2.5 text-white/40" />
                           )}
-                          {!canEmbed && !useSDK && <ExternalLink className="w-2.5 h-2.5 opacity-40" />}
+                          {!canEmbed && !useSpotifySDK && !useYoutubeSDK && <ExternalLink className="w-2.5 h-2.5 opacity-40" />}
                         </button>
                       );
                     })}
@@ -382,7 +391,9 @@ export function ReleasedView({ eras, releasedData, searchQuery, spotifyLoggedIn,
                 <AnimatePresence>
                   {links.map((link, linkIdx) => {
                     const key = `${trackIdx}-${linkIdx}`;
+                    const ytId2 = link.url.match(/[?&]v=([A-Za-z0-9_-]+)/)?.[1] ?? link.url.match(/youtu\.be\/([A-Za-z0-9_-]+)/)?.[1];
                     if (openEmbed !== key || !link.embedUrl) return null;
+                    if (link.platform === 'youtube' && youtubeReady && onPlayYoutube && ytId2) return null;
                     const h = embedHeight(link);
                     return (
                       <motion.div

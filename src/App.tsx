@@ -20,6 +20,7 @@ import { matchesFilters, createSlug, getSongSlug, getCleanSongNameWithTags, isSo
 import { isLastfmLoggedIn, saveLastfmSession, clearLastfmSession, scrobbleTrack, updateNowPlaying, cleanTrackName, parseArtistFromSong, cleanAlbumName } from './lastfm';
 import { isSpotifyLoggedIn, clearSpotifySession, startSpotifyAuth, handleSpotifyCallback } from './spotify';
 import { useSpotify, SpotifyTrack } from './useSpotify';
+import { useYoutube } from './useYoutube';
 
 const CUSTOM_ALBUM_INFO: Record<string, string[]> = {
   "The College Dropout": ["1 OG File(s)", "49 Full", "9 Tagged", "2 Partial", "7 Snippet(s)", "0 Stem Bounce(s)", "46 Unavailable"],
@@ -362,8 +363,9 @@ export default function App() {
 
   const [lastfmLoggedIn, setLastfmLoggedIn] = useState(isLastfmLoggedIn());
   const [spotifyLoggedIn, setSpotifyLoggedIn] = useState(isSpotifyLoggedIn());
-  const [activePlayer, setActivePlayer] = useState<'audio' | 'spotify'>('audio');
+  const [activePlayer, setActivePlayer] = useState<'audio' | 'spotify' | 'youtube'>('audio');
   const { state: spotifyState, controls: spotifyControls } = useSpotify(spotifyLoggedIn);
+  const { state: youtubeState, controls: youtubeControls } = useYoutube();
   const scrobbledRef = useRef(false);
   const songStartTimeRef = useRef<number>(0);
 
@@ -1695,6 +1697,17 @@ export default function App() {
     await spotifyControls.playUri(uri);
   };
 
+  const handlePlayYoutubeTrack = (videoId: string, title?: string) => {
+    if (!youtubeState.isReady) return;
+    if (audioRef.current) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    }
+    setActivePlayer('youtube');
+    setIsPlayerClosed(false);
+    youtubeControls.playVideoId(videoId, title);
+  };
+
   function spotifyTrackToSong(track: SpotifyTrack): Song {
     return {
       name: track.artists.join(', ') + ' - ' + track.name,
@@ -2020,25 +2033,58 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
   };
 
   const isSpotifyActive = activePlayer === 'spotify';
+  const isYoutubeActive = activePlayer === 'youtube';
+
+  // Build a Song-like object from a YouTube video so PlayerBar can display it
+  const youtubeSong: Song | null = isYoutubeActive && youtubeState.currentVideo
+    ? {
+        name: youtubeState.currentVideo.title || 'YouTube',
+        extra: 'YouTube',
+        url: '',
+        image: youtubeState.currentVideo.thumbnail,
+        track_length: formatTime(youtubeState.duration),
+      }
+    : null;
+
   const effectiveSong = isSpotifyActive && spotifyState.currentTrack
     ? spotifyTrackToSong(spotifyState.currentTrack)
+    : isYoutubeActive && youtubeSong
+    ? youtubeSong
     : currentSong;
   const effectiveEra = isSpotifyActive && spotifyState.currentTrack
     ? spotifyTrackToEra(spotifyState.currentTrack)
+    : isYoutubeActive && youtubeState.currentVideo
+    ? { name: 'YouTube', image: youtubeState.currentVideo.thumbnail, data: {} }
     : currentEra;
-  const effectiveIsPlaying = isSpotifyActive ? spotifyState.isPlaying : isPlaying;
-  const effectiveCurrentTime = isSpotifyActive ? spotifyState.position / 1000 : currentTime;
+  const effectiveIsPlaying = isSpotifyActive
+    ? spotifyState.isPlaying
+    : isYoutubeActive
+    ? youtubeState.isPlaying
+    : isPlaying;
+  const effectiveCurrentTime = isSpotifyActive
+    ? spotifyState.position / 1000
+    : isYoutubeActive
+    ? youtubeState.position
+    : currentTime;
   const effectiveDuration = isSpotifyActive && spotifyState.currentTrack
     ? spotifyState.currentTrack.duration / 1000
+    : isYoutubeActive
+    ? youtubeState.duration
     : duration;
   const effectiveTogglePlay = isSpotifyActive
     ? () => { spotifyControls.togglePlay(); }
+    : isYoutubeActive
+    ? () => { youtubeControls.togglePlay(); }
     : togglePlay;
   const effectiveSeek = isSpotifyActive
     ? (t: number) => spotifyControls.seek(t * 1000)
+    : isYoutubeActive
+    ? (t: number) => youtubeControls.seek(t)
     : handleSeek;
   const effectiveVolumeChange = isSpotifyActive
     ? (v: number) => spotifyControls.setVolume(v)
+    : isYoutubeActive
+    ? (v: number) => youtubeControls.setVolume(v)
     : setVolume;
   const effectiveNext = isSpotifyActive ? () => spotifyControls.next() : playNext;
   const effectivePrev = isSpotifyActive ? () => spotifyControls.prev() : playPrev;
@@ -2192,6 +2238,8 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
                   spotifyLoggedIn={spotifyLoggedIn}
                   spotifyReady={spotifyState.isReady}
                   onPlaySpotify={handlePlaySpotifyTrack}
+                  youtubeReady={youtubeState.isReady}
+                  onPlayYoutube={handlePlayYoutubeTrack}
                 />
               ) : activeCategory === 'recent' ? (
                 <EraDetail
@@ -2279,8 +2327,8 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
               toggleShuffle={toggleShuffleState}
               loopMode={loopMode}
               toggleLoop={() => setLoopMode((prev) => (prev + 1) % 3)}
-              isFavorite={!isSpotifyActive && currentSong ? favoriteKeys.some(k => k.songName === currentSong.name && k.url === (currentSong.url || (currentSong.urls && currentSong.urls[0]) || '')) : false}
-              toggleFavorite={!isSpotifyActive && currentSong ? () => toggleFavorite(currentSong, currentEra?.name || '') : undefined}
+              isFavorite={!isSpotifyActive && !isYoutubeActive && currentSong ? favoriteKeys.some(k => k.songName === currentSong.name && k.url === (currentSong.url || (currentSong.urls && currentSong.urls[0]) || '')) : false}
+              toggleFavorite={!isSpotifyActive && !isYoutubeActive && currentSong ? () => toggleFavorite(currentSong, currentEra?.name || '') : undefined}
               onShowQueue={() => setShowQueue(true)}
               showQueue={showQueue}
               setShowQueue={setShowQueue}
@@ -2316,7 +2364,7 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
       )}
 
       <AnimatePresence>
-        {isFullScreen && effectiveSong && !isSpotifyActive && (
+        {isFullScreen && effectiveSong && !isSpotifyActive && !isYoutubeActive && (
           <FullScreenPlayer
             currentSong={currentSong!}
             nextSong={playlist.length > 0 ? playlist[(currentSongIndex + 1) % playlist.length] : null}
