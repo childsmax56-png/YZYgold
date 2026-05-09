@@ -150,7 +150,7 @@ export function PlayerBar({
         animate={{ y: 0, opacity: 1, filter: 'blur(0px)' }}
         exit={{ y: 100, opacity: 0, filter: 'blur(10px)' }}
         transition={{ duration: 0.4, ease: "easeOut" }}
-        className="fixed bottom-0 left-0 right-0 py-3 pb-8 md:py-0 md:h-24 bg-black/70 md:bg-black/60 backdrop-blur-3xl md:backdrop-blur-2xl border-t border-white/10 z-50 grid grid-cols-[1fr_auto] md:flex items-center px-4 md:px-6 gap-y-4 gap-x-0 md:gap-0 rounded-t-3xl md:rounded-none"
+        className="fixed bottom-0 left-0 right-0 py-3 pb-safe md:py-0 md:h-24 bg-black/70 md:bg-black/60 backdrop-blur-3xl md:backdrop-blur-2xl border-t border-white/10 z-50 grid grid-cols-[1fr_auto] md:flex items-center px-4 md:px-6 gap-y-4 gap-x-0 md:gap-0 rounded-t-3xl md:rounded-none"
       >
         <div className="flex items-center gap-4 min-w-0 md:flex-1 col-start-1 col-end-2 row-start-1 pr-4 md:pr-0">
           {settings.showMiniPlayerArt && (() => {
@@ -339,6 +339,26 @@ export function PlayerBar({
                         >
                           <Mic2 className="w-4 h-4" /> {tooltipText}
                         </button>
+                        {toggleFavorite &&
+                          currentSong.name !== "Alright but the beat is Father Stretch My Hands Pt. 1" &&
+                          !currentSong.name.endsWith('[Fake Leak]') &&
+                          !(era?.name || '').includes('Fake') &&
+                          !currentSong.name.endsWith('[Stems]') &&
+                          !(era?.name || '').includes('Stems') &&
+                          !currentSong.name.endsWith('[Misc]') &&
+                          !(era?.name || '').includes('Misc') && (
+                          <button
+                            onClick={() => {
+                              toggleFavorite();
+                              setShowMenu(false);
+                            }}
+                            className="md:hidden w-full flex items-center gap-3 px-4 py-2 text-sm transition-colors cursor-pointer hover:bg-white/5"
+                            style={{ color: isFavorite ? 'var(--theme-color)' : undefined }}
+                          >
+                            <Star className={`w-4 h-4 ${isFavorite ? 'fill-[var(--theme-color)] text-[var(--theme-color)]' : 'text-white/70'}`} />
+                            <span className={isFavorite ? '' : 'text-white/70'}>{isFavorite ? 'Unfavorite' : 'Favorite'}</span>
+                          </button>
+                        )}
                       </>
                     );
                   })()}

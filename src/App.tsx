@@ -564,21 +564,22 @@ export default function App() {
       settings.googleSheetsUrl || `https://docs.google.com/spreadsheets/d/${HARDCODED_SHEET_ID}/edit#gid=${HARDCODED_SHEET_GID}`
     );
 
+    const FETCH_TIMEOUT = 20000;
     Promise.all([
-      axios.get('/api/a'),
-      axios.get('https://yzygold-test.vercel.app/MyK.json').catch(err => {
+      axios.get('/api/a', { timeout: FETCH_TIMEOUT }),
+      axios.get('https://yzygold-test.vercel.app/MyK.json', { timeout: FETCH_TIMEOUT }).catch(err => {
         console.error("Failed to fetch MyK data", err);
         return { data: [] };
       }),
-      axios.get('/local-songs.json').catch(err => {
+      axios.get('/local-songs.json', { timeout: FETCH_TIMEOUT }).catch(err => {
         console.error("Failed to fetch local songs", err);
         return { data: [] };
       }),
-      axios.get(`/api/sheets-proxy?url=${encodeURIComponent(sheetCsvUrl!)}`).catch(err => {
+      axios.get(`/api/sheets-proxy?url=${encodeURIComponent(sheetCsvUrl!)}`, { timeout: FETCH_TIMEOUT }).catch(err => {
         console.error("Failed to fetch Google Sheets data", err);
         return { data: [] };
       }),
-      axios.get('/api/recent').catch(err => {
+      axios.get('/api/recent', { timeout: FETCH_TIMEOUT }).catch(err => {
         console.error("Failed to fetch Recent data:", err);
         return { data: [] };
       })
@@ -2044,7 +2045,7 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
   const showPlayer = !!effectiveSong && !isFullScreen && !isPlayerClosed;
 
   return (
-    <div className="h-screen w-full flex overflow-hidden relative bg-yzy-black">
+    <div className="h-dvh w-full flex overflow-hidden relative bg-yzy-black">
       <audio
         ref={audioRef}
         onEnded={handleEnded}
@@ -2254,58 +2255,65 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
         </main>
       </div>
 
-      <AnimatePresence>
-        {showPlayer && effectiveSong && (
-          <PlayerBar
-            currentSong={effectiveSong}
-            isPlaying={effectiveIsPlaying}
-            togglePlay={effectiveTogglePlay}
-            onFullScreen={() => {
-              setIsFullScreen(true);
-              setShowQueue(false);
-            }}
-            onClose={() => setIsPlayerClosed(true)}
-            era={effectiveEra}
-            currentTime={effectiveCurrentTime}
-            duration={effectiveDuration}
-            onSeek={effectiveSeek}
-            volume={volume}
-            onVolumeChange={effectiveVolumeChange}
-            onNext={effectiveNext}
-            onPrev={effectivePrev}
-            isShuffle={isShuffle}
-            toggleShuffle={toggleShuffleState}
-            loopMode={loopMode}
-            toggleLoop={() => setLoopMode((prev) => (prev + 1) % 3)}
-            isFavorite={!isSpotifyActive && currentSong ? favoriteKeys.some(k => k.songName === currentSong.name && k.url === (currentSong.url || (currentSong.urls && currentSong.urls[0]) || '')) : false}
-            toggleFavorite={!isSpotifyActive && currentSong ? () => toggleFavorite(currentSong, currentEra?.name || '') : undefined}
-            onShowQueue={() => setShowQueue(true)}
-            showQueue={showQueue}
-            setShowQueue={setShowQueue}
-          />
-        )}
-      </AnimatePresence>
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {showPlayer && effectiveSong && (
+            <PlayerBar
+              currentSong={effectiveSong}
+              isPlaying={effectiveIsPlaying}
+              togglePlay={effectiveTogglePlay}
+              onFullScreen={() => {
+                setIsFullScreen(true);
+                setShowQueue(false);
+              }}
+              onClose={() => setIsPlayerClosed(true)}
+              era={effectiveEra}
+              currentTime={effectiveCurrentTime}
+              duration={effectiveDuration}
+              onSeek={effectiveSeek}
+              volume={volume}
+              onVolumeChange={effectiveVolumeChange}
+              onNext={effectiveNext}
+              onPrev={effectivePrev}
+              isShuffle={isShuffle}
+              toggleShuffle={toggleShuffleState}
+              loopMode={loopMode}
+              toggleLoop={() => setLoopMode((prev) => (prev + 1) % 3)}
+              isFavorite={!isSpotifyActive && currentSong ? favoriteKeys.some(k => k.songName === currentSong.name && k.url === (currentSong.url || (currentSong.urls && currentSong.urls[0]) || '')) : false}
+              toggleFavorite={!isSpotifyActive && currentSong ? () => toggleFavorite(currentSong, currentEra?.name || '') : undefined}
+              onShowQueue={() => setShowQueue(true)}
+              showQueue={showQueue}
+              setShowQueue={setShowQueue}
+            />
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
 
-      <AnimatePresence>
-        {isPlayerClosed && effectiveSong && !isFullScreen && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.8, ease: [0.2, 0, 0, 1] } }}
-            transition={{ duration: 1.5, ease: [0.2, 0, 0, 1] }}
-            className="fixed bottom-6 right-6 z-50 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform drop-shadow-2xl"
-            onClick={() => setIsPlayerClosed(false)}
-            title="Restore Player"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 2000 2000">
-              <circle fill="#111" stroke="#1d1d1d" strokeWidth="40" cx="1000.5" cy="1000.5" r="890.5"/>
-              <g transform="translate(1000.5, 1020)">
-                <path stroke="white" strokeWidth="80" strokeLinecap="round" strokeLinejoin="round" fill="none" d="M -250 125 L 0 -125 L 250 125" />
-              </g>
-            </svg>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {isPlayerClosed && effectiveSong && !isFullScreen && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.8, ease: [0.2, 0, 0, 1] } }}
+              transition={{ duration: 1.5, ease: [0.2, 0, 0, 1] }}
+              className="fixed right-6 z-50 flex items-center justify-center cursor-pointer hover:scale-105 transition-transform drop-shadow-2xl"
+              style={{ bottom: 'calc(100vh - 100dvh + 1.5rem)' }}
+              onClick={() => setIsPlayerClosed(false)}
+              title="Restore Player"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 2000 2000">
+                <circle fill="#222" stroke="rgba(255,255,255,0.15)" strokeWidth="80" cx="1000.5" cy="1000.5" r="890.5"/>
+                <g transform="translate(1000.5, 1020)">
+                  <path stroke="white" strokeWidth="80" strokeLinecap="round" strokeLinejoin="round" fill="none" d="M -250 125 L 0 -125 L 250 125" />
+                </g>
+              </svg>
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
 
       <AnimatePresence>
         {isFullScreen && effectiveSong && !isSpotifyActive && (

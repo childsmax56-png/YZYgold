@@ -26,7 +26,7 @@
 
 @layer base {
   body {
-    @apply bg-[var(--bg-color)] text-[var(--text-color)] font-sans overflow-hidden selection:bg-[var(--selection-bg)] selection:text-[var(--selection-text)];
+    @apply bg-[var(--bg-color)] text-[var(--text-color)] font-sans selection:bg-[var(--selection-bg)] selection:text-[var(--selection-text)];
   }
 
   button {
@@ -56,5 +56,9 @@
   .glass-panel {
     background-color: var(--panel-bg);
     border-color: var(--border-color);
+  }
+
+  .pb-safe {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
   }
 }
