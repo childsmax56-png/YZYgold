@@ -1834,7 +1834,10 @@ export default function App() {
             <video src={screen.url} autoPlay loop muted playsInline className="w-[400px] h-[400px] object-contain" />
           )}
           {screen?.type === 'streamable' && screen.url && (
-            <iframe src={`${screen.url}?autoplay=1&muted=1&loop=1&controls=0`} className="w-[400px] h-[400px]" allowFullScreen allow="autoplay; muted" style={{ border: 'none', pointerEvents: 'none' }} />
+            <div className="relative w-[400px] h-[400px]">
+              <iframe src={`${screen.url}?autoplay=1&muted=1&loop=1&controls=0`} className="w-full h-full" allowFullScreen allow="autoplay; muted" style={{ border: 'none', pointerEvents: 'none' }} />
+              <div className="absolute bottom-0 left-0 w-32 h-8 bg-black" />
+            </div>
           )}
           {(!screen || screen.type === 'none') && (
             <div className="animate-pulse text-sm font-bold tracking-widest uppercase text-white/50">Loading Songs...</div>
