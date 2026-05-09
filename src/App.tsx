@@ -2422,6 +2422,27 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
       )}
 
       <AnimatePresence>
+        {isFullScreen && isYoutubeActive && youtubeState.currentVideo && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center"
+          >
+            <button
+              onClick={() => setIsFullScreen(false)}
+              className="absolute top-4 right-4 z-10 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <iframe
+              src={`https://www.youtube.com/embed/${youtubeState.currentVideo.id}?autoplay=1&controls=1&modestbranding=1&rel=0`}
+              className="w-full h-full max-w-6xl max-h-[80vh]"
+              allow="autoplay; fullscreen"
+              allowFullScreen
+            />
+          </motion.div>
+        )}
         {isFullScreen && effectiveSong && !isSpotifyActive && !isYoutubeActive && !isSoundCloudActive && (
           <FullScreenPlayer
             currentSong={currentSong!}
