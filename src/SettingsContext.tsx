@@ -7,7 +7,7 @@ export type LoadingScreenId = 'none' | 'donda2' | 'swish' | 'thankgod' | 'yandhi
 export interface LoadingScreenOption {
   id: LoadingScreenId;
   label: string;
-  type: 'none' | 'gif' | 'video' | 'streamable';
+  type: 'none' | 'gif' | 'video' | 'embed';
   url?: string;
 }
 
@@ -18,8 +18,8 @@ export const LOADING_SCREENS: LoadingScreenOption[] = [
   { id: 'thankgod', label: 'Thank God for Drugs', type: 'gif', url: 'https://i.ibb.co/gMQcJwtH/TGFD-loading-screen.gif' },
   { id: 'yandhi', label: 'Yandhi', type: 'gif', url: 'https://i.ibb.co/TMfjBmkX/Yandhi-loading-screen.gif' },
   { id: 'yeezus', label: 'Yeezus', type: 'gif', url: 'https://i.ibb.co/kt6cT2Z/Yeezus-loading-screen.gif' },
-  { id: 'graduation', label: 'Graduation', type: 'streamable', url: 'https://streamable.com/e/8odwcz' },
-  { id: 'wtt', label: 'Watch the Throne', type: 'streamable', url: 'https://streamable.com/e/vybez2' },
+  { id: 'graduation', label: 'Graduation', type: 'embed', url: 'https://drive.google.com/file/d/1Tg0Z6QObtXTMfUS0JMC_nHaisdXdOq6C/preview' },
+  { id: 'wtt', label: 'Watch the Throne', type: 'embed', url: 'https://drive.google.com/file/d/1JNN309DzsPFWygCAI-yK730IoATQnYeM/preview' },
 ];
 
 export interface AppSettings {
