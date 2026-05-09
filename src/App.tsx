@@ -85,6 +85,8 @@ const ERA_MAPPINGS: Record<string, string> = {
   "TurboGrafix 16": "Turbo Grafx 16",
   "Turbo Grafx 16": "Turbo Grafx 16",
   "Turbo Grafx-16": "Turbo Grafx 16",
+  "Turbo Grafix 16": "Turbo Grafx 16",
+  "Turbo Grafix-16": "Turbo Grafx 16",
   "Donda [V1]": "DONDA [V1]",
   "KIDSSEEGHOSTS": "KIDS SEE GHOSTS",
   "Kids See Ghosts": "KIDS SEE GHOSTS",
