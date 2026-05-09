@@ -16,7 +16,7 @@ export const LOADING_SCREENS: LoadingScreenOption[] = [
   { id: 'donda2', label: 'Donda 2', type: 'gif', url: 'https://i.ibb.co/BH4D6dZm/Donda-2-Loading-Screen.gif' },
   { id: 'swish', label: 'Swish', type: 'gif', url: 'https://i.ibb.co/vxrY813X/Swish-loading-screen.gif' },
   { id: 'thankgod', label: 'Thank God for Drugs', type: 'gif', url: 'https://i.ibb.co/gMQcJwtH/TGFD-loading-screen.gif' },
-  { id: 'yandhi', label: 'Yandhi', type: 'gif', url: 'https://i.ibb.co/TMfjBmkX/Yandhi-loading-screen.gif' },
+  { id: 'yandhi', label: 'Yandhi', type: 'gif', url: 'https://i.ibb.co/27xVGrT6/IMG-3646.gif' },
   { id: 'yeezus', label: 'Yeezus', type: 'gif', url: 'https://i.ibb.co/kt6cT2Z/Yeezus-loading-screen.gif' },
   { id: 'graduation', label: 'Graduation', type: 'gif', url: 'https://i.ibb.co/5gNfGhmZ/Graduation-loading-screen-1.gif' },
   { id: 'wtt', label: 'Watch the Throne', type: 'gif', url: 'https://i.ibb.co/fGPV83fc/Watch-the-throne-loading-screen.gif' },
