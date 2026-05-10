@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { saveAs } from 'file-saver';
 import { useSettings } from './SettingsContext';
+import { ID3Writer } from 'browser-id3-writer';
 
 export const TAG_TOOLTIP_MAP: Record<string, string> = {
   'Best Of': 'some of the best leaks hosted on the tracker.',
@@ -439,6 +440,58 @@ export function getCleanSongNameWithTags(text: string | undefined | null): strin
   return formattedText;
 }
 
+export interface SongMeta {
+  title?: string;
+  artist?: string;
+  album?: string;
+  year?: string;
+  artworkUrl?: string;
+}
+
+async function fetchArtworkBuffer(artworkUrl: string): Promise<ArrayBuffer | null> {
+  const proxies = [
+    artworkUrl,
+    `https://corsproxy.io/?${encodeURIComponent(artworkUrl)}`,
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(artworkUrl)}`,
+  ];
+  for (const url of proxies) {
+    try {
+      const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+      if (res.ok) return await res.arrayBuffer();
+    } catch {
+      // try next proxy
+    }
+  }
+  return null;
+}
+
+async function embedID3Tags(blob: Blob, meta: SongMeta, cleanTitle: string): Promise<Blob> {
+  const audioBuffer = await blob.arrayBuffer();
+  const writer = new ID3Writer(audioBuffer);
+
+  if (meta.title || cleanTitle) writer.setFrame('TIT2', meta.title || cleanTitle);
+  if (meta.artist) writer.setFrame('TPE1', [meta.artist]);
+  if (meta.album) writer.setFrame('TALB', meta.album);
+  if (meta.year) {
+    const yearNum = parseInt(meta.year, 10);
+    if (!isNaN(yearNum)) writer.setFrame('TYER', yearNum);
+  }
+
+  if (meta.artworkUrl) {
+    const artBuffer = await fetchArtworkBuffer(meta.artworkUrl);
+    if (artBuffer) {
+      writer.setFrame('APIC', {
+        type: 3,
+        data: artBuffer,
+        description: 'Cover',
+      });
+    }
+  }
+
+  writer.addTag();
+  return writer.getBlob();
+}
+
 function openFallback(url: string) {
   const a = document.createElement('a');
   a.href = url;
@@ -455,7 +508,7 @@ function isInAppBrowser(): boolean {
   return /GSA\/|FBAN|FBAV|Instagram\//.test(ua);
 }
 
-export async function handleDownloadFile(url: string, suggestedName: string, tagsAsEmojis: boolean) {
+export async function handleDownloadFile(url: string, suggestedName: string, tagsAsEmojis: boolean, meta?: SongMeta) {
   if (!url) return;
   try {
     let finalUrl = url;
@@ -560,6 +613,15 @@ export async function handleDownloadFile(url: string, suggestedName: string, tag
         const actualExt = blob.type.includes('wav') ? '.wav' : blob.type.includes('flac') ? '.flac' : '.mp3';
         if (actualExt !== '.mp3' && fileName.endsWith('.mp3')) {
           fileName = fileName.slice(0, -4) + actualExt;
+        }
+
+        if (meta && actualExt === '.mp3') {
+          const cleanTitle = meta.title || formatTextForNotification(suggestedName, false);
+          try {
+            blob = await embedID3Tags(blob, meta, cleanTitle);
+          } catch (e) {
+            console.warn('ID3 tagging failed, saving without tags:', e);
+          }
         }
       }
     } catch (e) {
