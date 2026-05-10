@@ -49,7 +49,7 @@ export const onRequestGet: PagesFunction = async (context) => {
       const eraField = row['Era'] ?? '';
       if (!eraField.includes('\n')) continue;
       const { name: eraName } = parseSongName(row[NAME_KEY] ?? '');
-      if (eraName && !/^\d/.test(eraName)) validEraNames.add(eraName);
+      if (eraName && !/^\d+\s/.test(eraName)) validEraNames.add(eraName);
     }
 
     // Second pass: build eras and songs, ignoring anything outside known eras.
