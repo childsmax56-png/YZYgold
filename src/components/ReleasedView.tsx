@@ -10,7 +10,7 @@ import {
   SiBandcamp,
 } from 'react-icons/si';
 import { Era } from '../types';
-import { CUSTOM_IMAGES } from '../utils';
+import { CUSTOM_IMAGES, ALBUM_DESCRIPTIONS } from '../utils';
 
 export interface ReleasedEntry {
   Era: string;
@@ -212,6 +212,7 @@ function groupByEra(data: ReleasedEntry[], allEras: Era[]): ReleasedEraGroup[] {
 
 export function ReleasedView({ eras, releasedData, searchQuery, spotifyLoggedIn, spotifyReady, onPlaySpotify, youtubeReady, onPlayYoutube, onPlayAudio, soundcloudReady, onPlaySoundCloud, onPlayArchive }: ReleasedViewProps) {
   const [selectedEra, setSelectedEra] = useState<string | null>(null);
+  const [isDescExpanded, setIsDescExpanded] = useState(false);
   // key: `${trackIdx}-${linkIdx}`
   const [openEmbed, setOpenEmbed] = useState<string | null>(null);
 
@@ -261,7 +262,7 @@ export function ReleasedView({ eras, releasedData, searchQuery, spotifyLoggedIn,
         {/* header */}
         <div className="p-6 md:p-8 flex flex-col md:flex-row items-start gap-6 md:gap-8 border-b border-white/5 bg-white/5">
           <button
-            onClick={() => { setSelectedEra(null); setOpenEmbed(null); }}
+            onClick={() => { setSelectedEra(null); setOpenEmbed(null); setIsDescExpanded(false); }}
             className="cursor-pointer mt-1 flex items-center justify-center w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors shrink-0"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -289,6 +290,19 @@ export function ReleasedView({ eras, releasedData, searchQuery, spotifyLoggedIn,
             <p className="text-white/50 text-sm">
               {selectedGroup.tracks.length} track{selectedGroup.tracks.length !== 1 ? 's' : ''}
             </p>
+            {ALBUM_DESCRIPTIONS[selectedGroup.eraName] && (
+              <div className="mt-3 max-w-3xl">
+                <p className={`text-white/80 text-sm leading-relaxed ${isDescExpanded ? '' : 'line-clamp-3'}`}>
+                  {ALBUM_DESCRIPTIONS[selectedGroup.eraName]}
+                </p>
+                <button
+                  onClick={() => setIsDescExpanded(!isDescExpanded)}
+                  className="text-[var(--theme-color)] text-xs font-bold mt-1 hover:underline cursor-pointer"
+                >
+                  {isDescExpanded ? 'Show Less' : 'Show More...'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -464,7 +478,7 @@ export function ReleasedView({ eras, releasedData, searchQuery, spotifyLoggedIn,
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: Math.min(i * 0.02, 0.5), duration: 0.3 }}
-          onClick={() => setSelectedEra(group.eraName)}
+          onClick={() => { setSelectedEra(group.eraName); setIsDescExpanded(false); }}
           className="group flex flex-col gap-3 cursor-pointer"
         >
           <div className="relative aspect-square rounded-md overflow-hidden bg-white/5 border border-white/5 group-hover:border-white/20 transition-colors">
