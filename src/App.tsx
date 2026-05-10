@@ -2303,7 +2303,7 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
                   onBack={() => setSelectedAlbum(null)}
                 />
               ) : activeCategory === 'tracklists' ? (
-                <EraGrid key="tracklists-grid" eras={filteredEras} onSelectEra={setSelectedAlbum} />
+                <EraGrid key="tracklists-grid" eras={filteredEras.filter(e => e.name !== 'Favorites')} onSelectEra={setSelectedAlbum} />
               ) : activeCategory === 'fakes' ? (
                 <FakesView
                   key="fakes"
