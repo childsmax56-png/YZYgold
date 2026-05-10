@@ -838,6 +838,7 @@ export function SettingsView({ onCategoryChange, searchQuery, eras = [], artData
               <h3 className="text-xl font-bold text-white mb-1">Mass Downloads</h3>
               <p className="text-sm text-white/50">Download entire categories as a ZIP file.</p>
               <p className="text-xs text-yellow-400/70 mt-1">⚠ Keep this tab open and active until the download finishes.</p>
+              <p className="text-xs text-white/30 mt-1">Tip: turn off <span className="text-white/50">Embed Metadata on Download</span> for faster downloads.</p>
             </div>
             <div className="space-y-2 pb-2">
               <div className="flex items-center justify-between p-4 bg-[var(--theme-color)]/10 border border-[var(--theme-color)]/20 rounded-xl">
