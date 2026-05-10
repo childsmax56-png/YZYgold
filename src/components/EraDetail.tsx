@@ -242,13 +242,13 @@ export function EraDetail({ era, onBack, onPlaySong, searchQuery = '', filters, 
           const songEraName = (song as any).realEra?.name || era.name;
           const artUrl = song.image || CUSTOM_IMAGES[songEraName] || (song as any).realEra?.image || era.image;
           const songTitle = song.name.includes(' - ') ? song.name.substring(song.name.indexOf(' - ') + 3) : song.name;
-          await handleDownloadFile(rawUrl, song.name, settings.tagsAsEmojis, {
+          await handleDownloadFile(rawUrl, song.name, settings.tagsAsEmojis, settings.embedMetadata ? {
             title: songTitle,
             artist: buildArtistTag(song.name, songEraName),
             album: songEraName,
             year: ALBUM_RELEASE_DATES[songEraName]?.split('/').pop(),
             artworkUrl: artUrl,
-          }, settings.downloadAsOgFilename ? song.description : undefined);
+          } : undefined, settings.downloadAsOgFilename ? song.description : undefined);
           await new Promise(resolve => setTimeout(resolve, 800));
         } catch (err) {
           console.error(`Failed to download ${song.name}:`, err);

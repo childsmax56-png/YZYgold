@@ -273,13 +273,13 @@ export function MiscView({ eras, miscData, searchQuery, filters, onPlaySong, cur
           const miscEraName = selectedEraData!.eraName.replace(' [Misc Album]', '');
           const artUrl = selectedEraData!.image || CUSTOM_IMAGES[miscEraName];
           const songTitle = song.name.includes(' - ') ? song.name.substring(song.name.indexOf(' - ') + 3) : song.name;
-          await handleDownloadFile(rawUrl, song.name, settings.tagsAsEmojis, {
+          await handleDownloadFile(rawUrl, song.name, settings.tagsAsEmojis, settings.embedMetadata ? {
             title: songTitle,
             artist: buildArtistTag(song.name, miscEraName),
             album: miscEraName,
             year: ALBUM_RELEASE_DATES[miscEraName]?.split('/').pop(),
             artworkUrl: artUrl,
-          }, settings.downloadAsOgFilename ? song.description : undefined);
+          } : undefined, settings.downloadAsOgFilename ? song.description : undefined);
           await new Promise(resolve => setTimeout(resolve, 800));
         } catch (err) {
           console.error(`Failed to download ${song.name}:`, err);

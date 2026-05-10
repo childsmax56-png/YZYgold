@@ -49,6 +49,7 @@ export interface AppSettings {
   notOpenInNewTab: boolean;
   googleSheetsUrl: string;
   downloadAsOgFilename: boolean;
+  embedMetadata: boolean;
 }
 
 interface SettingsContextType {
@@ -84,6 +85,7 @@ export const defaultSettings: AppSettings = {
   notOpenInNewTab: false,
   googleSheetsUrl: '',
   downloadAsOgFilename: false,
+  embedMetadata: true,
 };
 
 const SettingsContext = createContext<SettingsContextType>({

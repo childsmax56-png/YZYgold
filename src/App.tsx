@@ -1632,13 +1632,13 @@ export default function App() {
         const kbEraName = (currentSong as any).realEra?.name || currentEra?.name || '';
         const kbArtUrl = currentSong.image || CUSTOM_IMAGES[kbEraName] || (currentSong as any).realEra?.image || currentEra?.image;
         const kbTitle = currentSong.name.includes(' - ') ? currentSong.name.substring(currentSong.name.indexOf(' - ') + 3) : currentSong.name;
-        handleDownloadFile(rawUrl, currentSong.name, settings.tagsAsEmojis, {
+        handleDownloadFile(rawUrl, currentSong.name, settings.tagsAsEmojis, settings.embedMetadata ? {
           title: kbTitle,
           artist: buildArtistTag(currentSong.name, kbEraName),
           album: kbEraName,
           year: ALBUM_RELEASE_DATES[kbEraName]?.split('/').pop(),
           artworkUrl: kbArtUrl,
-        }, settings.downloadAsOgFilename ? currentSong.description : undefined);
+        } : undefined, settings.downloadAsOgFilename ? currentSong.description : undefined);
       }
     };
 
