@@ -16,7 +16,7 @@ import { QueueModal } from './components/QueueModal';
 import { handleShareSilent } from './components/EraDetail';
 
 import { TrackerData, Era, Song, SearchFilters } from './types';
-import { matchesFilters, createSlug, getSongSlug, getCleanSongNameWithTags, isSongNotAvailable, formatTextForNotification, CUSTOM_IMAGES, HIDDEN_ALBUMS, handleDownloadFile } from './utils';
+import { matchesFilters, createSlug, getSongSlug, getCleanSongNameWithTags, isSongNotAvailable, formatTextForNotification, CUSTOM_IMAGES, HIDDEN_ALBUMS, ALBUM_RELEASE_DATES, getArtistName, buildArtistTag, handleDownloadFile } from './utils';
 import { isLastfmLoggedIn, saveLastfmSession, clearLastfmSession, scrobbleTrack, updateNowPlaying, cleanTrackName, parseArtistFromSong, cleanAlbumName } from './lastfm';
 import { isSpotifyLoggedIn, clearSpotifySession, startSpotifyAuth, handleSpotifyCallback } from './spotify';
 import { useSpotify, SpotifyTrack } from './useSpotify';
@@ -1629,7 +1629,16 @@ export default function App() {
       } else if (e.code === 'KeyD' && currentSong && !isPlayerClosed) {
         e.preventDefault();
         const rawUrl = currentSong.url || (currentSong.urls && currentSong.urls.length > 0 ? currentSong.urls[0] : '');
-        handleDownloadFile(rawUrl, currentSong.name, settings.tagsAsEmojis);
+        const kbEraName = (currentSong as any).realEra?.name || currentEra?.name || '';
+        const kbArtUrl = currentSong.image || CUSTOM_IMAGES[kbEraName] || (currentSong as any).realEra?.image || currentEra?.image;
+        const kbTitle = currentSong.name.includes(' - ') ? currentSong.name.substring(currentSong.name.indexOf(' - ') + 3) : currentSong.name;
+        handleDownloadFile(rawUrl, currentSong.name, settings.tagsAsEmojis, settings.embedMetadata ? {
+          title: kbTitle,
+          artist: buildArtistTag(currentSong.name, kbEraName),
+          album: kbEraName,
+          year: ALBUM_RELEASE_DATES[kbEraName]?.split('/').pop(),
+          artworkUrl: kbArtUrl,
+        } : undefined, settings.downloadAsOgFilename ? currentSong.description : undefined);
       }
     };
 
@@ -2252,7 +2261,7 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
           <div className="flex-1">
             <AnimatePresence mode="wait">
               {activeCategory === 'settings' ? (
-                <SettingsView key="settings" onCategoryChange={setActiveCategory} searchQuery={searchQuery} />
+                <SettingsView key="settings" onCategoryChange={setActiveCategory} searchQuery={searchQuery} eras={erasArray} artData={artData} stemsData={stemsData} miscData={miscData} />
               ) : activeCategory === 'history' ? (
                 <HistoryView key="history" searchQuery={searchQuery} filters={filters} eras={erasArray} historyData={recentData} />
               ) : activeCategory === 'art' ? (

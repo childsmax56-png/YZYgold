@@ -3,7 +3,7 @@ import { Play, Pause, Volume2, Maximize2, MoreHorizontal, Download, X, SkipBack,
 import { parseArtistFromSong } from '../lastfm';
 import { Song, Era } from '../types';
 import { useState, useRef, useEffect } from 'react';
-import { formatTextWithTags, CUSTOM_IMAGES, handleDownloadFile } from '../utils';
+import { formatTextWithTags, CUSTOM_IMAGES, ALBUM_RELEASE_DATES, buildArtistTag, handleDownloadFile } from '../utils';
 import { LyricsModal } from './LyricsModal';
 import { useSettings } from '../SettingsContext';
 
@@ -368,7 +368,16 @@ export function PlayerBar({
                   })()}
                 {downloadUrl && allowDownload && (
                   <button onClick={() => {
-                        handleDownloadFile(rawUrl, currentSong.name, settings.tagsAsEmojis);
+                        const dlEraName = (currentSong as any).realEra?.name || era?.name || '';
+                        const dlArtUrl = currentSong.image || CUSTOM_IMAGES[dlEraName] || (currentSong as any).realEra?.image || era?.image;
+                        const dlYear = ALBUM_RELEASE_DATES[dlEraName]?.split('/').pop();
+                        handleDownloadFile(rawUrl, currentSong.name, settings.tagsAsEmojis, settings.embedMetadata ? {
+                          title: titleDisplay,
+                          artist: buildArtistTag(currentSong.name, dlEraName),
+                          album: dlEraName,
+                          year: dlYear,
+                          artworkUrl: dlArtUrl,
+                        } : undefined, settings.downloadAsOgFilename ? currentSong.description : undefined);
                         setShowMenu(false);
                     }}
                     className="w-full flex items-center gap-3 px-4 py-2 text-sm text-white/70 hover:text-white hover:bg-white/5 transition-colors cursor-pointer text-left">
