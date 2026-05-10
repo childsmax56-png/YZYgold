@@ -1,24 +1,245 @@
 import { useSettings, LOADING_SCREENS } from '../SettingsContext';
-import { AlignLeft, AlignCenter, AlignRight, History, Trash2, RotateCcw, X, RefreshCw, Check } from 'lucide-react';
+import { AlignLeft, AlignCenter, AlignRight, History, Trash2, RotateCcw, X, RefreshCw, Check, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Category } from './Navbar';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { SiLastdotfm } from 'react-icons/si';
 import { isLastfmLoggedIn } from '../lastfm';
+import { saveAs } from 'file-saver';
+import { Era } from '../types';
+import { ArtEntry } from './ArtGallery';
+import { StemEntry } from './StemsView';
+import { MiscEntry } from './MiscView';
 
 interface SettingsViewProps {
   onCategoryChange: (cat: Category) => void;
   searchQuery: string;
+  eras?: Era[];
+  artData?: ArtEntry[];
+  stemsData?: StemEntry[];
+  miscData?: MiscEntry[];
 }
 
-export function SettingsView({ onCategoryChange, searchQuery }: SettingsViewProps) {
+async function resolveAudioUrl(rawUrl: string): Promise<string> {
+  if (rawUrl.includes('temp.imgur.gg/f/')) {
+    const id = rawUrl.split('/f/')[1];
+    const res = await fetch(`https://temp.imgur.gg/api/file/${id}`);
+    const data = await res.json();
+    return data.cdnUrl as string;
+  }
+  if (rawUrl.includes('pillows.su/f/')) {
+    const id = rawUrl.split('/f/')[1];
+    return `https://api.pillows.su/api/get/${id}`;
+  }
+  return rawUrl;
+}
+
+function sanitizeFilename(name: string): string {
+  return name.replace(/[/\\?%*:|"<>]/g, '-').trim();
+}
+
+export function SettingsView({ onCategoryChange, searchQuery, eras = [], artData = [], stemsData = [], miscData = [] }: SettingsViewProps) {
   const { settings, updateSettings, resetSettings } = useSettings();
   const [isConfirmingReset, setIsConfirmingReset] = useState(false);
   const [isConfirmingClear, setIsConfirmingClear] = useState(false);
   const [showShortcutsModal, setShowShortcutsModal] = useState(false);
   const [sheetUrlInput, setSheetUrlInput] = useState(settings.googleSheetsUrl);
   const [sheetSaved, setSheetSaved] = useState(false);
+  const [dlProgress, setDlProgress] = useState<{ [key: string]: string | null }>({});
+
+  const setProgress = (key: string, val: string | null) =>
+    setDlProgress(prev => ({ ...prev, [key]: val }));
+
+  const handleDownloadUnreleased = async () => {
+    if (dlProgress['unreleased']) return;
+    const songs: { name: string; era: string; url: string }[] = [];
+    for (const era of eras) {
+      for (const tracks of Object.values(era.data || {})) {
+        for (const song of tracks) {
+          const url = song.url || (song.urls && song.urls[0]) || '';
+          if (url) songs.push({ name: song.name, era: era.name, url });
+        }
+      }
+    }
+    if (!songs.length) return;
+    setProgress('unreleased', `0 / ${songs.length}`);
+    const JSZip = (await import('jszip')).default;
+    const zip = new JSZip();
+    let done = 0;
+    await Promise.all(songs.map(async ({ name, era, url }) => {
+      try {
+        const fetchUrl = await resolveAudioUrl(url);
+        const res = await fetch(fetchUrl);
+        if (!res.ok) throw new Error('fetch failed');
+        const blob = await res.blob();
+        const ext = blob.type.includes('wav') ? '.wav' : blob.type.includes('flac') ? '.flac' : '.mp3';
+        zip.file(`${sanitizeFilename(era)}/${sanitizeFilename(name)}${ext}`, blob);
+      } catch { /* skip */ } finally {
+        done++;
+        setProgress('unreleased', `${done} / ${songs.length}`);
+      }
+    }));
+    const content = await zip.generateAsync({ type: 'blob' });
+    saveAs(content, 'all-unreleased.zip');
+    setProgress('unreleased', null);
+  };
+
+  const handleDownloadArt = async () => {
+    if (dlProgress['art']) return;
+    const items = artData.filter(a => a['Link(s)']?.trim());
+    if (!items.length) return;
+    setProgress('art', `0 / ${items.length}`);
+    const JSZip = (await import('jszip')).default;
+    const zip = new JSZip();
+    let done = 0;
+    await Promise.all(items.map(async (item) => {
+      try {
+        const url = item['Link(s)'].split('\n')[0].trim();
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('fetch failed');
+        const blob = await res.blob();
+        const ext = blob.type.includes('png') ? '.png' : blob.type.includes('gif') ? '.gif' : blob.type.includes('webp') ? '.webp' : '.jpg';
+        zip.file(`${sanitizeFilename(item.Era || 'misc')}/${sanitizeFilename(item.Name)}${ext}`, blob);
+      } catch { /* skip */ } finally {
+        done++;
+        setProgress('art', `${done} / ${items.length}`);
+      }
+    }));
+    const content = await zip.generateAsync({ type: 'blob' });
+    saveAs(content, 'all-art.zip');
+    setProgress('art', null);
+  };
+
+  const handleDownloadStems = async () => {
+    if (dlProgress['stems']) return;
+    const items = stemsData.filter(s => s['Link(s)']?.trim());
+    if (!items.length) return;
+    setProgress('stems', `0 / ${items.length}`);
+    const JSZip = (await import('jszip')).default;
+    const zip = new JSZip();
+    let done = 0;
+    await Promise.all(items.map(async (item) => {
+      try {
+        const url = item['Link(s)']!.split('\n')[0].trim();
+        const fetchUrl = await resolveAudioUrl(url);
+        const res = await fetch(fetchUrl);
+        if (!res.ok) throw new Error('fetch failed');
+        const blob = await res.blob();
+        const ext = blob.type.includes('wav') ? '.wav' : blob.type.includes('flac') ? '.flac' : blob.type.includes('zip') ? '.zip' : '.mp3';
+        zip.file(`${sanitizeFilename(item.Era || 'misc')}/${sanitizeFilename(item.Name)}${ext}`, blob);
+      } catch { /* skip */ } finally {
+        done++;
+        setProgress('stems', `${done} / ${items.length}`);
+      }
+    }));
+    const content = await zip.generateAsync({ type: 'blob' });
+    saveAs(content, 'all-stems.zip');
+    setProgress('stems', null);
+  };
+
+  const handleDownloadMisc = async () => {
+    if (dlProgress['misc']) return;
+    const items = miscData.filter(m => m['Link(s)']?.trim());
+    if (!items.length) return;
+    setProgress('misc', `0 / ${items.length}`);
+    const JSZip = (await import('jszip')).default;
+    const zip = new JSZip();
+    let done = 0;
+    await Promise.all(items.map(async (item) => {
+      try {
+        const url = item['Link(s)']!.split('\n')[0].trim();
+        const fetchUrl = await resolveAudioUrl(url);
+        const res = await fetch(fetchUrl);
+        if (!res.ok) throw new Error('fetch failed');
+        const blob = await res.blob();
+        const ext = blob.type.includes('wav') ? '.wav' : blob.type.includes('flac') ? '.flac' : blob.type.includes('png') ? '.png' : blob.type.includes('jpg') ? '.jpg' : '.mp3';
+        zip.file(`${sanitizeFilename(item.Era || 'misc')}/${sanitizeFilename(item.Name)}${ext}`, blob);
+      } catch { /* skip */ } finally {
+        done++;
+        setProgress('misc', `${done} / ${items.length}`);
+      }
+    }));
+    const content = await zip.generateAsync({ type: 'blob' });
+    saveAs(content, 'all-misc.zip');
+    setProgress('misc', null);
+  };
+
+  const handleDownloadEverything = async () => {
+    if (dlProgress['everything']) return;
+    const JSZip = (await import('jszip')).default;
+    const zip = new JSZip();
+
+    const songs: { name: string; era: string; url: string }[] = [];
+    for (const era of eras) {
+      for (const tracks of Object.values(era.data || {})) {
+        for (const song of tracks) {
+          const url = song.url || (song.urls && song.urls[0]) || '';
+          if (url) songs.push({ name: song.name, era: era.name, url });
+        }
+      }
+    }
+    const artItems = artData.filter(a => a['Link(s)']?.trim());
+    const stemItems = stemsData.filter(s => s['Link(s)']?.trim());
+    const miscItems = miscData.filter(m => m['Link(s)']?.trim());
+
+    const total = songs.length + artItems.length + stemItems.length + miscItems.length;
+    if (!total) return;
+    let done = 0;
+    const tick = () => { done++; setProgress('everything', `${done} / ${total}`); };
+
+    setProgress('everything', `0 / ${total}`);
+
+    await Promise.all([
+      ...songs.map(async ({ name, era, url }) => {
+        try {
+          const fetchUrl = await resolveAudioUrl(url);
+          const res = await fetch(fetchUrl);
+          if (!res.ok) throw new Error('fetch failed');
+          const blob = await res.blob();
+          const ext = blob.type.includes('wav') ? '.wav' : blob.type.includes('flac') ? '.flac' : '.mp3';
+          zip.file(`unreleased/${sanitizeFilename(era)}/${sanitizeFilename(name)}${ext}`, blob);
+        } catch { /* skip */ } finally { tick(); }
+      }),
+      ...artItems.map(async (item) => {
+        try {
+          const url = item['Link(s)'].split('\n')[0].trim();
+          const res = await fetch(url);
+          if (!res.ok) throw new Error('fetch failed');
+          const blob = await res.blob();
+          const ext = blob.type.includes('png') ? '.png' : blob.type.includes('gif') ? '.gif' : blob.type.includes('webp') ? '.webp' : '.jpg';
+          zip.file(`art/${sanitizeFilename(item.Era || 'misc')}/${sanitizeFilename(item.Name)}${ext}`, blob);
+        } catch { /* skip */ } finally { tick(); }
+      }),
+      ...stemItems.map(async (item) => {
+        try {
+          const url = item['Link(s)']!.split('\n')[0].trim();
+          const fetchUrl = await resolveAudioUrl(url);
+          const res = await fetch(fetchUrl);
+          if (!res.ok) throw new Error('fetch failed');
+          const blob = await res.blob();
+          const ext = blob.type.includes('wav') ? '.wav' : blob.type.includes('flac') ? '.flac' : blob.type.includes('zip') ? '.zip' : '.mp3';
+          zip.file(`stems/${sanitizeFilename(item.Era || 'misc')}/${sanitizeFilename(item.Name)}${ext}`, blob);
+        } catch { /* skip */ } finally { tick(); }
+      }),
+      ...miscItems.map(async (item) => {
+        try {
+          const url = item['Link(s)']!.split('\n')[0].trim();
+          const fetchUrl = await resolveAudioUrl(url);
+          const res = await fetch(fetchUrl);
+          if (!res.ok) throw new Error('fetch failed');
+          const blob = await res.blob();
+          const ext = blob.type.includes('wav') ? '.wav' : blob.type.includes('flac') ? '.flac' : blob.type.includes('png') ? '.png' : blob.type.includes('jpg') ? '.jpg' : '.mp3';
+          zip.file(`misc/${sanitizeFilename(item.Era || 'misc')}/${sanitizeFilename(item.Name)}${ext}`, blob);
+        } catch { /* skip */ } finally { tick(); }
+      }),
+    ]);
+
+    setProgress('everything', 'Zipping...');
+    const content = await zip.generateAsync({ type: 'blob' });
+    saveAs(content, 'everything.zip');
+    setProgress('everything', null);
+  };
 
   const handleSaveSheetUrl = () => {
     updateSettings({ googleSheetsUrl: sheetUrlInput.trim() });
@@ -73,6 +294,21 @@ export function SettingsView({ onCategoryChange, searchQuery }: SettingsViewProp
               className={`w-11 h-6 rounded-full transition-colors relative shrink-0 ${settings.tagsAsEmojis ? 'bg-[var(--theme-color)]' : 'bg-white/10'}`}
             >
               <div className={`w-5 h-5 rounded-full bg-white absolute top-0.5 transition-transform ${settings.tagsAsEmojis ? 'translate-x-5.5' : 'translate-x-0.5'}`} />
+            </button>
+          </div>
+        )}
+
+        {matchesSearch('download og filename original filename') && (
+          <div className="flex items-center justify-between p-4 bg-[#111] border border-white/5 rounded-xl">
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-white/90">Download as OG Filename</span>
+              <span className="text-xs text-white/40">Use the original filename from notes when downloading, if available</span>
+            </div>
+            <button
+              onClick={() => updateSettings({ downloadAsOgFilename: !settings.downloadAsOgFilename })}
+              className={`w-11 h-6 rounded-full transition-colors relative shrink-0 ${settings.downloadAsOgFilename ? 'bg-[var(--theme-color)]' : 'bg-white/10'}`}
+            >
+              <div className={`w-5 h-5 rounded-full bg-white absolute top-0.5 transition-transform ${settings.downloadAsOgFilename ? 'translate-x-5.5' : 'translate-x-0.5'}`} />
             </button>
           </div>
         )}
@@ -576,6 +812,53 @@ export function SettingsView({ onCategoryChange, searchQuery }: SettingsViewProp
                     <span className="block text-xs text-white/30 mt-0.5">{screen.type === 'video' ? 'Video' : 'GIF'}</span>
                   )}
                 </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {matchesSearch('mass downloads download all unreleased art stems misc everything') && (
+          <div className="border border-white/5 rounded-2xl p-2 bg-[#0a0a0a] mt-8">
+            <div className="text-center py-8">
+              <h3 className="text-xl font-bold text-white mb-1">Mass Downloads</h3>
+              <p className="text-sm text-white/50">Download entire categories as a ZIP file.</p>
+              <p className="text-xs text-yellow-400/70 mt-1">⚠ Keep this tab open and active until the download finishes.</p>
+            </div>
+            <div className="space-y-2 pb-2">
+              <div className="flex items-center justify-between p-4 bg-[var(--theme-color)]/10 border border-[var(--theme-color)]/20 rounded-xl">
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium text-white/90">Download Everything</span>
+                  <span className="text-xs text-white/40">All unreleased, art, stems, and misc in one ZIP</span>
+                </div>
+                <button
+                  onClick={handleDownloadEverything}
+                  disabled={!!dlProgress['everything']}
+                  className="text-xs font-bold bg-[var(--theme-color)] hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-md transition-opacity flex items-center gap-2 shrink-0 cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  {dlProgress['everything'] ? dlProgress['everything'] : 'Download Everything'}
+                </button>
+              </div>
+              {[
+                { key: 'unreleased', label: 'Download All Unreleased', desc: 'All songs from every era', handler: handleDownloadUnreleased },
+                { key: 'art', label: 'Download All Art', desc: 'Every art gallery entry', handler: handleDownloadArt },
+                { key: 'stems', label: 'Download All Stems', desc: 'Every stems entry', handler: handleDownloadStems },
+                { key: 'misc', label: 'Download All Misc', desc: 'Every misc entry', handler: handleDownloadMisc },
+              ].map(({ key, label, desc, handler }) => (
+                <div key={key} className="flex items-center justify-between p-4 bg-[#111] border border-white/5 rounded-xl">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-white/90">{label}</span>
+                    <span className="text-xs text-white/40">{desc}</span>
+                  </div>
+                  <button
+                    onClick={handler}
+                    disabled={!!dlProgress[key]}
+                    className="text-xs font-medium bg-white/10 hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-md transition-colors flex items-center gap-2 shrink-0 cursor-pointer"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    {dlProgress[key] ? dlProgress[key] : 'Download'}
+                  </button>
+                </div>
               ))}
             </div>
           </div>

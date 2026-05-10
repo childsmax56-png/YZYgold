@@ -317,7 +317,7 @@ export function StemsView({ eras, stemsData, searchQuery, filters, onPlaySong, c
             album: stemsEraName,
             year: ALBUM_RELEASE_DATES[stemsEraName]?.split('/').pop(),
             artworkUrl: artUrl,
-          });
+          }, settings.downloadAsOgFilename ? song.description : undefined);
           await new Promise(resolve => setTimeout(resolve, 800));
         } catch (err) {
           console.error(`Failed to download ${song.name}:`, err);

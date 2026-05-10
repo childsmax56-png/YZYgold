@@ -688,7 +688,7 @@ export default function App() {
           if (!nextJson.eras["Sunday Service Choir"]) {
             nextJson.eras["Sunday Service Choir"] = {
               name: "Sunday Service Choir",
-              extra: "Yandhi / JESUS IS KING / JESUS IS LORD / DONDA",
+              extra: "Yandhi / JESUS IS KING / God's Country / DONDA",
               data: { "Featured": [] }
             };
           }
@@ -787,7 +787,7 @@ export default function App() {
           if (!baseJson.eras["Sunday Service Choir"]) {
             baseJson.eras["Sunday Service Choir"] = {
               name: "Sunday Service Choir",
-              extra: "Yandhi / JESUS IS KING / JESUS IS LORD / DONDA",
+              extra: "Yandhi / JESUS IS KING / God's Country / DONDA",
               data: { "Featured": [] }
             };
           }
@@ -1638,7 +1638,7 @@ export default function App() {
           album: kbEraName,
           year: ALBUM_RELEASE_DATES[kbEraName]?.split('/').pop(),
           artworkUrl: kbArtUrl,
-        });
+        }, settings.downloadAsOgFilename ? currentSong.description : undefined);
       }
     };
 
@@ -2261,7 +2261,7 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
           <div className="flex-1">
             <AnimatePresence mode="wait">
               {activeCategory === 'settings' ? (
-                <SettingsView key="settings" onCategoryChange={setActiveCategory} searchQuery={searchQuery} />
+                <SettingsView key="settings" onCategoryChange={setActiveCategory} searchQuery={searchQuery} eras={erasArray} artData={artData} stemsData={stemsData} miscData={miscData} />
               ) : activeCategory === 'history' ? (
                 <HistoryView key="history" searchQuery={searchQuery} filters={filters} eras={erasArray} historyData={recentData} />
               ) : activeCategory === 'art' ? (

@@ -377,7 +377,7 @@ export function PlayerBar({
                           album: dlEraName,
                           year: dlYear,
                           artworkUrl: dlArtUrl,
-                        });
+                        }, settings.downloadAsOgFilename ? currentSong.description : undefined);
                         setShowMenu(false);
                     }}
                     className="w-full flex items-center gap-3 px-4 py-2 text-sm text-white/70 hover:text-white hover:bg-white/5 transition-colors cursor-pointer text-left">

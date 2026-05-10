@@ -248,7 +248,7 @@ export function EraDetail({ era, onBack, onPlaySong, searchQuery = '', filters, 
             album: songEraName,
             year: ALBUM_RELEASE_DATES[songEraName]?.split('/').pop(),
             artworkUrl: artUrl,
-          });
+          }, settings.downloadAsOgFilename ? song.description : undefined);
           await new Promise(resolve => setTimeout(resolve, 800));
         } catch (err) {
           console.error(`Failed to download ${song.name}:`, err);

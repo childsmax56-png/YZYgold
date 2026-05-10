@@ -279,7 +279,7 @@ export function MiscView({ eras, miscData, searchQuery, filters, onPlaySong, cur
             album: miscEraName,
             year: ALBUM_RELEASE_DATES[miscEraName]?.split('/').pop(),
             artworkUrl: artUrl,
-          });
+          }, settings.downloadAsOgFilename ? song.description : undefined);
           await new Promise(resolve => setTimeout(resolve, 800));
         } catch (err) {
           console.error(`Failed to download ${song.name}:`, err);
