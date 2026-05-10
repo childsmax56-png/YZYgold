@@ -247,6 +247,24 @@ export function getArtistName(eraName: string | undefined): string {
   return "Kanye West";
 }
 
+export function buildArtistTag(songName: string, eraName: string | undefined): string {
+  let primary: string;
+  const dashIdx = songName.indexOf(' - ');
+  if (dashIdx !== -1) {
+    primary = songName.substring(0, dashIdx);
+    Object.keys(TAG_MAP).forEach(emoji => { primary = primary.replaceAll(emoji, ''); });
+    primary = primary.replace(/[️]/g, '').trim();
+  } else {
+    primary = getArtistName(eraName);
+  }
+
+  const featMatch = songName.match(/\(feat\.\s*([^)]+)\)/i);
+  if (featMatch) {
+    return `${primary} feat. ${featMatch[1].trim()}`;
+  }
+  return primary;
+}
+
 export const TAG_MAP: Record<string, string> = {
   '⭐': 'Best Of',
   '🏆': 'Grails',

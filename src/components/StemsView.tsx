@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { ArrowLeft, Play, ExternalLink, X, Share2, Volume2, Check, Download, Loader2, Star } from 'lucide-react';
 import { Era, Song, SearchFilters } from '../types';
 import { useState, useMemo, useEffect } from 'react';
-import { formatTextWithTags, getCleanSongNameWithTags, matchesFilters, createSlug, getSongSlug, ALBUM_RELEASE_DATES, isSongNotAvailable, CUSTOM_IMAGES, getArtistName, handleDownloadFile } from '../utils';
+import { formatTextWithTags, getCleanSongNameWithTags, matchesFilters, createSlug, getSongSlug, ALBUM_RELEASE_DATES, isSongNotAvailable, CUSTOM_IMAGES, getArtistName, buildArtistTag, handleDownloadFile } from '../utils';
 import { useSettings } from '../SettingsContext';
 import { MvEntry, RemixEntry, SampleEntry } from '../App';
 import { findMvsForSong, findRemixesForSong, findSamplesForSong } from './EraDetail';
@@ -313,7 +313,7 @@ export function StemsView({ eras, stemsData, searchQuery, filters, onPlaySong, c
           const songTitle = song.name.includes(' - ') ? song.name.substring(song.name.indexOf(' - ') + 3) : song.name;
           await handleDownloadFile(rawUrl, song.name, settings.tagsAsEmojis, {
             title: songTitle,
-            artist: getArtistName(stemsEraName),
+            artist: buildArtistTag(song.name, stemsEraName),
             album: stemsEraName,
             year: ALBUM_RELEASE_DATES[stemsEraName]?.split('/').pop(),
             artworkUrl: artUrl,

@@ -3,7 +3,7 @@ import { Play, Pause, Volume2, Maximize2, MoreHorizontal, Download, X, SkipBack,
 import { parseArtistFromSong } from '../lastfm';
 import { Song, Era } from '../types';
 import { useState, useRef, useEffect } from 'react';
-import { formatTextWithTags, CUSTOM_IMAGES, ALBUM_RELEASE_DATES, handleDownloadFile } from '../utils';
+import { formatTextWithTags, CUSTOM_IMAGES, ALBUM_RELEASE_DATES, buildArtistTag, handleDownloadFile } from '../utils';
 import { LyricsModal } from './LyricsModal';
 import { useSettings } from '../SettingsContext';
 
@@ -373,7 +373,7 @@ export function PlayerBar({
                         const dlYear = ALBUM_RELEASE_DATES[dlEraName]?.split('/').pop();
                         handleDownloadFile(rawUrl, currentSong.name, settings.tagsAsEmojis, {
                           title: titleDisplay,
-                          artist: artistName,
+                          artist: buildArtistTag(currentSong.name, dlEraName),
                           album: dlEraName,
                           year: dlYear,
                           artworkUrl: dlArtUrl,

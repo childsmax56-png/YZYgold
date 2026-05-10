@@ -4,7 +4,7 @@ import { ArrowLeft, Play, ExternalLink, X, Share2, Volume2, Check, Download, Loa
 import { SiYoutube } from 'react-icons/si';
 import { Era, Song, SearchFilters } from '../types';
 import { useState, useMemo, useEffect } from 'react';
-import { formatTextWithTags, getCleanSongNameWithTags, matchesFilters, createSlug, getSongSlug, ALBUM_RELEASE_DATES, isSongNotAvailable, ALBUM_DESCRIPTIONS, HIDDEN_ALBUMS, CUSTOM_IMAGES, getArtistName, handleDownloadFile } from '../utils';
+import { formatTextWithTags, getCleanSongNameWithTags, matchesFilters, createSlug, getSongSlug, ALBUM_RELEASE_DATES, isSongNotAvailable, ALBUM_DESCRIPTIONS, HIDDEN_ALBUMS, CUSTOM_IMAGES, getArtistName, buildArtistTag, handleDownloadFile } from '../utils';
 import { useSettings } from '../SettingsContext';
 import { MvEntry, RemixEntry, SampleEntry } from '../App';
 
@@ -244,7 +244,7 @@ export function EraDetail({ era, onBack, onPlaySong, searchQuery = '', filters, 
           const songTitle = song.name.includes(' - ') ? song.name.substring(song.name.indexOf(' - ') + 3) : song.name;
           await handleDownloadFile(rawUrl, song.name, settings.tagsAsEmojis, {
             title: songTitle,
-            artist: getArtistName(songEraName),
+            artist: buildArtistTag(song.name, songEraName),
             album: songEraName,
             year: ALBUM_RELEASE_DATES[songEraName]?.split('/').pop(),
             artworkUrl: artUrl,

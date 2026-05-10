@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft, ChevronDown, ChevronUp, Download, ExternalLink, Play, Pause } from 'lucide-react';
 import { saveAs } from 'file-saver';
 import { Era, Song } from '../types';
-import { isSongNotAvailable, embedID3Tags, CUSTOM_IMAGES, ALBUM_RELEASE_DATES, getArtistName } from '../utils';
+import { isSongNotAvailable, embedID3Tags, CUSTOM_IMAGES, ALBUM_RELEASE_DATES, buildArtistTag } from '../utils';
 
 export interface TracklistAlbum {
   era: string;
@@ -210,7 +210,7 @@ function AlbumCard({ album, matches, defaultOpen, onPlaySong, currentSong, isPla
             const year = album.date || ALBUM_RELEASE_DATES[album.era]?.split('/').pop();
             blob = await embedID3Tags(blob, {
               title: track.name,
-              artist: getArtistName(album.era),
+              artist: buildArtistTag(track.name, album.era),
               album: album.name,
               year,
               artworkUrl,
