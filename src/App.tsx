@@ -688,7 +688,7 @@ export default function App() {
           if (!nextJson.eras["Sunday Service Choir"]) {
             nextJson.eras["Sunday Service Choir"] = {
               name: "Sunday Service Choir",
-              extra: "Yandhi / JESUS IS KING / JESUS IS LORD / DONDA",
+              extra: "Yandhi / JESUS IS KING / God's Country / DONDA",
               data: { "Featured": [] }
             };
           }
@@ -787,7 +787,7 @@ export default function App() {
           if (!baseJson.eras["Sunday Service Choir"]) {
             baseJson.eras["Sunday Service Choir"] = {
               name: "Sunday Service Choir",
-              extra: "Yandhi / JESUS IS KING / JESUS IS LORD / DONDA",
+              extra: "Yandhi / JESUS IS KING / God's Country / DONDA",
               data: { "Featured": [] }
             };
           }
