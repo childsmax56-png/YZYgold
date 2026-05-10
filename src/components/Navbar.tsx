@@ -1,6 +1,6 @@
 import { motion } from 'motion/react';
 import { Search, DollarSign, LogIn, LogOut, Settings, Dice5, X } from 'lucide-react';
-import { SiLastdotfm, SiSpotify } from 'react-icons/si';
+import { SiLastdotfm, SiSpotify, SiDiscord } from 'react-icons/si';
 import { FilterMenu } from './FilterMenu';
 import { SearchFilters } from '../types';
 import { isLastfmLoggedIn, getLastfmUsername, clearLastfmSession, startLastfmAuth } from '../lastfm';
@@ -140,6 +140,15 @@ export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHom
             >
               <SiSpotify className="w-5 h-5" />
             </button>
+            <a
+              href="https://discord.gg/TYqdey3B"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center p-2.5 rounded-full transition-all duration-300 cursor-pointer bg-white/5 text-white/50 hover:bg-[#5865F2]/15 hover:text-[#5865F2]"
+              title="Join Discord"
+            >
+              <SiDiscord className="w-5 h-5" />
+            </a>
             <button
               onClick={handleLastfmClick}
               className={`flex items-center justify-center p-2.5 rounded-full transition-all duration-300 cursor-pointer ${lastfmLoggedIn
@@ -198,6 +207,16 @@ export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHom
             {spotifyLoggedIn ? 'Spotify' : 'Spotify'}
           </span>
         </button>
+        <a
+          href="https://discord.gg/TYqdey3B"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-300 cursor-pointer bg-white/5 text-white/50 hover:bg-[#5865F2]/15 hover:text-[#5865F2] hover:scale-105"
+          title="Join Discord"
+        >
+          <SiDiscord className="w-4 h-4" />
+          <span className="text-xs font-semibold uppercase tracking-wider whitespace-nowrap">Discord</span>
+        </a>
         <button
           onClick={handleLastfmClick}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-300 cursor-pointer ${lastfmLoggedIn

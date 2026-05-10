@@ -1072,7 +1072,7 @@ export default function App() {
     const userAgent = navigator.userAgent.toLowerCase();
     const isBrowserSafari = userAgent.includes('safari') && !userAgent.includes('chrome') && !userAgent.includes('crios') && !userAgent.includes('android');
 
-    if (!localStorage.getItem('v1_7_seen')) {
+    if (!localStorage.getItem('v1_8_seen')) {
       setShowChangelog(true);
     } else if (isBrowserSafari) {
       setShowSafariWarning(true);
@@ -2382,10 +2382,10 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
               YƵYGOLD does not host or hold any illegal files. All links are external and provided as-is for educational and archival purposes only.
             </p>
             <p className="text-[10px] text-white/30 leading-relaxed">
-              YZYGOLD 2026 © [V1.7]
+              YZYGOLD 2026 © [V1.8]
             </p>
             <p className="text-[10px] text-white/30 leading-relaxed mt-1 space-x-3">
-              <a href="https://www.reddit.com/r/yzygold/" target="_blank" rel="noopener noreferrer" className="text-[var(--theme-color)]/50 hover:text-[var(--theme-color)] transition-colors underline">r/yzygold</a>
+              <a href="https://discord.gg/TYqdey3B" target="_blank" rel="noopener noreferrer" className="text-[var(--theme-color)]/50 hover:text-[var(--theme-color)] transition-colors underline">Discord</a>
               <span>·</span>
               <a href="https://docs.google.com/document/d/1b8aidNuSLLHfzgzrJ0uGdWHPuo-uNk6wI21Vscwzid4/edit?tab=t.0#heading=h.coxp3mvb86xr" target="_blank" rel="noopener noreferrer" className="text-[var(--theme-color)]/50 hover:text-[var(--theme-color)] transition-colors underline">Changelog</a>
               <span>·</span>
@@ -2590,36 +2590,42 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
               className="bg-[#111] border border-white/10 rounded-xl max-w-lg w-full p-6 md:p-8"
             >
               <h2 className="text-2xl font-bold text-white mb-1 tracking-tight font-display">
-                YZYgold Version 1.7
+                Version 1.8
               </h2>
               <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-6">What's New</p>
 
               <div className="space-y-4 mb-8 text-sm text-white/70 leading-relaxed">
                 <ul className="space-y-3">
                   <li>
-                    <strong className="text-white">Genius Lyrics</strong>
-                    <br />Genius lyrics are now set as the default provider for lyrics. You can view annotations, read about the song, view samples and credits.
-                    <br /><span className="text-white/50 text-xs">Not all songs have Genius — we use the previous lyric provider iClib as a backup.</span>
+                    <strong className="text-white">Released tab</strong>
+                    <br />You can view Kanye's released music in the released tab
+                    <br /><span className="text-white/50 text-xs">Most of the links use Spotify, in order for optimal use link a Spotify Premium account in order to play songs in the background</span>
                   </li>
                   <li>
-                    <strong className="text-white">Sunday Service Choir</strong>
-                    <br />You can view and listen to Sunday Service Choir songs in the "Related" tab.
+                    <strong className="text-white">Custom loading screens</strong>
+                    <br />Loading times are getting longer and we can't counteract it, so we have added animated loading screens based off of the album covers for Yeezus, Donda 2, Thank God For Drugs, Yandhi, SWISH, Graduation, and Watch The Throne. You can choose which cover to use in the settings tab
                   </li>
                   <li>
-                    <strong className="text-white">General bug fixes</strong>
+                    <strong className="text-white">Discord</strong>
+                    <br />My reddit account got banned and I cannot moderate r/yzygold anymore, so I have created a YZY Gold Discord:{' '}
+                    <a href="https://discord.gg/TYqdey3B" target="_blank" rel="noopener noreferrer" className="text-[var(--theme-color)] hover:underline">
+                      https://discord.gg/TYqdey3B
+                    </a>
                   </li>
                 </ul>
+
+                <p className="text-white/40 text-xs italic">I did not intend to release the update this early so much more will be added</p>
 
                 <div className="border-t border-white/10 pt-4 space-y-2 text-white/50 text-xs">
                   <p>
                     <a href="https://docs.google.com/document/d/1b8aidNuSLLHfzgzrJ0uGdWHPuo-uNk6wI21Vscwzid4/edit?tab=t.0#heading=h.coxp3mvb86xr" target="_blank" rel="noopener noreferrer" className="text-[var(--theme-color)] hover:underline">
-                      View full changelog here
+                      View full change log: YZY gold updates
                     </a>
                   </p>
                   <p>
-                    Report any bugs to our subreddit:{' '}
-                    <a href="https://www.reddit.com/r/yzygold/" target="_blank" rel="noopener noreferrer" className="text-[var(--theme-color)] hover:underline">
-                      r/yzygold
+                    YZYgold Discord:{' '}
+                    <a href="https://discord.gg/TYqdey3B" target="_blank" rel="noopener noreferrer" className="text-[var(--theme-color)] hover:underline">
+                      https://discord.gg/TYqdey3B
                     </a>
                   </p>
                 </div>
@@ -2628,7 +2634,7 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
               <button
                 onClick={() => {
                   setShowChangelog(false);
-                  localStorage.setItem('v1_7_seen', 'true');
+                  localStorage.setItem('v1_8_seen', 'true');
 
                   const userAgent = navigator.userAgent.toLowerCase();
                   const isBrowserSafari = userAgent.includes('safari') && !userAgent.includes('chrome') && !userAgent.includes('crios') && !userAgent.includes('android');
