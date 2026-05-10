@@ -455,12 +455,22 @@ function isInAppBrowser(): boolean {
   return /GSA\/|FBAN|FBAV|Instagram\//.test(ua);
 }
 
-export async function handleDownloadFile(url: string, suggestedName: string, tagsAsEmojis: boolean) {
+function parseOgFilename(description: string | undefined): string | null {
+  if (!description) return null;
+  const match = description.match(/^OG Filename:\s*(.+)$/im);
+  if (!match) return null;
+  const raw = match[1].trim().replace(/^["']|["']$/g, '');
+  // Strip known audio extensions so extension logic below can normalize them
+  return raw.replace(/\.(mp3|wav|flac|aif|aiff|m4a|ogg)$/i, '');
+}
+
+export async function handleDownloadFile(url: string, suggestedName: string, tagsAsEmojis: boolean, description?: string) {
   if (!url) return;
   try {
     let finalUrl = url;
-    let fileName = suggestedName;
-    if (!tagsAsEmojis) {
+    const ogName = parseOgFilename(description);
+    let fileName = ogName ?? suggestedName;
+    if (!tagsAsEmojis && !ogName) {
       fileName = formatTextForNotification(suggestedName, false);
     }
 

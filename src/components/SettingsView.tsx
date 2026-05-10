@@ -77,6 +77,21 @@ export function SettingsView({ onCategoryChange, searchQuery }: SettingsViewProp
           </div>
         )}
 
+        {matchesSearch('download og filename original filename') && (
+          <div className="flex items-center justify-between p-4 bg-[#111] border border-white/5 rounded-xl">
+            <div className="flex flex-col">
+              <span className="text-sm font-medium text-white/90">Download as OG Filename</span>
+              <span className="text-xs text-white/40">Use the original filename from notes when downloading, if available</span>
+            </div>
+            <button
+              onClick={() => updateSettings({ downloadAsOgFilename: !settings.downloadAsOgFilename })}
+              className={`w-11 h-6 rounded-full transition-colors relative shrink-0 ${settings.downloadAsOgFilename ? 'bg-[var(--theme-color)]' : 'bg-white/10'}`}
+            >
+              <div className={`w-5 h-5 rounded-full bg-white absolute top-0.5 transition-transform ${settings.downloadAsOgFilename ? 'translate-x-5.5' : 'translate-x-0.5'}`} />
+            </button>
+          </div>
+        )}
+
         {matchesSearch('keyboard shortcuts') && (
           <div className="hidden md:flex items-center justify-between p-4 bg-[#111] border border-white/5 rounded-xl">
             <div className="flex flex-col">

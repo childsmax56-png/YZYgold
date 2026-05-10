@@ -368,7 +368,7 @@ export function PlayerBar({
                   })()}
                 {downloadUrl && allowDownload && (
                   <button onClick={() => {
-                        handleDownloadFile(rawUrl, currentSong.name, settings.tagsAsEmojis);
+                        handleDownloadFile(rawUrl, currentSong.name, settings.tagsAsEmojis, settings.downloadAsOgFilename ? currentSong.description : undefined);
                         setShowMenu(false);
                     }}
                     className="w-full flex items-center gap-3 px-4 py-2 text-sm text-white/70 hover:text-white hover:bg-white/5 transition-colors cursor-pointer text-left">

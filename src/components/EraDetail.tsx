@@ -239,7 +239,7 @@ export function EraDetail({ era, onBack, onPlaySong, searchQuery = '', filters, 
       const rawUrl = song.url || (song.urls && song.urls.length > 0 ? song.urls[0] : '');
       if (rawUrl && (rawUrl.includes('pillows.su/f/') || rawUrl.includes('temp.imgur.gg/f/') || rawUrl.includes('ibb.co') || rawUrl.match(/\.(png|jpg|jpeg)$/i) || rawUrl.startsWith('https://i.scdn.co/'))) {
         try {
-          await handleDownloadFile(rawUrl, song.name, settings.tagsAsEmojis);
+          await handleDownloadFile(rawUrl, song.name, settings.tagsAsEmojis, settings.downloadAsOgFilename ? song.description : undefined);
           await new Promise(resolve => setTimeout(resolve, 800));
         } catch (err) {
           console.error(`Failed to download ${song.name}:`, err);
