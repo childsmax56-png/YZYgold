@@ -165,6 +165,82 @@ export function SettingsView({ onCategoryChange, searchQuery, eras = [], artData
     setProgress('misc', null);
   };
 
+  const handleDownloadEverything = async () => {
+    if (dlProgress['everything']) return;
+    const JSZip = (await import('jszip')).default;
+    const zip = new JSZip();
+
+    const songs: { name: string; era: string; url: string }[] = [];
+    for (const era of eras) {
+      for (const tracks of Object.values(era.data || {})) {
+        for (const song of tracks) {
+          const url = song.url || (song.urls && song.urls[0]) || '';
+          if (url) songs.push({ name: song.name, era: era.name, url });
+        }
+      }
+    }
+    const artItems = artData.filter(a => a['Link(s)']?.trim());
+    const stemItems = stemsData.filter(s => s['Link(s)']?.trim());
+    const miscItems = miscData.filter(m => m['Link(s)']?.trim());
+
+    const total = songs.length + artItems.length + stemItems.length + miscItems.length;
+    if (!total) return;
+    let done = 0;
+    const tick = () => { done++; setProgress('everything', `${done} / ${total}`); };
+
+    setProgress('everything', `0 / ${total}`);
+
+    await Promise.all([
+      ...songs.map(async ({ name, era, url }) => {
+        try {
+          const fetchUrl = await resolveAudioUrl(url);
+          const res = await fetch(fetchUrl);
+          if (!res.ok) throw new Error('fetch failed');
+          const blob = await res.blob();
+          const ext = blob.type.includes('wav') ? '.wav' : blob.type.includes('flac') ? '.flac' : '.mp3';
+          zip.file(`unreleased/${sanitizeFilename(era)}/${sanitizeFilename(name)}${ext}`, blob);
+        } catch { /* skip */ } finally { tick(); }
+      }),
+      ...artItems.map(async (item) => {
+        try {
+          const url = item['Link(s)'].split('\n')[0].trim();
+          const res = await fetch(url);
+          if (!res.ok) throw new Error('fetch failed');
+          const blob = await res.blob();
+          const ext = blob.type.includes('png') ? '.png' : blob.type.includes('gif') ? '.gif' : blob.type.includes('webp') ? '.webp' : '.jpg';
+          zip.file(`art/${sanitizeFilename(item.Era || 'misc')}/${sanitizeFilename(item.Name)}${ext}`, blob);
+        } catch { /* skip */ } finally { tick(); }
+      }),
+      ...stemItems.map(async (item) => {
+        try {
+          const url = item['Link(s)']!.split('\n')[0].trim();
+          const fetchUrl = await resolveAudioUrl(url);
+          const res = await fetch(fetchUrl);
+          if (!res.ok) throw new Error('fetch failed');
+          const blob = await res.blob();
+          const ext = blob.type.includes('wav') ? '.wav' : blob.type.includes('flac') ? '.flac' : blob.type.includes('zip') ? '.zip' : '.mp3';
+          zip.file(`stems/${sanitizeFilename(item.Era || 'misc')}/${sanitizeFilename(item.Name)}${ext}`, blob);
+        } catch { /* skip */ } finally { tick(); }
+      }),
+      ...miscItems.map(async (item) => {
+        try {
+          const url = item['Link(s)']!.split('\n')[0].trim();
+          const fetchUrl = await resolveAudioUrl(url);
+          const res = await fetch(fetchUrl);
+          if (!res.ok) throw new Error('fetch failed');
+          const blob = await res.blob();
+          const ext = blob.type.includes('wav') ? '.wav' : blob.type.includes('flac') ? '.flac' : blob.type.includes('png') ? '.png' : blob.type.includes('jpg') ? '.jpg' : '.mp3';
+          zip.file(`misc/${sanitizeFilename(item.Era || 'misc')}/${sanitizeFilename(item.Name)}${ext}`, blob);
+        } catch { /* skip */ } finally { tick(); }
+      }),
+    ]);
+
+    setProgress('everything', 'Zipping...');
+    const content = await zip.generateAsync({ type: 'blob' });
+    saveAs(content, 'everything.zip');
+    setProgress('everything', null);
+  };
+
   const handleSaveSheetUrl = () => {
     updateSettings({ googleSheetsUrl: sheetUrlInput.trim() });
     setSheetSaved(true);
@@ -726,13 +802,27 @@ export function SettingsView({ onCategoryChange, searchQuery, eras = [], artData
           </div>
         )}
 
-        {matchesSearch('mass downloads download all unreleased art stems misc') && (
+        {matchesSearch('mass downloads download all unreleased art stems misc everything') && (
           <div className="border border-white/5 rounded-2xl p-2 bg-[#0a0a0a] mt-8">
             <div className="text-center py-8">
               <h3 className="text-xl font-bold text-white mb-1">Mass Downloads</h3>
               <p className="text-sm text-white/50">Download entire categories as a ZIP file.</p>
             </div>
             <div className="space-y-2 pb-2">
+              <div className="flex items-center justify-between p-4 bg-[var(--theme-color)]/10 border border-[var(--theme-color)]/20 rounded-xl">
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium text-white/90">Download Everything</span>
+                  <span className="text-xs text-white/40">All unreleased, art, stems, and misc in one ZIP</span>
+                </div>
+                <button
+                  onClick={handleDownloadEverything}
+                  disabled={!!dlProgress['everything']}
+                  className="text-xs font-bold bg-[var(--theme-color)] hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-md transition-opacity flex items-center gap-2 shrink-0 cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  {dlProgress['everything'] ? dlProgress['everything'] : 'Download Everything'}
+                </button>
+              </div>
               {[
                 { key: 'unreleased', label: 'Download All Unreleased', desc: 'All songs from every era', handler: handleDownloadUnreleased },
                 { key: 'art', label: 'Download All Art', desc: 'Every art gallery entry', handler: handleDownloadArt },
