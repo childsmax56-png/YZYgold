@@ -465,7 +465,7 @@ async function fetchArtworkBuffer(artworkUrl: string): Promise<ArrayBuffer | nul
   return null;
 }
 
-async function embedID3Tags(blob: Blob, meta: SongMeta, cleanTitle: string): Promise<Blob> {
+export async function embedID3Tags(blob: Blob, meta: SongMeta, cleanTitle: string): Promise<Blob> {
   const audioBuffer = await blob.arrayBuffer();
   const writer = new ID3Writer(audioBuffer);
 
