@@ -560,6 +560,19 @@ export function EraDetail({ era, onBack, onPlaySong, searchQuery = '', filters, 
                           {song.description && <div className={`text-xs break-words whitespace-normal leading-snug mt-1 ${isCurrentlyPlaying ? 'text-[var(--theme-color)]/40' : 'text-white/40'}`}>{formatTextWithTags(song.description)}</div>}
                         </div>
 
+                        {isPlayable && (() => {
+                          const pillowUrl = rawUrl.startsWith('http') ? rawUrl : `https://${rawUrl}`;
+                          return (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); window.open(pillowUrl, '_blank'); }}
+                              className={`shrink-0 p-1 rounded transition-all hover:bg-white/10 hover:text-white cursor-pointer ${isCurrentlyPlaying ? 'text-[var(--theme-color)]/60 hover:text-[var(--theme-color)]' : 'text-white/40'}`}
+                              title="Open on Pillowcase"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </button>
+                          );
+                        })()}
+
                         <div className="w-32 shrink-0 hidden sm:flex items-center gap-1.5 flex-wrap">
                           {song.quality && (
                             <span className={`text-[10px] px-2 py-0.5 rounded border ${isCurrentlyPlaying ? 'border-[var(--theme-color)]/20 text-[var(--theme-color)]/80 bg-[var(--theme-color)]/5' : 'border-white/10 text-white/60 bg-white/5'}`}>
@@ -733,18 +746,6 @@ export function EraDetail({ era, onBack, onPlaySong, searchQuery = '', filters, 
                                   </>
                                 )}
                               </div>
-                            );
-                          })()}
-                          {isPlayable && (() => {
-                            const pillowUrl = rawUrl.startsWith('http') ? rawUrl : `https://${rawUrl}`;
-                            return (
-                              <button
-                                onClick={(e) => { e.stopPropagation(); window.open(pillowUrl, '_blank'); }}
-                                className={`p-1 rounded transition-all hover:bg-white/10 hover:text-white cursor-pointer ${isCurrentlyPlaying ? 'text-[var(--theme-color)]/60 hover:text-[var(--theme-color)]' : 'text-white/40'}`}
-                                title="Open on Pillowcase"
-                              >
-                                <ExternalLink className="w-3.5 h-3.5" />
-                              </button>
                             );
                           })()}
                           <button
