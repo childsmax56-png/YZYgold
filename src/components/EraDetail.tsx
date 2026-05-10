@@ -735,6 +735,18 @@ export function EraDetail({ era, onBack, onPlaySong, searchQuery = '', filters, 
                               </div>
                             );
                           })()}
+                          {isPlayable && (() => {
+                            const pillowUrl = rawUrl.startsWith('http') ? rawUrl : `https://${rawUrl}`;
+                            return (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); window.open(pillowUrl, '_blank'); }}
+                                className={`p-1 rounded transition-all hover:bg-white/10 hover:text-white cursor-pointer ${isCurrentlyPlaying ? 'text-[var(--theme-color)]/60 hover:text-[var(--theme-color)]' : 'text-white/40'}`}
+                                title="Open on Pillowcase"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </button>
+                            );
+                          })()}
                           <button
                             onClick={(e) => isPlayable && handleShare(e, song)}
                             className={`p-1 rounded ${isPlayable ? 'hover:bg-white/10 hover:text-white text-white/40 cursor-pointer' : 'invisible pointer-events-none'} ${isCurrentlyPlaying && isPlayable ? 'hover:bg-[var(--theme-color)]/10 text-[var(--theme-color)]' : ''}`}
