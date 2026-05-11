@@ -74,7 +74,7 @@ export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHom
 
           {activeCategory !== 'history' && (
             <div
-              className="flex items-center gap-2 flex-1 max-w-[55%] md:w-80 md:max-w-none md:ml-0 transition-opacity duration-500"
+              className="flex items-center gap-2 flex-1 max-w-[55%] md:w-56 md:max-w-none md:ml-0 transition-opacity duration-500"
             >
               <div className="relative group flex-1">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/40" />
@@ -83,7 +83,7 @@ export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHom
                   placeholder={activeCategory === 'settings' ? "Search settings..." : "Search..."}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-md py-1 pl-8 pr-7 text-xs text-white focus:outline-none focus:border-white/30 transition-colors placeholder:text-white/30"
+                  className="w-full bg-white/5 border border-white/10 rounded-md py-1 pl-8 pr-7 text-xs text-white focus:outline-none focus:border-white/30 transition-colors placeholder:text-white/30 md:py-1 md:text-xs"
                 />
                 {searchQuery && (
                   <button
@@ -170,7 +170,7 @@ export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHom
             src="/logo.png"
             alt="YZY Gold"
             onClick={onHomeClick}
-            className="h-[60px] w-[60px] object-contain cursor-pointer hover:opacity-80 transition-opacity duration-300 shrink-0"
+            className="h-[80px] w-[80px] object-contain cursor-pointer hover:opacity-80 transition-opacity duration-300 shrink-0"
           />
 
           <div className="flex items-center ml-6">
