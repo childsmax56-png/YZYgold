@@ -1,8 +1,13 @@
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import { ArrowLeft, ExternalLink, Star } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { CUSTOM_IMAGES } from '../utils';
 import { Era } from '../types';
+
+interface LinkEntry {
+  text: string;
+  url: string;
+}
 
 interface CompEntry {
   era: string;
@@ -10,76 +15,19 @@ interface CompEntry {
   description: string;
   creator: string;
   review: string;
-  downloads: string;
-  streaming: string;
+  downloads: LinkEntry[];
+  streaming: LinkEntry[];
+}
+
+interface EraGroup {
+  eraName: string;
+  image?: string;
+  comps: CompEntry[];
 }
 
 interface CompsViewProps {
   eras: Era[];
   searchQuery: string;
-}
-
-const SECTION_LABELS = new Set([
-  'Overhauls', 'Renovations', 'Vanilla-style', 'Extensions',
-  'Honorable Mentions', 'Remixes', 'Alternates', 'Alts', 'Vanilla-styles', 'HMs',
-]);
-
-function parseCompsCSV(text: string): CompEntry[] {
-  const results: CompEntry[] = [];
-  let pos = 0;
-
-  function parseField(): string {
-    if (text[pos] === '"') {
-      pos++;
-      let field = '';
-      while (pos < text.length) {
-        if (text[pos] === '"' && text[pos + 1] === '"') { field += '"'; pos += 2; }
-        else if (text[pos] === '"') { pos++; break; }
-        else { field += text[pos++]; }
-      }
-      return field;
-    }
-    let field = '';
-    while (pos < text.length && text[pos] !== ',' && text[pos] !== '\n' && text[pos] !== '\r') {
-      field += text[pos++];
-    }
-    return field;
-  }
-
-  function parseRow(): string[] {
-    const row: string[] = [];
-    while (pos < text.length && text[pos] !== '\n' && text[pos] !== '\r') {
-      row.push(parseField());
-      if (text[pos] === ',') pos++;
-    }
-    if (text[pos] === '\r') pos++;
-    if (text[pos] === '\n') pos++;
-    return row;
-  }
-
-  // skip header
-  parseRow();
-
-  while (pos < text.length) {
-    const row = parseRow();
-    if (row.length < 3) continue;
-    const era = (row[0] || '').trim();
-    const name = (row[2] || '').trim();
-    const desc = (row[3] || '').trim();
-    const creator = (row[4] || '').trim();
-    const review = (row[5] || '').trim();
-    const downloads = (row[6] || '').trim();
-    const streaming = (row[7] || '').trim();
-
-    if (!name) continue;
-    const namePlain = name.replace(/[⭐🌟✨↳\s]/g, '');
-    if (SECTION_LABELS.has(namePlain.trim())) continue;
-    if (!desc && !creator && !downloads && !streaming) continue;
-
-    results.push({ era, name, description: desc, creator, review, downloads, streaming });
-  }
-
-  return results;
 }
 
 function isHighlight(name: string) {
@@ -90,28 +38,31 @@ function cleanName(name: string) {
   return name.replace(/[⭐🌟✨]/g, '').trim();
 }
 
-function PlatformBadges({ text }: { text: string }) {
-  if (!text) return null;
-  const parts = text.split('\n').map(p => p.trim()).filter(p => p && p !== '[untitled]');
-  if (!parts.length) return null;
+function LinkButton({ link }: { link: LinkEntry }) {
   return (
-    <div className="flex flex-wrap gap-1">
-      {parts.map((p, i) => (
-        <span
-          key={i}
-          className="text-[10px] px-2 py-0.5 rounded border border-white/10 text-white/60 bg-white/5 whitespace-nowrap"
-        >
-          {p}
-        </span>
-      ))}
-    </div>
+    <a
+      href={link.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={e => e.stopPropagation()}
+      className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded border border-white/10 text-white/60 bg-white/5 hover:border-[var(--theme-color)]/40 hover:text-[var(--theme-color)] hover:bg-[var(--theme-color)]/5 transition-colors whitespace-nowrap"
+    >
+      <ExternalLink className="w-2.5 h-2.5 shrink-0" />
+      {link.text || 'Link'}
+    </a>
   );
 }
 
-interface EraGroup {
-  eraName: string;
-  image?: string;
-  comps: CompEntry[];
+function LinkGroup({ label, links }: { label: string; links: LinkEntry[] }) {
+  if (!links.length) return null;
+  return (
+    <div className="text-right">
+      <p className="text-white/25 text-[10px] uppercase tracking-wider mb-1">{label}</p>
+      <div className="flex flex-wrap gap-1 justify-end">
+        {links.map((l, i) => <LinkButton key={i} link={l} />)}
+      </div>
+    </div>
+  );
 }
 
 export function CompsView({ eras, searchQuery }: CompsViewProps) {
@@ -120,9 +71,9 @@ export function CompsView({ eras, searchQuery }: CompsViewProps) {
   const [selectedEra, setSelectedEra] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('/data/comps.csv')
-      .then(r => r.text())
-      .then(text => { setAllComps(parseCompsCSV(text)); setLoading(false); })
+    fetch('/data/comps.json')
+      .then(r => r.json())
+      .then(data => { setAllComps(data); setLoading(false); })
       .catch(() => setLoading(false));
   }, []);
 
@@ -216,12 +167,11 @@ export function CompsView({ eras, searchQuery }: CompsViewProps) {
         </div>
 
         {/* Comp list */}
-        <div className="px-6 md:px-8 mt-8 max-w-5xl mx-auto">
-          {/* Column headers */}
+        <div className="px-6 md:px-8 mt-8 max-w-5xl mx-auto mb-16">
           <div className="hidden sm:flex items-center px-4 py-2 text-xs font-semibold text-white/30 uppercase tracking-wider border-b border-white/5 mb-2">
             <div className="flex-1">Comp</div>
             <div className="w-40 text-right">Download</div>
-            <div className="w-32 text-right ml-4">Stream</div>
+            <div className="w-36 text-right ml-4">Stream</div>
           </div>
 
           <div className="flex flex-col">
@@ -232,7 +182,6 @@ export function CompsView({ eras, searchQuery }: CompsViewProps) {
                   key={i}
                   className={`group flex items-start gap-4 px-4 py-3.5 rounded-md transition-colors ${highlight ? 'bg-[var(--theme-color)]/5' : 'hover:bg-white/5'}`}
                 >
-                  {/* Left: name + meta */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       {highlight && (
@@ -254,37 +203,31 @@ export function CompsView({ eras, searchQuery }: CompsViewProps) {
                         <span className="text-[var(--theme-color)]/60 text-xs">{comp.review}</span>
                       </div>
                     )}
-                    {/* Mobile: badges inline */}
-                    <div className="flex sm:hidden flex-wrap gap-2 mt-2">
-                      {comp.downloads && (
+                    {/* Mobile links */}
+                    <div className="flex sm:hidden flex-wrap gap-3 mt-2">
+                      {comp.downloads.length > 0 && (
                         <div>
                           <p className="text-white/25 text-[10px] uppercase tracking-wider mb-1">Download</p>
-                          <PlatformBadges text={comp.downloads} />
+                          <div className="flex flex-wrap gap-1">
+                            {comp.downloads.map((l, j) => <LinkButton key={j} link={l} />)}
+                          </div>
                         </div>
                       )}
-                      {comp.streaming && (
+                      {comp.streaming.length > 0 && (
                         <div>
                           <p className="text-white/25 text-[10px] uppercase tracking-wider mb-1">Stream</p>
-                          <PlatformBadges text={comp.streaming} />
+                          <div className="flex flex-wrap gap-1">
+                            {comp.streaming.map((l, j) => <LinkButton key={j} link={l} />)}
+                          </div>
                         </div>
                       )}
                     </div>
                   </div>
 
-                  {/* Right: badges (desktop) */}
-                  <div className="hidden sm:flex flex-col items-end gap-2 shrink-0">
-                    {comp.downloads && (
-                      <div className="text-right">
-                        <p className="text-white/25 text-[10px] uppercase tracking-wider mb-1">Download</p>
-                        <PlatformBadges text={comp.downloads} />
-                      </div>
-                    )}
-                    {comp.streaming && (
-                      <div className="text-right mt-1">
-                        <p className="text-white/25 text-[10px] uppercase tracking-wider mb-1">Stream</p>
-                        <PlatformBadges text={comp.streaming} />
-                      </div>
-                    )}
+                  {/* Desktop links */}
+                  <div className="hidden sm:flex flex-col items-end gap-2 shrink-0 min-w-[160px]">
+                    <LinkGroup label="Download" links={comp.downloads} />
+                    <LinkGroup label="Stream" links={comp.streaming} />
                   </div>
                 </div>
               );
