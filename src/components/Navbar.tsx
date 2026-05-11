@@ -68,13 +68,13 @@ export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHom
               src="/logo.png"
               alt="YZY Gold"
               onClick={onHomeClick}
-              className="h-11 w-auto object-contain cursor-pointer hover:opacity-80 transition-opacity duration-300"
+              className="h-[60px] w-auto object-contain cursor-pointer hover:opacity-80 transition-opacity duration-300"
             />
           </div>
 
           {activeCategory !== 'history' && (
             <div
-              className="flex items-center gap-2 w-full flex-1 md:w-80 md:ml-0 transition-opacity duration-500"
+              className="flex items-center gap-2 flex-1 max-w-[55%] md:w-80 md:max-w-none md:ml-0 transition-opacity duration-500"
             >
               <div className="relative group flex-1">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/40" />
