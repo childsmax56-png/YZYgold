@@ -62,12 +62,12 @@ export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHom
   return (
     <header className="h-auto md:h-16 w-full glass-panel border-b border-white/5 flex flex-col md:flex-row items-center justify-between px-4 md:px-8 py-3 md:py-0 z-30 relative shrink-0 gap-3 md:gap-0">
       <div className="flex flex-col w-full md:flex-1">
-        <div className="md:hidden w-full flex justify-center mb-2">
+        <div className="md:hidden w-full mb-2 h-16 overflow-hidden">
           <img
             src="/logo.png"
             alt="YZY Gold"
             onClick={onHomeClick}
-            className="w-full h-auto max-h-20 object-contain cursor-pointer hover:opacity-80 transition-opacity duration-300"
+            className="w-full h-full object-cover object-center cursor-pointer hover:opacity-80 transition-opacity duration-300"
           />
         </div>
 
