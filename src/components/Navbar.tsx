@@ -68,7 +68,7 @@ export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHom
               src="/logo.png"
               alt="YZY Gold"
               onClick={onHomeClick}
-              className="h-9 w-auto object-contain cursor-pointer hover:opacity-80 transition-opacity duration-300"
+              className="h-11 w-auto object-contain cursor-pointer hover:opacity-80 transition-opacity duration-300"
             />
           </div>
 
@@ -77,13 +77,13 @@ export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHom
               className="flex items-center gap-2 w-full flex-1 md:w-80 md:ml-0 transition-opacity duration-500"
             >
               <div className="relative group flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/40" />
                 <input
                   type="text"
                   placeholder={activeCategory === 'settings' ? "Search settings..." : "Search..."}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-md py-1.5 pl-9 pr-8 text-sm text-white focus:outline-none focus:border-white/30 transition-colors placeholder:text-white/30"
+                  className="w-full bg-white/5 border border-white/10 rounded-md py-1 pl-8 pr-7 text-xs text-white focus:outline-none focus:border-white/30 transition-colors placeholder:text-white/30"
                 />
                 {searchQuery && (
                   <button
