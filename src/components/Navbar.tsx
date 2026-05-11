@@ -109,12 +109,13 @@ export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHom
                 )}
               </div>
               {/* desktop logo fills the gap between search and center */}
-              <div className="hidden md:flex flex-1 items-center">
+              <div className="hidden md:block flex-1 h-9 overflow-hidden">
                 <img
                   src="/logo.png"
                   alt="YZY Gold"
                   onClick={onHomeClick}
-                  className="h-11 w-auto object-contain cursor-pointer hover:opacity-80 transition-opacity duration-300"
+                  className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition-opacity duration-300"
+                  style={{ objectPosition: 'center 60%' }}
                 />
               </div>
             </div>
