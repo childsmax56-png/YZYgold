@@ -62,19 +62,19 @@ export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHom
   return (
     <header className="h-auto md:h-16 w-full glass-panel border-b border-white/5 flex flex-col md:flex-row items-center justify-between px-4 md:px-8 py-3 md:py-0 z-30 relative shrink-0 gap-3 md:gap-0">
       <div className="flex flex-col w-full md:flex-1">
+        <div className="md:hidden w-full flex justify-center mb-2">
+          <img
+            src="/logo.png"
+            alt="YZY Gold"
+            onClick={onHomeClick}
+            className="w-full h-auto max-h-20 object-contain cursor-pointer hover:opacity-80 transition-opacity duration-300"
+          />
+        </div>
+
         <div className="flex-1 flex flex-row items-center justify-between md:justify-start w-full relative gap-3">
-          <div className="md:hidden flex items-center flex-1 relative z-10">
-            <img
-              src="/logo.png"
-              alt="YZY Gold"
-              onClick={onHomeClick}
-              className="w-full h-auto max-h-16 object-contain object-left cursor-pointer hover:opacity-80 transition-opacity duration-300 relative z-20"
-            />
-          </div>
-  
           {activeCategory !== 'history' && (
             <div
-              className="flex items-center gap-2 w-full flex-1 sm:max-w-xs md:w-80 ml-4 md:ml-0 transition-opacity duration-500"
+              className="flex items-center gap-2 w-full flex-1 sm:max-w-xs md:w-80 md:ml-0 transition-opacity duration-500"
             >
               <div className="relative group flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
