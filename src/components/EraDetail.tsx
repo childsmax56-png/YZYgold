@@ -4,7 +4,7 @@ import { ArrowLeft, Play, ExternalLink, X, Share2, Volume2, Check, Download, Loa
 import { SiYoutube } from 'react-icons/si';
 import { Era, Song, SearchFilters } from '../types';
 import { useState, useMemo, useEffect } from 'react';
-import { formatTextWithTags, getCleanSongNameWithTags, matchesFilters, createSlug, getSongSlug, ALBUM_RELEASE_DATES, isSongNotAvailable, ALBUM_DESCRIPTIONS, HIDDEN_ALBUMS, handleDownloadFile } from '../utils';
+import { formatTextWithTags, getCleanSongNameWithTags, matchesFilters, createSlug, getSongSlug, ALBUM_RELEASE_DATES, isSongNotAvailable, ALBUM_DESCRIPTIONS, HIDDEN_ALBUMS, CUSTOM_IMAGES, getArtistName, handleDownloadFile } from '../utils';
 import { useSettings } from '../SettingsContext';
 import { MvEntry, RemixEntry, SampleEntry } from '../App';
 
@@ -239,7 +239,16 @@ export function EraDetail({ era, onBack, onPlaySong, searchQuery = '', filters, 
       const rawUrl = song.url || (song.urls && song.urls.length > 0 ? song.urls[0] : '');
       if (rawUrl && (rawUrl.includes('pillows.su/f/') || rawUrl.includes('temp.imgur.gg/f/') || rawUrl.includes('ibb.co') || rawUrl.match(/\.(png|jpg|jpeg)$/i) || rawUrl.startsWith('https://i.scdn.co/'))) {
         try {
-          await handleDownloadFile(rawUrl, song.name, settings.tagsAsEmojis);
+          const songEraName = (song as any).realEra?.name || era.name;
+          const artUrl = song.image || CUSTOM_IMAGES[songEraName] || (song as any).realEra?.image || era.image;
+          const songTitle = song.name.includes(' - ') ? song.name.substring(song.name.indexOf(' - ') + 3) : song.name;
+          await handleDownloadFile(rawUrl, song.name, settings.tagsAsEmojis, {
+            title: songTitle,
+            artist: getArtistName(songEraName),
+            album: songEraName,
+            year: ALBUM_RELEASE_DATES[songEraName]?.split('/').pop(),
+            artworkUrl: artUrl,
+          });
           await new Promise(resolve => setTimeout(resolve, 800));
         } catch (err) {
           console.error(`Failed to download ${song.name}:`, err);
@@ -550,6 +559,19 @@ export function EraDetail({ era, onBack, onPlaySong, searchQuery = '', filters, 
                           </div>
                           {song.description && <div className={`text-xs break-words whitespace-normal leading-snug mt-1 ${isCurrentlyPlaying ? 'text-[var(--theme-color)]/40' : 'text-white/40'}`}>{formatTextWithTags(song.description)}</div>}
                         </div>
+
+                        {isPlayable && (() => {
+                          const pillowUrl = rawUrl.startsWith('http') ? rawUrl : `https://${rawUrl}`;
+                          return (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); window.open(pillowUrl, '_blank'); }}
+                              className={`shrink-0 p-1 rounded transition-all hover:bg-white/10 hover:text-white cursor-pointer ${isCurrentlyPlaying ? 'text-[var(--theme-color)]/60 hover:text-[var(--theme-color)]' : 'text-white/40'}`}
+                              title="Open on Pillowcase"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </button>
+                          );
+                        })()}
 
                         <div className="w-32 shrink-0 hidden sm:flex items-center gap-1.5 flex-wrap">
                           {song.quality && (
