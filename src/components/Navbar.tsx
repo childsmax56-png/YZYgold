@@ -74,7 +74,7 @@ export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHom
 
           {activeCategory !== 'history' && (
             <div
-              className="flex items-center gap-2 flex-1 max-w-[55%] md:max-w-[200px] md:ml-0 transition-opacity duration-500"
+              className="flex items-center gap-2 flex-1 max-w-[55%] md:max-w-none md:ml-0 transition-opacity duration-500"
             >
               <div className="relative group flex-1">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/40" />
@@ -107,6 +107,15 @@ export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHom
                     <Dice5 className="w-4 h-4" />
                   </button>
                 )}
+              </div>
+              {/* desktop logo fills the gap between search and center */}
+              <div className="hidden md:block flex-1 h-10 overflow-hidden">
+                <img
+                  src="/logo.png"
+                  alt="YZY Gold"
+                  onClick={onHomeClick}
+                  className="w-full h-full object-cover object-center cursor-pointer hover:opacity-80 transition-opacity duration-300"
+                />
               </div>
             </div>
           )}
@@ -201,12 +210,6 @@ export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHom
       </div>
 
       <div className="flex-1 hidden md:flex justify-end items-center gap-2 md:gap-3">
-        <img
-          src="/logo.png"
-          alt="YZY Gold"
-          onClick={onHomeClick}
-          className="h-[60px] w-[60px] object-contain cursor-pointer hover:opacity-80 transition-opacity duration-300 shrink-0"
-        />
         <button
           onClick={() => spotifyLoggedIn ? onSpotifyLogout?.() : onSpotifyLogin?.()}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-300 cursor-pointer ${
