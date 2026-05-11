@@ -62,7 +62,7 @@ export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHom
   return (
     <header className="h-auto md:h-16 w-full glass-panel border-b border-white/5 flex flex-col md:flex-row items-center justify-between px-4 md:px-8 py-3 md:py-0 z-30 relative shrink-0 gap-3 md:gap-0">
       <div className="flex flex-col w-full md:flex-1">
-        <div className="md:hidden w-full mb-2 h-16 overflow-hidden">
+        <div className="md:hidden w-full mb-2 h-16 overflow-hidden px-10">
           <img
             src="/logo.png"
             alt="YZY Gold"
