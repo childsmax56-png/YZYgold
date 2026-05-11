@@ -109,7 +109,7 @@ export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHom
                 )}
               </div>
               {/* desktop logo fills the gap between search and center */}
-              <div className="hidden md:block flex-1 h-10 overflow-hidden">
+              <div className="hidden md:block flex-1 h-7 overflow-hidden">
                 <img
                   src="/logo.png"
                   alt="YZY Gold"
