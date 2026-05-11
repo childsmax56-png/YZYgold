@@ -75,6 +75,7 @@ export interface FakesEntry {
 import { SettingsView } from './components/SettingsView';
 import { HistoryView } from './components/HistoryView';
 import { FakesView } from './components/FakesView';
+import { CompsView } from './components/CompsView';
 import { ReleasedView, ReleasedEntry } from './components/ReleasedView';
 import { useSettings, LOADING_SCREENS } from './SettingsContext';
 import { recordListeningHistory } from './history';
@@ -136,6 +137,7 @@ export default function App() {
     if (path.startsWith('/settings')) return 'settings';
     if (path.startsWith('/history')) return 'history';
     if (path.startsWith('/tracklists')) return 'tracklists';
+    if (path.startsWith('/comps')) return 'comps';
     return 'music';
   });
 
@@ -1156,6 +1158,10 @@ export default function App() {
         if (currentPath !== '/tracklists') {
           window.history.pushState({ category: 'tracklists' }, '', '/tracklists');
         }
+      }
+    } else if (activeCategory === 'comps') {
+      if (currentPath !== '/comps') {
+        window.history.pushState({ category: 'comps' }, '', '/comps');
       }
     } else {
       if (selectedAlbum) {
@@ -2326,6 +2332,8 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
                   toggleFavorite={toggleFavorite}
                   favoriteKeys={favoriteKeys}
                 />
+              ) : activeCategory === 'comps' ? (
+                <CompsView key="comps" searchQuery={searchQuery} />
               ) : activeCategory === 'released' ? (
                 <ReleasedView
                   key="released"
