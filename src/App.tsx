@@ -16,7 +16,7 @@ import { QueueModal } from './components/QueueModal';
 import { handleShareSilent } from './components/EraDetail';
 
 import { TrackerData, Era, Song, SearchFilters } from './types';
-import { matchesFilters, createSlug, getSongSlug, getCleanSongNameWithTags, isSongNotAvailable, formatTextForNotification, CUSTOM_IMAGES, HIDDEN_ALBUMS, ALBUM_RELEASE_DATES, getArtistName, handleDownloadFile } from './utils';
+import { matchesFilters, createSlug, getSongSlug, getCleanSongNameWithTags, isSongNotAvailable, formatTextForNotification, CUSTOM_IMAGES, HIDDEN_ALBUMS, ALBUM_RELEASE_DATES, getArtistName, buildArtistTag, handleDownloadFile } from './utils';
 import { isLastfmLoggedIn, saveLastfmSession, clearLastfmSession, scrobbleTrack, updateNowPlaying, cleanTrackName, parseArtistFromSong, cleanAlbumName } from './lastfm';
 import { isSpotifyLoggedIn, clearSpotifySession, startSpotifyAuth, handleSpotifyCallback } from './spotify';
 import { useSpotify, SpotifyTrack } from './useSpotify';
@@ -75,6 +75,7 @@ export interface FakesEntry {
 import { SettingsView } from './components/SettingsView';
 import { HistoryView } from './components/HistoryView';
 import { FakesView } from './components/FakesView';
+import { CompsView } from './components/CompsView';
 import { ReleasedView, ReleasedEntry } from './components/ReleasedView';
 import { useSettings, LOADING_SCREENS } from './SettingsContext';
 import { recordListeningHistory } from './history';
@@ -136,6 +137,7 @@ export default function App() {
     if (path.startsWith('/settings')) return 'settings';
     if (path.startsWith('/history')) return 'history';
     if (path.startsWith('/tracklists')) return 'tracklists';
+    if (path.startsWith('/comps')) return 'comps';
     return 'music';
   });
 
@@ -1157,6 +1159,10 @@ export default function App() {
           window.history.pushState({ category: 'tracklists' }, '', '/tracklists');
         }
       }
+    } else if (activeCategory === 'comps') {
+      if (currentPath !== '/comps') {
+        window.history.pushState({ category: 'comps' }, '', '/comps');
+      }
     } else {
       if (selectedAlbum) {
         const newPath = `/album/${createSlug(selectedAlbum.name)}`;
@@ -1632,13 +1638,13 @@ export default function App() {
         const kbEraName = (currentSong as any).realEra?.name || currentEra?.name || '';
         const kbArtUrl = currentSong.image || CUSTOM_IMAGES[kbEraName] || (currentSong as any).realEra?.image || currentEra?.image;
         const kbTitle = currentSong.name.includes(' - ') ? currentSong.name.substring(currentSong.name.indexOf(' - ') + 3) : currentSong.name;
-        handleDownloadFile(rawUrl, currentSong.name, settings.tagsAsEmojis, {
+        handleDownloadFile(rawUrl, currentSong.name, settings.tagsAsEmojis, settings.embedMetadata ? {
           title: kbTitle,
-          artist: getArtistName(kbEraName),
+          artist: buildArtistTag(currentSong.name, kbEraName),
           album: kbEraName,
           year: ALBUM_RELEASE_DATES[kbEraName]?.split('/').pop(),
           artworkUrl: kbArtUrl,
-        });
+        } : undefined, settings.downloadAsOgFilename ? currentSong.description : undefined);
       }
     };
 
@@ -2261,7 +2267,7 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
           <div className="flex-1">
             <AnimatePresence mode="wait">
               {activeCategory === 'settings' ? (
-                <SettingsView key="settings" onCategoryChange={setActiveCategory} searchQuery={searchQuery} />
+                <SettingsView key="settings" onCategoryChange={setActiveCategory} searchQuery={searchQuery} eras={erasArray} artData={artData} stemsData={stemsData} miscData={miscData} />
               ) : activeCategory === 'history' ? (
                 <HistoryView key="history" searchQuery={searchQuery} filters={filters} eras={erasArray} historyData={recentData} />
               ) : activeCategory === 'art' ? (
@@ -2326,6 +2332,8 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
                   toggleFavorite={toggleFavorite}
                   favoriteKeys={favoriteKeys}
                 />
+              ) : activeCategory === 'comps' ? (
+                <CompsView key="comps" eras={erasArray} searchQuery={searchQuery} />
               ) : activeCategory === 'released' ? (
                 <ReleasedView
                   key="released"
