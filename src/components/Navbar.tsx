@@ -68,7 +68,7 @@ export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHom
               src="/logo.png"
               alt="YZY Gold"
               onClick={onHomeClick}
-              className="h-[60px] w-auto object-contain cursor-pointer hover:opacity-80 transition-opacity duration-300"
+              className="h-[60px] w-[60px] object-contain cursor-pointer hover:opacity-80 transition-opacity duration-300"
             />
           </div>
 
