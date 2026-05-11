@@ -63,12 +63,12 @@ export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHom
       <div className="flex flex-col w-full md:flex-1">
         <div className="flex-1 flex flex-row items-center justify-between md:justify-start w-full relative gap-3">
           <div className="md:hidden flex items-center shrink-0 relative z-10">
-            <h1
+            <img
+              src="/logo.png"
+              alt="YZY Gold"
               onClick={onHomeClick}
-              className="text-2xl font-display font-bold tracking-tight text-white cursor-pointer hover:opacity-80 transition-all duration-[2000ms] ease-[cubic-bezier(0.2,0,0,1)] relative z-20 shrink-0"
-            >
-              YƵY<span className="text-[var(--theme-color)]">GOLD</span>
-            </h1>
+              className="h-8 w-auto cursor-pointer hover:opacity-80 transition-opacity duration-300 relative z-20 shrink-0"
+            />
           </div>
   
           {activeCategory !== 'history' && (
@@ -165,12 +165,12 @@ export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHom
 
       <div className="hidden md:flex flex-1 justify-center">
         <div className="flex items-center justify-center">
-          <h1
+          <img
+            src="/logo.png"
+            alt="YZY Gold"
             onClick={onHomeClick}
-            className="text-2xl font-display font-bold tracking-tight text-white cursor-pointer hover:opacity-80 transition-all duration-[2000ms] ease-[cubic-bezier(0.2,0,0,1)] shrink-0"
-          >
-            YƵY<span className="text-[var(--theme-color)]">GOLD</span>
-          </h1>
+            className="h-8 w-auto cursor-pointer hover:opacity-80 transition-opacity duration-300 shrink-0"
+          />
 
           <div className="flex items-center ml-6">
             <div className="flex items-center gap-6 min-w-max pr-2">
