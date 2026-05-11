@@ -74,7 +74,12 @@ export const CUSTOM_IMAGES: Record<string, string> = {
   "K.T.S.E.": "https://i.ibb.co/rfZM2kCp/K-T-S-E.jpg",
   "NEVER STOP": "https://i.ibb.co/vC9c5qFM/never-stop.png",
   "Jesus Is Born": "https://api.pillows.su/api/get/61be2288632189d710fc6865f5efd9c7",
-  "Sunday Service Choir": "https://i.ibb.co/nN2LDSxN/SSC.jpg"
+  "Sunday Service Choir": "https://i.ibb.co/nN2LDSxN/SSC.jpg",
+  "Late Orchestration": "https://i.ibb.co/whrYVzkr/Late-Orchestration.jpg",
+  "Child Rebel Soldier": "https://i.ibb.co/QFLpkFcz/IMG-3998.png",
+  "BULLY": "https://a5.mzstatic.com/us/r1000/0/Music221/v4/4b/38/d1/4b38d146-381d-ace2-73df-24074576e62b/656465138828_cover.jpg",
+  "Live": "https://i.ibb.co/zhhhyDVq/hq720.jpg",
+  "Other": "https://i.ibb.co/G3VqQV3t/IMG-3890.jpg"
 };
 
 export const ALBUM_RELEASE_DATES: Record<string, string> = {
