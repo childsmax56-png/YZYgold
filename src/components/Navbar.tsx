@@ -144,7 +144,7 @@ export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHom
               href="https://discord.gg/TYqdey3B"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center p-2.5 rounded-full transition-all duration-300 cursor-pointer bg-white/5 text-white/50 hover:bg-[#5865F2]/15 hover:text-[#5865F2]"
+              className="flex items-center justify-center p-2.5 rounded-full transition-all duration-300 cursor-pointer bg-[#5865F2]/15 text-[#5865F2] hover:bg-[#5865F2]/25"
               title="Join Discord"
             >
               <SiDiscord className="w-5 h-5" />
@@ -211,7 +211,7 @@ export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHom
           href="https://discord.gg/TYqdey3B"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-300 cursor-pointer bg-white/5 text-white/50 hover:bg-[#5865F2]/15 hover:text-[#5865F2] hover:scale-105"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-300 cursor-pointer bg-[#5865F2]/15 text-[#5865F2] hover:bg-[#5865F2]/25 hover:scale-105"
           title="Join Discord"
         >
           <SiDiscord className="w-4 h-4" />
