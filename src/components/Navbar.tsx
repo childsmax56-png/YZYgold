@@ -68,7 +68,7 @@ export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHom
               src="/logo.png"
               alt="YZY Gold"
               onClick={onHomeClick}
-              className="h-8 w-auto cursor-pointer hover:opacity-80 transition-opacity duration-300 relative z-20 shrink-0"
+              className="h-12 w-auto cursor-pointer hover:opacity-80 transition-opacity duration-300 relative z-20 shrink-0"
             />
           </div>
   
@@ -170,7 +170,7 @@ export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHom
             src="/logo.png"
             alt="YZY Gold"
             onClick={onHomeClick}
-            className="h-8 w-auto cursor-pointer hover:opacity-80 transition-opacity duration-300 shrink-0"
+            className="h-12 w-auto cursor-pointer hover:opacity-80 transition-opacity duration-300 shrink-0"
           />
 
           <div className="flex items-center ml-6">
