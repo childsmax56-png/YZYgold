@@ -48,6 +48,8 @@ export interface AppSettings {
   lastfmShowFeats: boolean;
   notOpenInNewTab: boolean;
   googleSheetsUrl: string;
+  downloadAsOgFilename: boolean;
+  embedMetadata: boolean;
 }
 
 interface SettingsContextType {
@@ -82,6 +84,8 @@ export const defaultSettings: AppSettings = {
   lastfmShowFeats: true,
   notOpenInNewTab: false,
   googleSheetsUrl: '',
+  downloadAsOgFilename: false,
+  embedMetadata: true,
 };
 
 const SettingsContext = createContext<SettingsContextType>({

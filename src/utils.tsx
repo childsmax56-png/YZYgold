@@ -247,6 +247,24 @@ export function getArtistName(eraName: string | undefined): string {
   return "Kanye West";
 }
 
+export function buildArtistTag(songName: string, eraName: string | undefined): string {
+  let primary: string;
+  const dashIdx = songName.indexOf(' - ');
+  if (dashIdx !== -1) {
+    primary = songName.substring(0, dashIdx);
+    Object.keys(TAG_MAP).forEach(emoji => { primary = primary.replaceAll(emoji, ''); });
+    primary = primary.replace(/[️]/g, '').trim();
+  } else {
+    primary = getArtistName(eraName);
+  }
+
+  const featMatch = songName.match(/\(feat\.\s*([^)]+)\)/i);
+  if (featMatch) {
+    return `${primary} feat. ${featMatch[1].trim()}`;
+  }
+  return primary;
+}
+
 export const TAG_MAP: Record<string, string> = {
   '⭐': 'Best Of',
   '🏆': 'Grails',
@@ -468,7 +486,7 @@ async function fetchArtworkBuffer(artworkUrl: string): Promise<ArrayBuffer | nul
   return null;
 }
 
-async function embedID3Tags(blob: Blob, meta: SongMeta, cleanTitle: string): Promise<Blob> {
+export async function embedID3Tags(blob: Blob, meta: SongMeta, cleanTitle: string): Promise<Blob> {
   const audioBuffer = await blob.arrayBuffer();
   const writer = new ID3Writer(audioBuffer);
 
@@ -511,12 +529,22 @@ function isInAppBrowser(): boolean {
   return /GSA\/|FBAN|FBAV|Instagram\//.test(ua);
 }
 
-export async function handleDownloadFile(url: string, suggestedName: string, tagsAsEmojis: boolean, meta?: SongMeta) {
+function parseOgFilename(description: string | undefined): string | null {
+  if (!description) return null;
+  const match = description.match(/^OG Filename:\s*(.+)$/im);
+  if (!match) return null;
+  const raw = match[1].trim().replace(/^["']|["']$/g, '');
+  // Strip known audio extensions so extension logic below can normalize them
+  return raw.replace(/\.(mp3|wav|flac|aif|aiff|m4a|ogg)$/i, '');
+}
+
+export async function handleDownloadFile(url: string, suggestedName: string, tagsAsEmojis: boolean, meta?: SongMeta, description?: string) {
   if (!url) return;
   try {
     let finalUrl = url;
-    let fileName = suggestedName;
-    if (!tagsAsEmojis) {
+    const ogName = parseOgFilename(description);
+    let fileName = ogName ?? suggestedName;
+    if (!tagsAsEmojis && !ogName) {
       fileName = formatTextForNotification(suggestedName, false);
     }
 

@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { ArrowLeft, Play, ExternalLink, X, Share2, Volume2, Check, Download, Loader2, Star } from 'lucide-react';
 import { Era, Song, SearchFilters } from '../types';
 import { useState, useMemo, useEffect } from 'react';
-import { formatTextWithTags, getCleanSongNameWithTags, createSlug, getSongSlug, ALBUM_RELEASE_DATES, matchesFilters, isSongNotAvailable, CUSTOM_IMAGES, getArtistName, handleDownloadFile } from '../utils';
+import { formatTextWithTags, getCleanSongNameWithTags, createSlug, getSongSlug, ALBUM_RELEASE_DATES, matchesFilters, isSongNotAvailable, CUSTOM_IMAGES, getArtistName, buildArtistTag, handleDownloadFile } from '../utils';
 import { useSettings } from '../SettingsContext';
 import { MvEntry, RemixEntry, SampleEntry } from '../App';
 import { findMvsForSong, findRemixesForSong, findSamplesForSong } from './EraDetail';
@@ -273,13 +273,13 @@ export function MiscView({ eras, miscData, searchQuery, filters, onPlaySong, cur
           const miscEraName = selectedEraData!.eraName.replace(' [Misc Album]', '');
           const artUrl = selectedEraData!.image || CUSTOM_IMAGES[miscEraName];
           const songTitle = song.name.includes(' - ') ? song.name.substring(song.name.indexOf(' - ') + 3) : song.name;
-          await handleDownloadFile(rawUrl, song.name, settings.tagsAsEmojis, {
+          await handleDownloadFile(rawUrl, song.name, settings.tagsAsEmojis, settings.embedMetadata ? {
             title: songTitle,
-            artist: getArtistName(miscEraName),
+            artist: buildArtistTag(song.name, miscEraName),
             album: miscEraName,
             year: ALBUM_RELEASE_DATES[miscEraName]?.split('/').pop(),
             artworkUrl: artUrl,
-          });
+          } : undefined, settings.downloadAsOgFilename ? song.description : undefined);
           await new Promise(resolve => setTimeout(resolve, 800));
         } catch (err) {
           console.error(`Failed to download ${song.name}:`, err);
