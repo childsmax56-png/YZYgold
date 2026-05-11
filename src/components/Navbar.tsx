@@ -63,27 +63,27 @@ export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHom
     <header className="h-auto md:h-16 w-full glass-panel border-b border-white/5 flex flex-col md:flex-row items-center justify-between px-4 md:px-8 py-3 md:py-0 z-30 relative shrink-0 gap-3 md:gap-0">
       <div className="flex flex-col w-full md:flex-1">
         <div className="flex-1 flex flex-row items-center justify-between md:justify-start w-full relative gap-3">
-          <div className="md:hidden flex items-center shrink-0 relative z-10">
-            <h1
+          <div className="md:hidden flex items-center shrink-0">
+            <img
+              src="/logo.png"
+              alt="YZY Gold"
               onClick={onHomeClick}
-              className="text-2xl font-display font-bold tracking-tight text-white cursor-pointer hover:opacity-80 transition-all duration-[2000ms] ease-[cubic-bezier(0.2,0,0,1)] relative z-20 shrink-0"
-            >
-              YƵY<span className="text-[var(--theme-color)]">GOLD</span>
-            </h1>
+              className="h-[48px] w-[160px] object-cover object-center cursor-pointer hover:opacity-80 transition-opacity duration-300"
+            />
           </div>
-  
+
           {activeCategory !== 'history' && (
             <div
-              className="flex items-center gap-2 w-full flex-1 sm:max-w-xs md:w-80 ml-4 md:ml-0 transition-opacity duration-500"
+              className="flex items-center gap-2 flex-1 max-w-[55%] md:max-w-none md:ml-0 transition-opacity duration-500"
             >
               <div className="relative group flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/40" />
                 <input
                   type="text"
                   placeholder={activeCategory === 'settings' ? "Search settings..." : "Search..."}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-md py-1.5 pl-9 pr-8 text-sm text-white focus:outline-none focus:border-white/30 transition-colors placeholder:text-white/30"
+                  className="w-full bg-white/5 border border-white/10 rounded-md py-1 pl-8 pr-7 text-xs text-white focus:outline-none focus:border-white/30 transition-colors placeholder:text-white/30"
                 />
                 {searchQuery && (
                   <button
@@ -94,17 +94,30 @@ export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHom
                   </button>
                 )}
               </div>
-              {activeCategory !== 'art' && activeCategory !== 'settings' && <FilterMenu filters={filters} setFilters={setFilters} activeCategory={activeCategory} />}
-              {activeCategory === 'music' && onRandomSongClick && settings.showRandomSongButton && (
-                <button
-                  onClick={onRandomSongClick}
-                  title="Play Random Song"
-                  className={`flex items-center justify-center cursor-pointer transition-colors p-1.5 rounded-md border ${isRandomMode ? 'border-[var(--theme-color)] bg-white/10' : 'border-transparent text-white/40 hover:text-white hover:bg-white/5'}`}
-                  style={isRandomMode ? { color: 'var(--theme-color)' } : {}}
-                >
-                  <Dice5 className="w-4 h-4" />
-                </button>
-              )}
+              {/* filter/shuffle shown on mobile only — desktop versions live in center */}
+              <div className="md:hidden flex items-center gap-2">
+                {activeCategory !== 'art' && activeCategory !== 'settings' && <FilterMenu filters={filters} setFilters={setFilters} activeCategory={activeCategory} />}
+                {activeCategory === 'music' && onRandomSongClick && settings.showRandomSongButton && (
+                  <button
+                    onClick={onRandomSongClick}
+                    title="Play Random Song"
+                    className={`flex items-center justify-center cursor-pointer transition-colors p-1.5 rounded-md border ${isRandomMode ? 'border-[var(--theme-color)] bg-white/10' : 'border-transparent text-white/40 hover:text-white hover:bg-white/5'}`}
+                    style={isRandomMode ? { color: 'var(--theme-color)' } : {}}
+                  >
+                    <Dice5 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+              {/* desktop logo fills the gap between search and center */}
+              <div className="hidden md:block w-[170px] h-[60px] shrink-0 overflow-hidden">
+                <img
+                  src="/logo.png"
+                  alt="YZY Gold"
+                  onClick={onHomeClick}
+                  className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition-opacity duration-300"
+                  style={{ objectPosition: 'center center' }}
+                />
+              </div>
             </div>
           )}
         </div>
@@ -166,30 +179,34 @@ export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHom
       </div>
 
       <div className="hidden md:flex flex-1 justify-center">
-        <div className="flex items-center justify-center">
-          <h1
-            onClick={onHomeClick}
-            className="text-2xl font-display font-bold tracking-tight text-white cursor-pointer hover:opacity-80 transition-all duration-[2000ms] ease-[cubic-bezier(0.2,0,0,1)] shrink-0"
-          >
-            YƵY<span className="text-[var(--theme-color)]">GOLD</span>
-          </h1>
-
-          <div className="flex items-center ml-6">
-            <div className="flex items-center gap-6 min-w-max pr-2">
-              {NAV_CATEGORIES.map(({ key, label }) => (
-                <div className="relative" key={key}>
-                  <button
-                    onClick={() => handleCategoryClick(key)}
-                    className={`text-sm font-semibold uppercase tracking-widest pb-1.5 transition-all duration-300 cursor-pointer whitespace-nowrap ${activeCategory === key ? 'text-[var(--theme-color)]' : 'text-white/50 hover:text-white'}`}
-                  >
-                    {label}
-                  </button>
-                  {activeCategory === key && (
-                    <motion.div layoutId="nav-indicator-desktop" className="absolute bottom-0 left-0 right-0 h-[2px] bg-[var(--theme-color)]" />
-                  )}
-                </div>
-              ))}
-            </div>
+        <div className="flex items-center justify-center gap-6">
+          <div className="flex items-center gap-4">
+            {activeCategory !== 'art' && activeCategory !== 'settings' && activeCategory !== 'history' && <FilterMenu filters={filters} setFilters={setFilters} activeCategory={activeCategory} />}
+            {activeCategory === 'music' && onRandomSongClick && settings.showRandomSongButton && (
+              <button
+                onClick={onRandomSongClick}
+                title="Play Random Song"
+                className={`flex items-center justify-center cursor-pointer transition-colors p-1.5 rounded-md border ${isRandomMode ? 'border-[var(--theme-color)] bg-white/10' : 'border-transparent text-white/40 hover:text-white hover:bg-white/5'}`}
+                style={isRandomMode ? { color: 'var(--theme-color)' } : {}}
+              >
+                <Dice5 className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-6 min-w-max">
+            {NAV_CATEGORIES.map(({ key, label }) => (
+              <div className="relative" key={key}>
+                <button
+                  onClick={() => handleCategoryClick(key)}
+                  className={`text-sm font-semibold uppercase tracking-widest pb-1.5 transition-all duration-300 cursor-pointer whitespace-nowrap ${activeCategory === key ? 'text-[var(--theme-color)]' : 'text-white/50 hover:text-white'}`}
+                >
+                  {label}
+                </button>
+                {activeCategory === key && (
+                  <motion.div layoutId="nav-indicator-desktop" className="absolute bottom-0 left-0 right-0 h-[2px] bg-[var(--theme-color)]" />
+                )}
+              </div>
+            ))}
           </div>
         </div>
       </div>
