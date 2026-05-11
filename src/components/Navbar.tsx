@@ -74,7 +74,7 @@ export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHom
 
           {activeCategory !== 'history' && (
             <div
-              className="flex items-center gap-2 flex-1 max-w-[55%] md:w-56 md:max-w-none md:ml-0 transition-opacity duration-500"
+              className="flex items-center gap-2 flex-1 max-w-[55%] md:max-w-[200px] md:ml-0 transition-opacity duration-500"
             >
               <div className="relative group flex-1">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/40" />
@@ -83,7 +83,7 @@ export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHom
                   placeholder={activeCategory === 'settings' ? "Search settings..." : "Search..."}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-md py-1 pl-8 pr-7 text-xs text-white focus:outline-none focus:border-white/30 transition-colors placeholder:text-white/30 md:py-1 md:text-xs"
+                  className="w-full bg-white/5 border border-white/10 rounded-md py-1 pl-8 pr-7 text-xs text-white focus:outline-none focus:border-white/30 transition-colors placeholder:text-white/30"
                 />
                 {searchQuery && (
                   <button
@@ -94,17 +94,20 @@ export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHom
                   </button>
                 )}
               </div>
-              {activeCategory !== 'art' && activeCategory !== 'settings' && <FilterMenu filters={filters} setFilters={setFilters} activeCategory={activeCategory} />}
-              {activeCategory === 'music' && onRandomSongClick && settings.showRandomSongButton && (
-                <button
-                  onClick={onRandomSongClick}
-                  title="Play Random Song"
-                  className={`flex items-center justify-center cursor-pointer transition-colors p-1.5 rounded-md border ${isRandomMode ? 'border-[var(--theme-color)] bg-white/10' : 'border-transparent text-white/40 hover:text-white hover:bg-white/5'}`}
-                  style={isRandomMode ? { color: 'var(--theme-color)' } : {}}
-                >
-                  <Dice5 className="w-4 h-4" />
-                </button>
-              )}
+              {/* filter/shuffle shown on mobile only — desktop versions live in center */}
+              <div className="md:hidden flex items-center gap-2">
+                {activeCategory !== 'art' && activeCategory !== 'settings' && <FilterMenu filters={filters} setFilters={setFilters} activeCategory={activeCategory} />}
+                {activeCategory === 'music' && onRandomSongClick && settings.showRandomSongButton && (
+                  <button
+                    onClick={onRandomSongClick}
+                    title="Play Random Song"
+                    className={`flex items-center justify-center cursor-pointer transition-colors p-1.5 rounded-md border ${isRandomMode ? 'border-[var(--theme-color)] bg-white/10' : 'border-transparent text-white/40 hover:text-white hover:bg-white/5'}`}
+                    style={isRandomMode ? { color: 'var(--theme-color)' } : {}}
+                  >
+                    <Dice5 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -165,35 +168,45 @@ export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHom
       </div>
 
       <div className="hidden md:flex flex-1 justify-center">
-        <div className="flex items-center justify-center">
-          <img
-            src="/logo.png"
-            alt="YZY Gold"
-            onClick={onHomeClick}
-            className="h-[80px] w-[80px] object-contain cursor-pointer hover:opacity-80 transition-opacity duration-300 shrink-0"
-          />
-
-          <div className="flex items-center ml-6">
-            <div className="flex items-center gap-6 min-w-max pr-2">
-              {NAV_CATEGORIES.map(({ key, label }) => (
-                <div className="relative" key={key}>
-                  <button
-                    onClick={() => handleCategoryClick(key)}
-                    className={`text-sm font-semibold uppercase tracking-widest pb-1.5 transition-all duration-300 cursor-pointer whitespace-nowrap ${activeCategory === key ? 'text-[var(--theme-color)]' : 'text-white/50 hover:text-white'}`}
-                  >
-                    {label}
-                  </button>
-                  {activeCategory === key && (
-                    <motion.div layoutId="nav-indicator-desktop" className="absolute bottom-0 left-0 right-0 h-[2px] bg-[var(--theme-color)]" />
-                  )}
-                </div>
-              ))}
-            </div>
+        <div className="flex items-center justify-center gap-6">
+          <div className="flex items-center gap-4">
+            {activeCategory !== 'art' && activeCategory !== 'settings' && activeCategory !== 'history' && <FilterMenu filters={filters} setFilters={setFilters} activeCategory={activeCategory} />}
+            {activeCategory === 'music' && onRandomSongClick && settings.showRandomSongButton && (
+              <button
+                onClick={onRandomSongClick}
+                title="Play Random Song"
+                className={`flex items-center justify-center cursor-pointer transition-colors p-1.5 rounded-md border ${isRandomMode ? 'border-[var(--theme-color)] bg-white/10' : 'border-transparent text-white/40 hover:text-white hover:bg-white/5'}`}
+                style={isRandomMode ? { color: 'var(--theme-color)' } : {}}
+              >
+                <Dice5 className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-6 min-w-max">
+            {NAV_CATEGORIES.map(({ key, label }) => (
+              <div className="relative" key={key}>
+                <button
+                  onClick={() => handleCategoryClick(key)}
+                  className={`text-sm font-semibold uppercase tracking-widest pb-1.5 transition-all duration-300 cursor-pointer whitespace-nowrap ${activeCategory === key ? 'text-[var(--theme-color)]' : 'text-white/50 hover:text-white'}`}
+                >
+                  {label}
+                </button>
+                {activeCategory === key && (
+                  <motion.div layoutId="nav-indicator-desktop" className="absolute bottom-0 left-0 right-0 h-[2px] bg-[var(--theme-color)]" />
+                )}
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
       <div className="flex-1 hidden md:flex justify-end items-center gap-2 md:gap-3">
+        <img
+          src="/logo.png"
+          alt="YZY Gold"
+          onClick={onHomeClick}
+          className="h-[60px] w-[60px] object-contain cursor-pointer hover:opacity-80 transition-opacity duration-300 shrink-0"
+        />
         <button
           onClick={() => spotifyLoggedIn ? onSpotifyLogout?.() : onSpotifyLogin?.()}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-300 cursor-pointer ${
