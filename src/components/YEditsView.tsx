@@ -1,7 +1,64 @@
-import { motion } from 'motion/react';
-import { Play, Pause, Volume2, Download, Loader2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { createPortal } from 'react-dom';
+import { ArrowLeft, Play, Volume2, Download, Loader2 } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { Song, Era } from '../types';
+
+const AUDIO_EXTS = /\.(mp3|m4a|wav|ogg|flac|aac)$/i;
+const IMAGE_EXTS = /\.(png|jpe?g|gif|webp)$/i;
+
+const FOLDER_CREATORS: Record<string, string> = {
+  'Bully by dangerous contact': 'Dangerous Contact',
+  'the overground hell road': 'Careless Basket',
+};
+
+interface YEditsGroup {
+  folderPath: string;
+  displayName: string;
+  parentName: string;
+  imageUrl?: string;
+  songs: Song[];
+}
+
+function parseGroups(keys: string[]): YEditsGroup[] {
+  const folderMap = new Map<string, { imageKey?: string; audioKeys: string[] }>();
+
+  for (const key of keys) {
+    const lastSlash = key.lastIndexOf('/');
+    if (lastSlash === -1) continue;
+    const folderPath = key.substring(0, lastSlash);
+    const filename = key.substring(lastSlash + 1);
+    if (!filename) continue;
+
+    if (!folderMap.has(folderPath)) {
+      folderMap.set(folderPath, { audioKeys: [] });
+    }
+    const entry = folderMap.get(folderPath)!;
+    if (AUDIO_EXTS.test(filename)) {
+      entry.audioKeys.push(key);
+    } else if (IMAGE_EXTS.test(filename)) {
+      entry.imageKey = key;
+    }
+  }
+
+  return Array.from(folderMap.entries())
+    .filter(([, { audioKeys }]) => audioKeys.length > 0)
+    .map(([folderPath, { imageKey, audioKeys }]) => {
+      const parts = folderPath.split('/');
+      const displayName = parts[parts.length - 1].trim() || folderPath;
+      const parentName = parts.length > 1
+        ? parts[0].trim()
+        : (FOLDER_CREATORS[parts[0].trim()] ?? '');
+      const imageUrl = imageKey
+        ? `/api/yedits-file?key=${encodeURIComponent(imageKey)}`
+        : undefined;
+      const songs: Song[] = audioKeys.map(key => ({
+        name: key.split('/').pop()!.replace(/\.[^.]+$/, ''),
+        url: `/api/yedits-file?key=${encodeURIComponent(key)}`,
+      }));
+      return { folderPath, displayName, parentName, imageUrl, songs };
+    });
+}
 
 interface YEditsViewProps {
   searchQuery: string;
@@ -10,91 +67,58 @@ interface YEditsViewProps {
   isPlaying?: boolean;
 }
 
-function keyToDisplayName(key: string): string {
-  const filename = key.split('/').pop() ?? key;
-  return filename.replace(/\.[^.]+$/, '').replace(/[_-]/g, ' ').trim();
-}
-
-function keyToGroup(key: string): string {
-  const parts = key.split('/');
-  return parts.length > 1 ? parts[0] : 'Yedits';
-}
-
-function keyToUrl(key: string): string {
-  return `/api/yedits-file?key=${encodeURIComponent(key)}`;
-}
-
-const YEDITS_ERA: Era = {
-  name: 'YZYgold Yedit Affiliates',
-  data: { Yedits: [] },
-};
-
 export function YEditsView({ searchQuery, onPlaySong, currentSong, isPlaying }: YEditsViewProps) {
   const [keys, setKeys] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedGroup, setSelectedGroup] = useState<YEditsGroup | null>(null);
+  const [selectedCreator, setSelectedCreator] = useState<string | null>(null);
+  const [zoomedImage, setZoomedImage] = useState(false);
 
   useEffect(() => {
-    setLoading(true);
-    setError(null);
     fetch('/api/yedits')
-      .then(r => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json() as Promise<string[]>;
-      })
-      .then(data => {
-        setKeys(data);
-        setLoading(false);
-      })
-      .catch(err => {
-        setError(err.message ?? 'Failed to load');
-        setLoading(false);
-      });
+      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json() as Promise<string[]>; })
+      .then(data => { setKeys(data); setLoading(false); })
+      .catch(err => { setError(err.message ?? 'Failed to load'); setLoading(false); });
   }, []);
 
-  const allSongs: Song[] = useMemo(() =>
-    keys.map(key => ({
-      name: keyToDisplayName(key),
-      url: keyToUrl(key),
-      extra2: keyToGroup(key),
-    })),
-    [keys]
-  );
+  const groups = useMemo(() => parseGroups(keys), [keys]);
 
-  const filtered = useMemo(() => {
-    if (!searchQuery.trim()) return allSongs;
-    const q = searchQuery.toLowerCase();
-    return allSongs.filter(s => s.name.toLowerCase().includes(q) || (s.extra2 ?? '').toLowerCase().includes(q));
-  }, [allSongs, searchQuery]);
-
-  const groups = useMemo(() => {
-    const map = new Map<string, Song[]>();
-    for (const song of filtered) {
-      const group = song.extra2 ?? 'Yedits';
-      if (!map.has(group)) map.set(group, []);
-      map.get(group)!.push(song);
+  const creators = useMemo(() => {
+    const map = new Map<string, { albumCount: number; previewImage?: string }>();
+    for (const g of groups) {
+      if (!g.parentName) continue;
+      const existing = map.get(g.parentName);
+      map.set(g.parentName, {
+        albumCount: (existing?.albumCount ?? 0) + 1,
+        previewImage: existing?.previewImage ?? g.imageUrl,
+      });
     }
-    return map;
-  }, [filtered]);
+    return Array.from(map.entries()).map(([name, info]) => ({ name, ...info }));
+  }, [groups]);
 
-  const era: Era = useMemo(() => ({
-    ...YEDITS_ERA,
-    data: { Yedits: allSongs },
-  }), [allSongs]);
+  const filteredGroups = useMemo(() => {
+    const byCreator = selectedCreator
+      ? groups.filter(g => g.parentName === selectedCreator)
+      : groups;
+    if (!searchQuery.trim()) return byCreator;
+    const q = searchQuery.toLowerCase();
+    return byCreator.filter(g =>
+      g.displayName.toLowerCase().includes(q) || g.parentName.toLowerCase().includes(q)
+    );
+  }, [groups, selectedCreator, searchQuery]);
 
-  const handlePlay = (song: Song) => {
-    onPlaySong(song, era, filtered);
-  };
+  const filteredSongs = useMemo(() => {
+    if (!selectedGroup) return [];
+    if (!searchQuery.trim()) return selectedGroup.songs;
+    const q = searchQuery.toLowerCase();
+    return selectedGroup.songs.filter(s => s.name.toLowerCase().includes(q));
+  }, [selectedGroup, searchQuery]);
 
   if (loading) {
     return (
-      <motion.div
-        key="yedits-loading"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="flex items-center justify-center h-64 text-white/40"
-      >
+      <motion.div key="yedits-loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        className="flex items-center justify-center h-64 text-white/40">
         <Loader2 className="w-6 h-6 animate-spin mr-3" />
         <span className="text-sm">Loading yedits…</span>
       </motion.div>
@@ -103,85 +127,243 @@ export function YEditsView({ searchQuery, onPlaySong, currentSong, isPlaying }: 
 
   if (error) {
     return (
-      <motion.div
-        key="yedits-error"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="flex items-center justify-center h-64 text-white/40 text-sm"
-      >
+      <motion.div key="yedits-error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        className="flex items-center justify-center h-64 text-white/40 text-sm">
         Failed to load: {error}
       </motion.div>
     );
   }
 
+  // DETAIL VIEW
+  if (selectedGroup) {
+    const era: Era = {
+      name: selectedGroup.displayName,
+      image: selectedGroup.imageUrl,
+      data: { Yedits: selectedGroup.songs },
+    };
+
+    return (
+      <>
+        {typeof document !== 'undefined' && createPortal(
+          <AnimatePresence>
+            {zoomedImage && selectedGroup.imageUrl && (
+              <motion.div
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                onClick={() => setZoomedImage(false)}
+                className="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center p-4 cursor-zoom-out backdrop-blur-sm"
+              >
+                <img src={selectedGroup.imageUrl} alt={selectedGroup.displayName}
+                  className="max-w-full max-h-full object-contain shadow-2xl rounded-md" />
+              </motion.div>
+            )}
+          </AnimatePresence>,
+          document.body
+        )}
+
+        <motion.div
+          key={`yedits-detail-${selectedGroup.folderPath}`}
+          initial={{ opacity: 0, filter: 'blur(10px)' }}
+          animate={{ opacity: 1, filter: 'blur(0px)' }}
+          exit={{ opacity: 0, filter: 'blur(10px)' }}
+          transition={{ duration: 0.4, ease: 'easeOut' }}
+          className="absolute inset-0 z-10 bg-[#0a0a0a] overflow-y-auto pb-64"
+        >
+          <div className="p-6 md:p-8 flex flex-col md:flex-row items-start gap-6 md:gap-8 border-b border-white/5 bg-white/5">
+            <button
+              onClick={() => { setSelectedGroup(null); setZoomedImage(false); }}
+              className="cursor-pointer mt-1 flex items-center justify-center w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors shrink-0"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+
+            <div
+              className={`w-32 h-32 md:w-48 md:h-48 rounded-md overflow-hidden bg-white/5 shrink-0 shadow-xl ${selectedGroup.imageUrl ? 'cursor-pointer' : ''}`}
+              onClick={() => { if (selectedGroup.imageUrl) setZoomedImage(true); }}
+              title={selectedGroup.imageUrl ? 'Click to zoom' : undefined}
+            >
+              {selectedGroup.imageUrl ? (
+                <img src={selectedGroup.imageUrl} alt={selectedGroup.displayName} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-4xl font-bold text-white/20 text-center p-4">
+                  {selectedGroup.displayName}
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-col justify-end h-full py-2">
+              {selectedGroup.parentName && (
+                <p className="text-[var(--theme-color)] text-sm font-semibold uppercase tracking-widest mb-2">
+                  {selectedGroup.parentName}
+                </p>
+              )}
+              <h1 className="text-3xl md:text-5xl font-bold text-white tracking-tight">
+                {selectedGroup.displayName}
+              </h1>
+              <div className="flex items-center gap-3 mt-3 flex-wrap">
+                <span className="text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full bg-[var(--theme-color)]/10 text-[var(--theme-color)] border border-[var(--theme-color)]/20">
+                  Yedit Affiliates
+                </span>
+                <p className="text-white/40 text-sm">
+                  {selectedGroup.songs.length} track{selectedGroup.songs.length !== 1 ? 's' : ''}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="px-6 md:px-8 mt-8 max-w-6xl mx-auto">
+            <div className="flex flex-col">
+              <div className="hidden sm:flex items-center px-4 py-2 text-xs font-semibold text-white/40 uppercase tracking-wider border-b border-white/5 mb-2">
+                <div className="w-8">#</div>
+                <div className="flex-1">Title</div>
+                <div className="w-10"></div>
+              </div>
+
+              {filteredSongs.map((song, i) => {
+                const isCurrentSong = currentSong?.url === song.url;
+                const isCurrentPlaying = isCurrentSong && isPlaying;
+                return (
+                  <div
+                    key={song.url}
+                    onClick={() => onPlaySong(song, era, filteredSongs)}
+                    className={`group flex items-center px-4 py-2.5 rounded-md transition-colors cursor-pointer hover:bg-white/5 ${isCurrentSong ? 'bg-white/5' : ''}`}
+                  >
+                    <div className={`w-8 text-sm font-mono flex items-center ${isCurrentSong ? 'text-[var(--theme-color)]' : 'text-white/40 group-hover:text-white'}`}>
+                      <span className="group-hover:hidden">
+                        {isCurrentSong
+                          ? <Volume2 className={`w-4 h-4 ${isCurrentPlaying ? 'animate-pulse' : ''}`} />
+                          : (i + 1)}
+                      </span>
+                      <Play className="w-4 h-4 hidden group-hover:block" />
+                    </div>
+
+                    <div className="flex-1 min-w-0 pr-4">
+                      <div className={`font-medium truncate ${isCurrentSong ? 'text-[var(--theme-color)]' : 'text-white'}`}>
+                        {song.name}
+                      </div>
+                    </div>
+
+                    <a
+                      href={song.url}
+                      download
+                      onClick={e => e.stopPropagation()}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10 text-white/40 hover:text-white/80"
+                      title="Download"
+                    >
+                      <Download className="w-4 h-4" />
+                    </a>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </motion.div>
+      </>
+    );
+  }
+
+  // GRID VIEW
   return (
     <motion.div
-      key="yedits"
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8 }}
-      transition={{ duration: 0.2 }}
-      className="p-6 space-y-8"
+      key="yedits-grid"
+      initial={{ opacity: 0, filter: 'blur(10px)' }}
+      animate={{ opacity: 1, filter: 'blur(0px)' }}
+      exit={{ opacity: 0, filter: 'blur(10px)' }}
+      transition={{ duration: 0.4, ease: 'easeOut' }}
+      className="p-6 md:p-8 pb-32 space-y-8"
     >
-      <div className="flex items-center justify-between">
+      {/* Creators section */}
+      {creators.length > 0 && (
         <div>
-          <h1 className="text-2xl font-bold text-white">YZYgold Yedit Affiliates</h1>
-          <p className="text-sm text-white/40 mt-1">{filtered.length} edit{filtered.length !== 1 ? 's' : ''}</p>
-        </div>
-      </div>
-
-      {filtered.length === 0 ? (
-        <div className="text-center text-white/30 text-sm py-20">
-          {keys.length === 0 ? 'No files in bucket yet.' : 'No results for that search.'}
-        </div>
-      ) : (
-        Array.from(groups.entries()).map(([group, songs]) => (
-          <div key={group} className="space-y-1">
-            {groups.size > 1 && (
-              <h2 className="text-xs uppercase tracking-widest text-white/40 font-bold mb-3 px-1">{group}</h2>
-            )}
-            {songs.map((song, i) => {
-              const isCurrentSong = currentSong?.url === song.url;
-              const isCurrentPlaying = isCurrentSong && isPlaying;
+          <h2 className="text-xs uppercase tracking-widest text-white/40 font-bold mb-4">Creators</h2>
+          <div className="flex flex-wrap gap-3">
+            {creators.map((creator, i) => {
+              const isActive = selectedCreator === creator.name;
               return (
-                <motion.div
-                  key={song.url}
-                  initial={{ opacity: 0, x: -4 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.02 }}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg group transition-colors cursor-pointer ${
-                    isCurrentSong ? 'bg-white/10' : 'hover:bg-white/5'
+                <motion.button
+                  key={creator.name}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                  onClick={() => setSelectedCreator(isActive ? null : creator.name)}
+                  className={`flex items-center gap-3 pl-1 pr-4 py-1 rounded-full border transition-all cursor-pointer ${
+                    isActive
+                      ? 'bg-[var(--theme-color)]/15 border-[var(--theme-color)]/40 text-white'
+                      : 'bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white hover:border-white/20'
                   }`}
-                  onClick={() => handlePlay(song)}
                 >
-                  <div className={`w-8 h-8 flex items-center justify-center rounded-full shrink-0 transition-colors ${
-                    isCurrentSong ? 'bg-[var(--theme-color)]/20' : 'bg-white/5 group-hover:bg-white/10'
-                  }`}>
-                    {isCurrentPlaying ? (
-                      <Volume2 className="w-3.5 h-3.5 text-[var(--theme-color)]" />
+                  <div className="w-8 h-8 rounded-full overflow-hidden bg-white/10 shrink-0">
+                    {creator.previewImage ? (
+                      <img src={creator.previewImage} alt={creator.name} className="w-full h-full object-cover" />
                     ) : (
-                      <Play className={`w-3.5 h-3.5 ${isCurrentSong ? 'text-[var(--theme-color)]' : 'text-white/40 group-hover:text-white/80'}`} />
+                      <div className="w-full h-full flex items-center justify-center text-[10px] font-bold text-white/30">
+                        {creator.name[0]}
+                      </div>
                     )}
                   </div>
-                  <span className={`flex-1 text-sm truncate ${isCurrentSong ? 'text-[var(--theme-color)]' : 'text-white/80 group-hover:text-white'}`}>
-                    {song.name}
-                  </span>
-                  <a
-                    href={song.url}
-                    download
-                    onClick={e => e.stopPropagation()}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-md hover:bg-white/10 text-white/40 hover:text-white/80"
-                    title="Download"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                  </a>
-                </motion.div>
+                  <div className="text-left">
+                    <div className={`text-sm font-semibold leading-tight ${isActive ? 'text-[var(--theme-color)]' : ''}`}>
+                      {creator.name}
+                    </div>
+                    <div className="text-[10px] text-white/40">
+                      {creator.albumCount} album{creator.albumCount !== 1 ? 's' : ''}
+                    </div>
+                  </div>
+                </motion.button>
               );
             })}
           </div>
+        </div>
+      )}
+
+      {/* Albums grid */}
+      <div>
+        {selectedCreator && (
+          <h2 className="text-xs uppercase tracking-widest text-white/40 font-bold mb-4">{selectedCreator}</h2>
+        )}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
+      {filteredGroups.length === 0 ? (
+        <div className="col-span-full text-center text-white/30 text-sm py-20">
+          {groups.length === 0 ? 'No content in bucket yet.' : 'No results for that search.'}
+        </div>
+      ) : (
+        filteredGroups.map((group, i) => (
+          <motion.div
+            key={group.folderPath}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: Math.min(i * 0.02, 0.5), duration: 0.3 }}
+            onClick={() => setSelectedGroup(group)}
+            className="group flex flex-col gap-3 cursor-pointer"
+          >
+            <div className="relative aspect-square rounded-md overflow-hidden bg-white/5 border border-white/5 group-hover:border-white/20 transition-colors">
+              {group.imageUrl ? (
+                <img
+                  src={group.imageUrl}
+                  alt={group.displayName}
+                  className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-white/5 text-white/20 font-bold text-xl text-center p-4">
+                  {group.displayName}
+                </div>
+              )}
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-white group-hover:underline truncate">
+                {group.displayName}
+              </h3>
+              <div className="flex items-center gap-2 mt-0.5">
+                {group.parentName && (
+                  <p className="text-white/50 text-xs truncate">{group.parentName}</p>
+                )}
+                <p className="text-white/30 text-xs shrink-0">{group.songs.length} tracks</p>
+              </div>
+            </div>
+          </motion.div>
         ))
       )}
+        </div>
+      </div>
     </motion.div>
   );
 }

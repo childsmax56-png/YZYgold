@@ -1378,6 +1378,33 @@ export default function App() {
     } else if (rawUrl.includes('archive.org/details/')) {
       const archiveId = rawUrl.split('archive.org/details/')[1].split('?')[0];
       handlePlayArchiveTrack(archiveId, song.name, era.name);
+    } else if (rawUrl.startsWith('/') || /\.(mp3|m4a|wav|ogg|flac|aac)(\?|$)/i.test(rawUrl)) {
+      const playableSongs = contextTracks && contextTracks.length > 0 ? contextTracks : [song];
+      setPlaylist(playableSongs);
+      const newIndex = playableSongs.findIndex(s =>
+        (s.url || (s.urls && s.urls[0]) || '') === (song.url || (song.urls && song.urls[0]) || '')
+      );
+      const safeIndex = newIndex >= 0 ? newIndex : 0;
+      setCurrentSongIndex(safeIndex);
+      if (resetShuffleHistory) {
+        setShuffledQueue(generateShuffledQueue(playableSongs.length, safeIndex));
+        setIsRandomMode(isRandomSelection);
+      }
+      setHasLoopedOnce(false);
+      setActivePlayer('audio');
+      setCurrentSong(song);
+      setCurrentEra(era);
+      setIsPlaying(autoPlay);
+      setIsPlayerClosed(false);
+      scrobbledRef.current = false;
+      songStartTimeRef.current = Math.floor(Date.now() / 1000);
+      if (audioRef.current) {
+        audioRef.current.src = rawUrl;
+        audioRef.current.volume = volume;
+        if (autoPlay) {
+          audioRef.current.play().catch(e => { if (e.name !== 'AbortError') console.error("Audio play failed", e); });
+        }
+      }
     } else {
       if (settings.notOpenInNewTab) {
           setPopupUrl(rawUrl);
