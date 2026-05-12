@@ -1078,7 +1078,7 @@ export default function App() {
     const userAgent = navigator.userAgent.toLowerCase();
     const isBrowserSafari = userAgent.includes('safari') && !userAgent.includes('chrome') && !userAgent.includes('crios') && !userAgent.includes('android');
 
-    if (!localStorage.getItem('v1_8_seen')) {
+    if (!localStorage.getItem('v1_8_5_seen')) {
       setShowChangelog(true);
     } else if (isBrowserSafari) {
       setShowSafariWarning(true);
@@ -2444,7 +2444,7 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
               YƵYGOLD does not host or hold any illegal files. All links are external and provided as-is for educational and archival purposes only.
             </p>
             <p className="text-[10px] text-white/30 leading-relaxed">
-              YZYGOLD 2026 © [V1.8]
+              YZYGOLD 2026 © [V1.8.5]
             </p>
             <p className="text-[10px] text-white/30 leading-relaxed mt-1">
               Logo created by Nr7th on discord
@@ -2655,42 +2655,34 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
               className="bg-[#111] border border-white/10 rounded-xl max-w-lg w-full p-6 md:p-8"
             >
               <h2 className="text-2xl font-bold text-white mb-1 tracking-tight font-display">
-                Version 1.8
+                Version 1.8.5
               </h2>
               <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-6">What's New</p>
 
               <div className="space-y-4 mb-8 text-sm text-white/70 leading-relaxed">
-                <ul className="space-y-3">
+                <ul className="space-y-4">
                   <li>
-                    <strong className="text-white">Released tab</strong>
-                    <br />You can view Kanye's released music in the released tab
-                    <br /><span className="text-white/50 text-xs">Most of the links use Spotify, in order for optimal use link a Spotify Premium account in order to play songs in the background</span>
+                    <strong className="text-white">YZYgold YEdits tab</strong>
+                    <br />This is a tab dedicated to YEdit creators who give the YZYgold team permission to host their works on the site
                   </li>
                   <li>
-                    <strong className="text-white">Custom loading screens</strong>
-                    <br />Loading times are getting longer and we can't counteract it, so we have added animated loading screens based off of the album covers for Yeezus, Donda 2, Thank God For Drugs, Yandhi, SWISH, Graduation, and Watch The Throne. You can choose which cover to use in the settings tab
+                    <strong className="text-white">Sophies Comps tab</strong>
+                    <br />This tab goes upon the Sophies comps sheet which is open source. Unfortunately you can not play songs from this tracker directly, it mostly serves as an alternative to find yedits that aren't affiliates
                   </li>
                   <li>
-                    <strong className="text-white">Discord</strong>
-                    <br />My reddit account got banned and I cannot moderate r/yzygold anymore, so I have created a YZY Gold Discord:{' '}
-                    <a href="https://discord.gg/TYqdey3B" target="_blank" rel="noopener noreferrer" className="text-[var(--theme-color)] hover:underline">
-                      https://discord.gg/TYqdey3B
-                    </a>
+                    <strong className="text-white">Thank you to Nr7th on discord for creating the new YZYgold logo, YOU DID A GREAT JOB</strong>
                   </li>
                 </ul>
 
-                <p className="text-white/40 text-xs italic">I did not intend to release the update this early so much more will be added</p>
-
                 <div className="border-t border-white/10 pt-4 space-y-2 text-white/50 text-xs">
                   <p>
-                    <a href="https://docs.google.com/document/d/1b8aidNuSLLHfzgzrJ0uGdWHPuo-uNk6wI21Vscwzid4/edit?tab=t.0#heading=h.coxp3mvb86xr" target="_blank" rel="noopener noreferrer" className="text-[var(--theme-color)] hover:underline">
-                      View full change log: YZY gold updates
+                    <a href="https://docs.google.com/document/d/1b8aidNuSLLHfzgzrJ0uGdWHPuo-uNk6wI21Vscwzid4/edit?usp=sharing" target="_blank" rel="noopener noreferrer" className="text-[var(--theme-color)] hover:underline">
+                      Full changelog here
                     </a>
                   </p>
                   <p>
-                    YZYgold Discord:{' '}
                     <a href="https://discord.gg/TYqdey3B" target="_blank" rel="noopener noreferrer" className="text-[var(--theme-color)] hover:underline">
-                      https://discord.gg/TYqdey3B
+                      Join the Discord here
                     </a>
                   </p>
                 </div>
@@ -2699,7 +2691,7 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
               <button
                 onClick={() => {
                   setShowChangelog(false);
-                  localStorage.setItem('v1_8_seen', 'true');
+                  localStorage.setItem('v1_8_5_seen', 'true');
 
                   const userAgent = navigator.userAgent.toLowerCase();
                   const isBrowserSafari = userAgent.includes('safari') && !userAgent.includes('chrome') && !userAgent.includes('crios') && !userAgent.includes('android');
