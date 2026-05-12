@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { FolderArchive, Disc3, Star, AlertTriangle, FileAudio, Video, HelpCircle, List } from 'lucide-react';
+import { FolderArchive, Disc3, Star, AlertTriangle, FileAudio, Video, HelpCircle, List, Scissors } from 'lucide-react';
 
 const getIcon = (name: string) => {
   if (name.includes('Unreleased')) return FolderArchive;
@@ -10,6 +10,7 @@ const getIcon = (name: string) => {
   if (name.includes('Stem')) return FileAudio;
   if (name.includes('Video')) return Video;
   if (name.includes('Misc') || name.includes('Lost')) return HelpCircle;
+  if (name.includes('Yedit')) return Scissors;
   return List;
 };
 

@@ -77,6 +77,7 @@ import { HistoryView } from './components/HistoryView';
 import { FakesView } from './components/FakesView';
 import { CompsView } from './components/CompsView';
 import { ReleasedView, ReleasedEntry } from './components/ReleasedView';
+import { YEditsView } from './components/YEditsView';
 import { useSettings, LOADING_SCREENS } from './SettingsContext';
 import { recordListeningHistory } from './history';
 
@@ -137,6 +138,7 @@ export default function App() {
     if (path.startsWith('/settings')) return 'settings';
     if (path.startsWith('/history')) return 'history';
     if (path.startsWith('/tracklists')) return 'tracklists';
+    if (path.startsWith('/yedits')) return 'yedits';
     if (path.startsWith('/comps')) return 'comps';
     return 'music';
   });
@@ -926,6 +928,8 @@ export default function App() {
           }
         } else if (path.startsWith('/tracklists')) {
           setActiveCategory('tracklists');
+        } else if (path.startsWith('/yedits')) {
+          setActiveCategory('yedits');
         } else if (path.startsWith('/related/')) {
           setActiveCategory('related');
           const slug = path.split('/related/')[1];
@@ -1159,6 +1163,10 @@ export default function App() {
           window.history.pushState({ category: 'tracklists' }, '', '/tracklists');
         }
       }
+    } else if (activeCategory === 'yedits') {
+      if (!currentPath.startsWith('/yedits')) {
+        window.history.pushState({ category: 'yedits' }, '', '/yedits');
+      }
     } else if (activeCategory === 'comps') {
       if (currentPath !== '/comps') {
         window.history.pushState({ category: 'comps' }, '', '/comps');
@@ -1236,6 +1244,8 @@ export default function App() {
         setActiveCategory('settings');
       } else if (path.startsWith('/history')) {
         setActiveCategory('history');
+      } else if (path.startsWith('/yedits')) {
+        setActiveCategory('yedits');
       }
     };
     window.addEventListener('popstate', handlePopState);
@@ -2385,6 +2395,14 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
                   samplesData={samplesData}
                   favoriteKeys={favoriteKeys}
                   toggleFavorite={toggleFavorite}
+                />
+              ) : activeCategory === 'yedits' ? (
+                <YEditsView
+                  key="yedits"
+                  searchQuery={searchQuery}
+                  onPlaySong={handlePlaySong}
+                  currentSong={currentSong}
+                  isPlaying={isPlaying}
                 />
               ) : activeCategory === 'related' ? (
                 <EraGrid key="related-grid" eras={filteredRelatedEras} onSelectEra={setSelectedAlbum} />
