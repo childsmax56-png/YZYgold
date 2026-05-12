@@ -74,7 +74,12 @@ export const CUSTOM_IMAGES: Record<string, string> = {
   "K.T.S.E.": "https://i.ibb.co/rfZM2kCp/K-T-S-E.jpg",
   "NEVER STOP": "https://i.ibb.co/vC9c5qFM/never-stop.png",
   "Jesus Is Born": "https://api.pillows.su/api/get/61be2288632189d710fc6865f5efd9c7",
-  "Sunday Service Choir": "https://i.ibb.co/nN2LDSxN/SSC.jpg"
+  "Sunday Service Choir": "https://i.ibb.co/nN2LDSxN/SSC.jpg",
+  "Late Orchestration": "https://i.ibb.co/whrYVzkr/Late-Orchestration.jpg",
+  "Child Rebel Soldier": "https://i.ibb.co/QFLpkFcz/IMG-3998.png",
+  "BULLY": "https://a5.mzstatic.com/us/r1000/0/Music221/v4/4b/38/d1/4b38d146-381d-ace2-73df-24074576e62b/656465138828_cover.jpg",
+  "Live": "https://i.ibb.co/zhhhyDVq/hq720.jpg",
+  "Other": "https://i.ibb.co/G3VqQV3t/IMG-3890.jpg"
 };
 
 export const ALBUM_RELEASE_DATES: Record<string, string> = {
@@ -245,6 +250,24 @@ export function getArtistName(eraName: string | undefined): string {
     return "YE";
   }
   return "Kanye West";
+}
+
+export function buildArtistTag(songName: string, eraName: string | undefined): string {
+  let primary: string;
+  const dashIdx = songName.indexOf(' - ');
+  if (dashIdx !== -1) {
+    primary = songName.substring(0, dashIdx);
+    Object.keys(TAG_MAP).forEach(emoji => { primary = primary.replaceAll(emoji, ''); });
+    primary = primary.replace(/[️]/g, '').trim();
+  } else {
+    primary = getArtistName(eraName);
+  }
+
+  const featMatch = songName.match(/\(feat\.\s*([^)]+)\)/i);
+  if (featMatch) {
+    return `${primary} feat. ${featMatch[1].trim()}`;
+  }
+  return primary;
 }
 
 export const TAG_MAP: Record<string, string> = {
@@ -468,7 +491,7 @@ async function fetchArtworkBuffer(artworkUrl: string): Promise<ArrayBuffer | nul
   return null;
 }
 
-async function embedID3Tags(blob: Blob, meta: SongMeta, cleanTitle: string): Promise<Blob> {
+export async function embedID3Tags(blob: Blob, meta: SongMeta, cleanTitle: string): Promise<Blob> {
   const audioBuffer = await blob.arrayBuffer();
   const writer = new ID3Writer(audioBuffer);
 
@@ -511,12 +534,22 @@ function isInAppBrowser(): boolean {
   return /GSA\/|FBAN|FBAV|Instagram\//.test(ua);
 }
 
-export async function handleDownloadFile(url: string, suggestedName: string, tagsAsEmojis: boolean, meta?: SongMeta) {
+function parseOgFilename(description: string | undefined): string | null {
+  if (!description) return null;
+  const match = description.match(/^OG Filename:\s*(.+)$/im);
+  if (!match) return null;
+  const raw = match[1].trim().replace(/^["']|["']$/g, '');
+  // Strip known audio extensions so extension logic below can normalize them
+  return raw.replace(/\.(mp3|wav|flac|aif|aiff|m4a|ogg)$/i, '');
+}
+
+export async function handleDownloadFile(url: string, suggestedName: string, tagsAsEmojis: boolean, meta?: SongMeta, description?: string) {
   if (!url) return;
   try {
     let finalUrl = url;
-    let fileName = suggestedName;
-    if (!tagsAsEmojis) {
+    const ogName = parseOgFilename(description);
+    let fileName = ogName ?? suggestedName;
+    if (!tagsAsEmojis && !ogName) {
       fileName = formatTextForNotification(suggestedName, false);
     }
 

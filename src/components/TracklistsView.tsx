@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft, ChevronDown, ChevronUp, Download, ExternalLink, Play, Pause } from 'lucide-react';
 import { saveAs } from 'file-saver';
 import { Era, Song } from '../types';
-import { isSongNotAvailable } from '../utils';
+import { isSongNotAvailable, embedID3Tags, CUSTOM_IMAGES, ALBUM_RELEASE_DATES, buildArtistTag } from '../utils';
+import { useSettings } from '../SettingsContext';
 
 export interface TracklistAlbum {
   era: string;
@@ -171,6 +172,7 @@ async function resolveAudioUrl(rawUrl: string): Promise<string> {
 function AlbumCard({ album, matches, defaultOpen, onPlaySong, currentSong, isPlaying }: AlbumCardProps) {
   const [open, setOpen] = useState(defaultOpen);
   const [dlProgress, setDlProgress] = useState<string | null>(null);
+  const { settings } = useSettings();
 
   const playableSongs = useMemo(
     () => matches.filter((m): m is SongMatch => m !== null).map(m => m.song),
@@ -202,8 +204,23 @@ function AlbumCard({ album, matches, defaultOpen, onPlaySong, currentSong, isPla
         const fetchUrl = await resolveAudioUrl(rawUrl);
         const res = await fetch(fetchUrl);
         if (!res.ok) throw new Error('fetch failed');
-        const blob = await res.blob();
+        let blob = await res.blob();
         const ext = blob.type.includes('wav') ? '.wav' : blob.type.includes('flac') ? '.flac' : '.mp3';
+        if (ext === '.mp3' && settings.embedMetadata) {
+          try {
+            const artworkUrl = CUSTOM_IMAGES[album.era] || match.era?.image || match.song.image;
+            const year = album.date || ALBUM_RELEASE_DATES[album.era]?.split('/').pop();
+            blob = await embedID3Tags(blob, {
+              title: track.name,
+              artist: buildArtistTag(track.name, album.era),
+              album: album.name,
+              year,
+              artworkUrl,
+            }, track.name);
+          } catch {
+            // continue without tags
+          }
+        }
         const num = track.num !== '#?' ? String(track.num).padStart(2, '0') : '00';
         zip.file(`${num}. ${sanitizeFilename(track.name)}${ext}`, blob);
       } catch {
