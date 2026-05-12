@@ -7,6 +7,11 @@ import { Song, Era } from '../types';
 const AUDIO_EXTS = /\.(mp3|m4a|wav|ogg|flac|aac)$/i;
 const IMAGE_EXTS = /\.(png|jpe?g|gif|webp)$/i;
 
+const FOLDER_CREATORS: Record<string, string> = {
+  'Bully by dangerous contact': 'Dangerous Contact',
+  'the overground hell road': 'Careless Basket',
+};
+
 interface YEditsGroup {
   folderPath: string;
   displayName: string;
@@ -41,7 +46,9 @@ function parseGroups(keys: string[]): YEditsGroup[] {
     .map(([folderPath, { imageKey, audioKeys }]) => {
       const parts = folderPath.split('/');
       const displayName = parts[parts.length - 1].trim() || folderPath;
-      const parentName = parts.length > 1 ? parts[0].trim() : '';
+      const parentName = parts.length > 1
+        ? parts[0].trim()
+        : (FOLDER_CREATORS[parts[0].trim()] ?? '');
       const imageUrl = imageKey
         ? `/api/yedits-file?key=${encodeURIComponent(imageKey)}`
         : undefined;
