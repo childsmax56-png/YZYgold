@@ -72,6 +72,7 @@ export function YEditsView({ searchQuery, onPlaySong, currentSong, isPlaying }: 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<YEditsGroup | null>(null);
+  const [selectedCreator, setSelectedCreator] = useState<string | null>(null);
   const [zoomedImage, setZoomedImage] = useState(false);
 
   useEffect(() => {
@@ -83,13 +84,29 @@ export function YEditsView({ searchQuery, onPlaySong, currentSong, isPlaying }: 
 
   const groups = useMemo(() => parseGroups(keys), [keys]);
 
+  const creators = useMemo(() => {
+    const map = new Map<string, { albumCount: number; previewImage?: string }>();
+    for (const g of groups) {
+      if (!g.parentName) continue;
+      const existing = map.get(g.parentName);
+      map.set(g.parentName, {
+        albumCount: (existing?.albumCount ?? 0) + 1,
+        previewImage: existing?.previewImage ?? g.imageUrl,
+      });
+    }
+    return Array.from(map.entries()).map(([name, info]) => ({ name, ...info }));
+  }, [groups]);
+
   const filteredGroups = useMemo(() => {
-    if (!searchQuery.trim()) return groups;
+    const byCreator = selectedCreator
+      ? groups.filter(g => g.parentName === selectedCreator)
+      : groups;
+    if (!searchQuery.trim()) return byCreator;
     const q = searchQuery.toLowerCase();
-    return groups.filter(g =>
+    return byCreator.filter(g =>
       g.displayName.toLowerCase().includes(q) || g.parentName.toLowerCase().includes(q)
     );
-  }, [groups, searchQuery]);
+  }, [groups, selectedCreator, searchQuery]);
 
   const filteredSongs = useMemo(() => {
     if (!selectedGroup) return [];
@@ -252,8 +269,58 @@ export function YEditsView({ searchQuery, onPlaySong, currentSong, isPlaying }: 
       animate={{ opacity: 1, filter: 'blur(0px)' }}
       exit={{ opacity: 0, filter: 'blur(10px)' }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
-      className="p-6 md:p-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6 pb-32"
+      className="p-6 md:p-8 pb-32 space-y-8"
     >
+      {/* Creators section */}
+      {creators.length > 0 && (
+        <div>
+          <h2 className="text-xs uppercase tracking-widest text-white/40 font-bold mb-4">Creators</h2>
+          <div className="flex flex-wrap gap-3">
+            {creators.map((creator, i) => {
+              const isActive = selectedCreator === creator.name;
+              return (
+                <motion.button
+                  key={creator.name}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                  onClick={() => setSelectedCreator(isActive ? null : creator.name)}
+                  className={`flex items-center gap-3 pl-1 pr-4 py-1 rounded-full border transition-all cursor-pointer ${
+                    isActive
+                      ? 'bg-[var(--theme-color)]/15 border-[var(--theme-color)]/40 text-white'
+                      : 'bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white hover:border-white/20'
+                  }`}
+                >
+                  <div className="w-8 h-8 rounded-full overflow-hidden bg-white/10 shrink-0">
+                    {creator.previewImage ? (
+                      <img src={creator.previewImage} alt={creator.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-[10px] font-bold text-white/30">
+                        {creator.name[0]}
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-left">
+                    <div className={`text-sm font-semibold leading-tight ${isActive ? 'text-[var(--theme-color)]' : ''}`}>
+                      {creator.name}
+                    </div>
+                    <div className="text-[10px] text-white/40">
+                      {creator.albumCount} album{creator.albumCount !== 1 ? 's' : ''}
+                    </div>
+                  </div>
+                </motion.button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Albums grid */}
+      <div>
+        {selectedCreator && (
+          <h2 className="text-xs uppercase tracking-widest text-white/40 font-bold mb-4">{selectedCreator}</h2>
+        )}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
       {filteredGroups.length === 0 ? (
         <div className="col-span-full text-center text-white/30 text-sm py-20">
           {groups.length === 0 ? 'No content in bucket yet.' : 'No results for that search.'}
@@ -295,6 +362,8 @@ export function YEditsView({ searchQuery, onPlaySong, currentSong, isPlaying }: 
           </motion.div>
         ))
       )}
+        </div>
+      </div>
     </motion.div>
   );
 }
