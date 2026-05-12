@@ -1,5 +1,4 @@
 import { motion, AnimatePresence } from 'motion/react';
-import axios from 'axios';
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { ArrowLeft, ExternalLink, Image as ImageIcon, X, Link as LinkIcon, Share2, Check, Download, Loader2 } from 'lucide-react';
@@ -29,37 +28,74 @@ function getUseBadgeColor(_use: string) {
   return 'border-white/10 text-white/50 bg-white/5';
 }
 
+const IMBB_CACHE_KEY = 'imbb_url_cache_v1';
+
+// Persistent localStorage cache: url -> direct_link
+function loadPersistedCache(): Map<string, string> {
+  try {
+    const raw = localStorage.getItem(IMBB_CACHE_KEY);
+    if (raw) return new Map(JSON.parse(raw));
+  } catch {}
+  return new Map();
+}
+
+function persistCache(cache: Map<string, string>) {
+  try {
+    localStorage.setItem(IMBB_CACHE_KEY, JSON.stringify([...cache]));
+  } catch {}
+}
+
+// Module-level caches shared across all ArtImage instances
+const resolvedCache: Map<string, string> = loadPersistedCache();
+const inFlight: Map<string, Promise<string | null>> = new Map();
+
+async function resolveImbbUrl(url: string): Promise<string | null> {
+  if (resolvedCache.has(url)) return resolvedCache.get(url)!;
+  if (inFlight.has(url)) return inFlight.get(url)!;
+
+  const promise = fetch(`https://imgbb-file-get-api.vercel.app/api?url=${url}`)
+    .then(res => res.ok ? res.json() : null)
+    .then((data): string | null => {
+      inFlight.delete(url);
+      if (data?.direct_link) {
+        resolvedCache.set(url, data.direct_link);
+        persistCache(resolvedCache);
+        return data.direct_link;
+      }
+      return null;
+    })
+    .catch((): null => { inFlight.delete(url); return null; });
+
+  inFlight.set(url, promise);
+  return promise;
+}
+
 function ArtImage({ url, alt, contain = false }: { url: string; alt: string; contain?: boolean }) {
-  const [imgSrc, setImgSrc] = useState<string | null>(null);
+  const [imgSrc, setImgSrc] = useState<string | null>(() => {
+    // Synchronously return cached value if available
+    if (url.includes('ibb.co') && !url.includes('i.ibb.co')) {
+      return resolvedCache.get(url) ?? null;
+    }
+    if (url.includes('pillows.su/f/')) {
+      const hash = url.split('/f/')[1]?.split('/')[0]?.split('?')[0];
+      return hash ? `https://api.pillows.su/api/get/${hash}` : url;
+    }
+    return url;
+  });
   const [error, setError] = useState(false);
 
   useEffect(() => {
+    if (imgSrc) return; // already resolved (cached or direct)
     let mounted = true;
     if (url.includes('ibb.co') && !url.includes('i.ibb.co')) {
-      axios.get(`https://imgbb-file-get-api.vercel.app/api?url=${url}`)
-        .then(res => {
-          if (!mounted) return;
-          if (res.data && res.data.direct_link) {
-            setImgSrc(res.data.direct_link);
-          } else {
-            setError(true);
-          }
-        })
-        .catch(() => {
-          if (mounted) setError(true);
-        });
-    } else if (url.includes('pillows.su/f/')) {
-      const hash = url.split('/f/')[1]?.split('/')[0]?.split('?')[0];
-      if (hash) {
-        setImgSrc(`https://api.pillows.su/api/get/${hash}`);
-      } else {
-        setImgSrc(url);
-      }
-    } else {
-      setImgSrc(url);
+      resolveImbbUrl(url).then(direct => {
+        if (!mounted) return;
+        if (direct) setImgSrc(direct);
+        else setError(true);
+      });
     }
     return () => { mounted = false; };
-  }, [url]);
+  }, [url, imgSrc]);
 
   if (error) {
     return (
