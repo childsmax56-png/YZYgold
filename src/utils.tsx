@@ -573,6 +573,37 @@ function parseOgFilename(description: string | undefined): string | null {
   return raw.replace(/\.(mp3|wav|flac|aif|aiff|m4a|ogg)$/i, '');
 }
 
+export async function resolveUrl(url: string): Promise<{ fetchUrl: string; isImage: boolean; imageExt?: string }> {
+  if (url.includes('temp.imgur.gg/f/')) {
+    const id = url.split('/f/')[1];
+    if (id) {
+      const res = await fetch(`https://temp.imgur.gg/api/file/${id}`).catch(() => null);
+      if (res && res.ok) {
+        const data = await res.json().catch(() => null);
+        if (data?.cdnUrl) return { fetchUrl: data.cdnUrl, isImage: false };
+      }
+    }
+    return { fetchUrl: url, isImage: false };
+  }
+  if (url.includes('pillows.su/f/')) {
+    const hash = url.split('/f/')[1]?.split('/')[0]?.split('?')[0];
+    return { fetchUrl: hash ? `https://api.pillows.su/api/get/${hash}` : url, isImage: false };
+  }
+  if (url.includes('ibb.co')) {
+    const apiRes = await fetch(`https://imgbb-file-get-api.vercel.app/api?url=${url}`).catch(() => null);
+    if (apiRes && apiRes.ok) {
+      const apiData = await apiRes.json().catch(() => null);
+      if (apiData?.direct_link) return { fetchUrl: apiData.direct_link, isImage: true };
+    }
+    return { fetchUrl: url, isImage: true };
+  }
+  if (url.match(/\.(png|jpg|jpeg)$/i) || url.startsWith('https://i.scdn.co/')) {
+    const match = url.match(/\.(png|jpg|jpeg)$/i);
+    return { fetchUrl: url, isImage: true, imageExt: match ? match[0] : '.png' };
+  }
+  return { fetchUrl: url, isImage: false };
+}
+
 export async function handleDownloadFile(url: string, suggestedName: string, tagsAsEmojis: boolean, meta?: SongMeta, description?: string) {
   if (!url) return;
   try {

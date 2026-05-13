@@ -4,7 +4,8 @@ import { ArrowLeft, Play, ExternalLink, X, Share2, Volume2, Check, Download, Loa
 import { SiYoutube } from 'react-icons/si';
 import { Era, Song, SearchFilters } from '../types';
 import { useState, useMemo, useEffect } from 'react';
-import { formatTextWithTags, getCleanSongNameWithTags, matchesFilters, createSlug, getSongSlug, ALBUM_RELEASE_DATES, isSongNotAvailable, ALBUM_DESCRIPTIONS, HIDDEN_ALBUMS, CUSTOM_IMAGES, getArtistName, buildArtistTag, handleDownloadFile } from '../utils';
+import { formatTextWithTags, getCleanSongNameWithTags, matchesFilters, createSlug, getSongSlug, ALBUM_RELEASE_DATES, isSongNotAvailable, ALBUM_DESCRIPTIONS, HIDDEN_ALBUMS, CUSTOM_IMAGES, getArtistName, buildArtistTag, handleDownloadFile, resolveUrl, detectAudioExt, embedID3Tags, formatTextForNotification } from '../utils';
+import { saveAs } from 'file-saver';
 import { useSettings } from '../SettingsContext';
 import { MvEntry, RemixEntry, SampleEntry } from '../App';
 
@@ -232,30 +233,49 @@ export function EraDetail({ era, onBack, onPlaySong, searchQuery = '', filters, 
 
     setIsDownloading(true);
     setToastMessage(`Preparing download for ${allFilteredPlayableSongs.length} songs...`);
-    setTimeout(() => setToastMessage(null), 5000);
 
-    for (let i = 0; i < allFilteredPlayableSongs.length; i++) {
-      const song = allFilteredPlayableSongs[i];
+    const JSZip = (await import('jszip')).default;
+    const zip = new JSZip();
+
+    await Promise.all(allFilteredPlayableSongs.map(async (song) => {
       const rawUrl = song.url || (song.urls && song.urls.length > 0 ? song.urls[0] : '');
-      if (rawUrl && (rawUrl.includes('pillows.su/f/') || rawUrl.includes('temp.imgur.gg/f/') || rawUrl.includes('ibb.co') || rawUrl.match(/\.(png|jpg|jpeg)$/i) || rawUrl.startsWith('https://i.scdn.co/'))) {
-        try {
-          const songEraName = (song as any).realEra?.name || era.name;
-          const artUrl = song.image || CUSTOM_IMAGES[songEraName] || (song as any).realEra?.image || era.image;
-          const songTitle = song.name.includes(' - ') ? song.name.substring(song.name.indexOf(' - ') + 3) : song.name;
-          await handleDownloadFile(rawUrl, song.name, settings.tagsAsEmojis, settings.embedMetadata ? {
-            title: songTitle,
-            artist: buildArtistTag(song.name, songEraName),
-            album: songEraName,
-            year: ALBUM_RELEASE_DATES[songEraName]?.split('/').pop(),
-            artworkUrl: artUrl,
-          } : undefined, settings.downloadAsOgFilename ? song.description : undefined);
-          await new Promise(resolve => setTimeout(resolve, 800));
-        } catch (err) {
-          console.error(`Failed to download ${song.name}:`, err);
+      if (!rawUrl || !(rawUrl.includes('pillows.su/f/') || rawUrl.includes('temp.imgur.gg/f/') || rawUrl.includes('ibb.co') || rawUrl.match(/\.(png|jpg|jpeg)$/i) || rawUrl.startsWith('https://i.scdn.co/'))) return;
+      try {
+        const { fetchUrl, isImage, imageExt } = await resolveUrl(rawUrl);
+        const res = await fetch(fetchUrl);
+        if (!res.ok) throw new Error('fetch failed');
+        let blob = await res.blob();
+        const songEraName = (song as any).realEra?.name || era.name;
+        const songTitle = song.name.includes(' - ') ? song.name.substring(song.name.indexOf(' - ') + 3) : song.name;
+        const fileName = settings.tagsAsEmojis ? song.name : formatTextForNotification(song.name, false);
+        let ext: string;
+        if (isImage) {
+          ext = imageExt || await detectAudioExt(blob);
+        } else {
+          ext = await detectAudioExt(blob);
+          if (settings.embedMetadata && ext === '.mp3') {
+            const artUrl = song.image || CUSTOM_IMAGES[songEraName] || (song as any).realEra?.image || era.image;
+            try {
+              blob = await embedID3Tags(blob, {
+                title: songTitle,
+                artist: buildArtistTag(song.name, songEraName),
+                album: songEraName,
+                year: ALBUM_RELEASE_DATES[songEraName]?.split('/').pop(),
+                artworkUrl: artUrl,
+              }, songTitle);
+            } catch { /* skip tagging, save raw */ }
+          }
         }
+        zip.file(`${fileName}${ext}`, blob);
+      } catch (err) {
+        console.error(`Failed to download ${song.name}:`, err);
       }
-    }
+    }));
 
+    setToastMessage('Zipping...');
+    const content = await zip.generateAsync({ type: 'blob' });
+    saveAs(content, `${era.name}.zip`);
+    setToastMessage(null);
     setIsDownloading(false);
   };
 

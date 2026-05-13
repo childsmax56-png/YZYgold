@@ -3,7 +3,8 @@ import { createPortal } from 'react-dom';
 import { ArrowLeft, Play, ExternalLink, X, Share2, Volume2, Check, Download, Loader2, Star } from 'lucide-react';
 import { Era, Song, SearchFilters } from '../types';
 import { useState, useMemo, useEffect } from 'react';
-import { formatTextWithTags, getCleanSongNameWithTags, createSlug, getSongSlug, ALBUM_RELEASE_DATES, matchesFilters, isSongNotAvailable, CUSTOM_IMAGES, getArtistName, buildArtistTag, handleDownloadFile } from '../utils';
+import { formatTextWithTags, getCleanSongNameWithTags, createSlug, getSongSlug, ALBUM_RELEASE_DATES, matchesFilters, isSongNotAvailable, CUSTOM_IMAGES, getArtistName, buildArtistTag, handleDownloadFile, resolveUrl, detectAudioExt, embedID3Tags, formatTextForNotification } from '../utils';
+import { saveAs } from 'file-saver';
 import { useSettings } from '../SettingsContext';
 import { MvEntry, RemixEntry, SampleEntry } from '../App';
 import { findMvsForSong, findRemixesForSong, findSamplesForSong } from './EraDetail';
@@ -263,32 +264,50 @@ export function MiscView({ eras, miscData, searchQuery, filters, onPlaySong, cur
   const handleDownloadAlbum = async () => {
     if (!allPlayableSongs.length) return;
     setIsDownloading(true);
-    setToastMessage(`Downloading ${allPlayableSongs.length} items... Allow multiple downloads!`);
+    setToastMessage(`Preparing download for ${allPlayableSongs.length} items...`);
 
-    for (let i = 0; i < allPlayableSongs.length; i++) {
-      const song = allPlayableSongs[i];
+    const miscEraName = selectedEraData!.eraName.replace(' [Misc Album]', '');
+    const JSZip = (await import('jszip')).default;
+    const zip = new JSZip();
+
+    await Promise.all(allPlayableSongs.map(async (song) => {
       const rawUrl = song.url || (song.urls && song.urls.length > 0 ? song.urls[0] : '');
-      if (rawUrl && (rawUrl.includes('pillows.su/f/') || rawUrl.includes('temp.imgur.gg/f/') || rawUrl.includes('ibb.co') || rawUrl.match(/\.(png|jpg|jpeg)$/i) || rawUrl.startsWith('https://i.scdn.co/'))) {
-        try {
-          const miscEraName = selectedEraData!.eraName.replace(' [Misc Album]', '');
-          const artUrl = selectedEraData!.image || CUSTOM_IMAGES[miscEraName];
-          const songTitle = song.name.includes(' - ') ? song.name.substring(song.name.indexOf(' - ') + 3) : song.name;
-          await handleDownloadFile(rawUrl, song.name, settings.tagsAsEmojis, settings.embedMetadata ? {
-            title: songTitle,
-            artist: buildArtistTag(song.name, miscEraName),
-            album: miscEraName,
-            year: ALBUM_RELEASE_DATES[miscEraName]?.split('/').pop(),
-            artworkUrl: artUrl,
-          } : undefined, settings.downloadAsOgFilename ? song.description : undefined);
-          await new Promise(resolve => setTimeout(resolve, 800));
-        } catch (err) {
-          console.error(`Failed to download ${song.name}:`, err);
+      if (!rawUrl || !(rawUrl.includes('pillows.su/f/') || rawUrl.includes('temp.imgur.gg/f/') || rawUrl.includes('ibb.co') || rawUrl.match(/\.(png|jpg|jpeg)$/i) || rawUrl.startsWith('https://i.scdn.co/'))) return;
+      try {
+        const { fetchUrl, isImage, imageExt } = await resolveUrl(rawUrl);
+        const res = await fetch(fetchUrl);
+        if (!res.ok) throw new Error('fetch failed');
+        let blob = await res.blob();
+        const songTitle = song.name.includes(' - ') ? song.name.substring(song.name.indexOf(' - ') + 3) : song.name;
+        const fileName = settings.tagsAsEmojis ? song.name : formatTextForNotification(song.name, false);
+        let ext: string;
+        if (isImage) {
+          ext = imageExt || await detectAudioExt(blob);
+        } else {
+          ext = await detectAudioExt(blob);
+          if (settings.embedMetadata && ext === '.mp3') {
+            const artUrl = selectedEraData!.image || CUSTOM_IMAGES[miscEraName];
+            try {
+              blob = await embedID3Tags(blob, {
+                title: songTitle,
+                artist: buildArtistTag(song.name, miscEraName),
+                album: miscEraName,
+                year: ALBUM_RELEASE_DATES[miscEraName]?.split('/').pop(),
+                artworkUrl: artUrl,
+              }, songTitle);
+            } catch { /* skip tagging, save raw */ }
+          }
         }
+        zip.file(`${fileName}${ext}`, blob);
+      } catch (err) {
+        console.error(`Failed to download ${song.name}:`, err);
       }
-    }
+    }));
 
-    setToastMessage(`Download complete!`);
-    setTimeout(() => setToastMessage(null), 3000);
+    setToastMessage('Zipping...');
+    const content = await zip.generateAsync({ type: 'blob' });
+    saveAs(content, `${miscEraName}.zip`);
+    setToastMessage(null);
     setIsDownloading(false);
   };
 
