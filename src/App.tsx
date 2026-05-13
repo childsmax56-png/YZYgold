@@ -878,40 +878,9 @@ export default function App() {
               .filter((s: Song) => !!s.name)
           : [];
 
-        // Only prepend sheet songs not already in recent.csv.
-        // Dedup by name+era so songs with the same name in different eras are not
-        // incorrectly filtered, and ERA_MAPPINGS normalizes spelling variants.
-        const normalizeEraForDedup = (era: string | undefined): string => {
-          if (!era) return '';
-          const lower = era.toLowerCase().trim();
-          const mk = Object.keys(ERA_MAPPINGS).find(k => k.toLowerCase() === lower);
-          return mk ? ERA_MAPPINGS[mk].toLowerCase() : lower;
-        };
-        const parseLeakDate = (dateStr: string | undefined): Date | null => {
-          if (!dateStr) return null;
-          const d = new Date(dateStr);
-          return isNaN(d.getTime()) ? null : d;
-        };
-        // Use the most recent leak date from recent.csv as a cutoff — songs in the
-        // tracker sheet that predate this are old backlog entries, not genuine updates.
-        const csvCutoffDate = recentMapped.reduce<Date | null>((max, s) => {
-          const d = parseLeakDate(s.leak_date);
-          return d && (!max || d > max) ? d : max;
-        }, null);
-        const recentKeys = new Set(
-          recentMapped.map(s =>
-            `${s.name?.toLowerCase().trim() ?? ''}||${normalizeEraForDedup(s.extra2)}`
-          )
-        );
-        const newSheetSongs = sheetRecentSongs.filter(s => {
-          if (recentKeys.has(`${s.name?.toLowerCase().trim() ?? ''}||${normalizeEraForDedup(s.extra2)}`)) return false;
-          if (csvCutoffDate) {
-            const leakDate = parseLeakDate(s.leak_date);
-            if (!leakDate || leakDate <= csvCutoffDate) return false;
-          }
-          return true;
-        });
-        setRecentData([...newSheetSongs, ...recentMapped]);
+        // Use the Google Sheet as the source of truth for Recent; fall back to
+        // recent.csv only if the sheet fetch returned nothing.
+        setRecentData(sheetRecentSongs.length > 0 ? sheetRecentSongs : recentMapped);
         setLoading(false);
 
         const path = window.location.pathname;
