@@ -6,7 +6,6 @@ import { Song, Era } from '../types';
 
 const AUDIO_EXTS = /\.(mp3|m4a|wav|ogg|flac|aac)$/i;
 const IMAGE_EXTS = /\.(png|jpe?g|gif|webp)$/i;
-const TRACKLIST_FILE = /YZYgold/i;
 const BACK_COVER_FILE = /back\s*cover/i;
 
 interface YEditsGroup {
@@ -15,12 +14,11 @@ interface YEditsGroup {
   parentName: string;
   imageUrl?: string;
   backCoverUrl?: string;
-  tracklistKey?: string;
   songs: Song[];
 }
 
 function parseGroups(keys: string[]): YEditsGroup[] {
-  const folderMap = new Map<string, { imageKey?: string; backCoverKey?: string; tracklistKey?: string; audioKeys: string[] }>();
+  const folderMap = new Map<string, { imageKey?: string; backCoverKey?: string; audioKeys: string[] }>();
 
   for (const key of keys) {
     const lastSlash = key.lastIndexOf('/');
@@ -41,14 +39,12 @@ function parseGroups(keys: string[]): YEditsGroup[] {
       } else {
         entry.imageKey = key;
       }
-    } else if (TRACKLIST_FILE.test(filename)) {
-      entry.tracklistKey = key;
     }
   }
 
   return Array.from(folderMap.entries())
     .filter(([, { audioKeys }]) => audioKeys.length > 0)
-    .map(([folderPath, { imageKey, backCoverKey, tracklistKey, audioKeys }]) => {
+    .map(([folderPath, { imageKey, backCoverKey, audioKeys }]) => {
       const parts = folderPath.split('/');
       const displayName = parts[parts.length - 1].trim() || folderPath;
       const parentName = parts.length > 1 ? parts[0].trim() : '';
@@ -62,7 +58,7 @@ function parseGroups(keys: string[]): YEditsGroup[] {
         name: key.split('/').pop()!.replace(/\.[^.]+$/, ''),
         url: `/api/yedits-file?key=${encodeURIComponent(key)}`,
       }));
-      return { folderPath, displayName, parentName, imageUrl, backCoverUrl, tracklistKey, songs };
+      return { folderPath, displayName, parentName, imageUrl, backCoverUrl, songs };
     });
 }
 
@@ -123,20 +119,18 @@ export function YEditsView({ searchQuery, onPlaySong, currentSong, isPlaying }: 
   const groups = useMemo(() => parseGroups(keys), [keys]);
 
   useEffect(() => {
-    const withTracklist = groups.filter(g => g.tracklistKey);
-    if (withTracklist.length === 0) return;
-    Promise.all(
-      withTracklist.map(g =>
-        fetch(`/api/yedits-file?key=${encodeURIComponent(g.tracklistKey!)}`)
-          .then(r => { if (!r.ok) throw new Error(); return r.text(); })
-          .then(text => [g.folderPath, applyTracklistOrder(g.songs, text)] as [string, Song[]])
-          .catch(() => null)
-      )
-    ).then(results => {
-      const map = new Map<string, Song[]>();
-      for (const r of results) { if (r) map.set(r[0], r[1]); }
-      setTracklistOverrides(map);
-    });
+    fetch('/api/yedits-tracklists')
+      .then(r => { if (!r.ok) throw new Error(); return r.json() as Promise<Record<string, string>>; })
+      .then(data => {
+        const groupsBySongKey = new Map(groups.map(g => [g.folderPath, g.songs]));
+        const map = new Map<string, Song[]>();
+        for (const [folderPath, text] of Object.entries(data)) {
+          const songs = groupsBySongKey.get(folderPath);
+          if (songs) map.set(folderPath, applyTracklistOrder(songs, text));
+        }
+        setTracklistOverrides(map);
+      })
+      .catch(() => {});
   }, [groups]);
 
   const creators = useMemo(() => {
