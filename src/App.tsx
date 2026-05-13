@@ -592,6 +592,7 @@ export default function App() {
     const sheetCsvUrl = getSheetCsvExportUrl(
       settings.googleSheetsUrl || `https://docs.google.com/spreadsheets/d/${HARDCODED_SHEET_ID}/edit#gid=${HARDCODED_SHEET_GID}`
     );
+    const recentTabCsvUrl = `https://docs.google.com/spreadsheets/d/${HARDCODED_SHEET_ID}/export?format=csv&gid=${HARDCODED_SHEET_GID}`;
 
     const FETCH_TIMEOUT = 20000;
     Promise.all([
@@ -611,9 +612,13 @@ export default function App() {
       axios.get('/api/recent', { timeout: FETCH_TIMEOUT }).catch(err => {
         console.error("Failed to fetch Recent data:", err);
         return { data: [] };
-      })
+      }),
+      axios.get(`/api/sheets-proxy?url=${encodeURIComponent(recentTabCsvUrl)}`, { timeout: FETCH_TIMEOUT }).catch(err => {
+        console.error("Failed to fetch Recent tab data", err);
+        return { data: [] };
+      }),
     ])
-      .then(([mainRes, mykRes, localRes, sheetsRes, recentRes]) => {
+      .then(([mainRes, mykRes, localRes, sheetsRes, recentRes, recentTabRes]) => {
         const rawJson = mainRes.data;
         const json = JSON.parse(JSON.stringify(rawJson));
 
@@ -840,12 +845,12 @@ export default function App() {
         };
         const recentMapped: Song[] = (recentRes.data as any[]).map(mapRecentItem);
 
-        // Build sheet songs in recent format and prepend them
-        const sheetNameKey = Array.isArray(sheetsRes.data) && sheetsRes.data.length > 0
-          ? (Object.keys(sheetsRes.data[0]).find((k: string) => k.startsWith('Name')) || 'Name')
+        // Build sheet songs in recent format from the dedicated Recent tab fetch
+        const sheetNameKey = Array.isArray(recentTabRes.data) && recentTabRes.data.length > 0
+          ? (Object.keys(recentTabRes.data[0]).find((k: string) => k.startsWith('Name')) || 'Name')
           : 'Name';
-        const sheetRecentSongs: Song[] = Array.isArray(sheetsRes.data)
-          ? (sheetsRes.data as any[])
+        const sheetRecentSongs: Song[] = Array.isArray(recentTabRes.data)
+          ? (recentTabRes.data as any[])
               .filter((item: any) => {
                 const rawEra = (item.Era || '').trim();
                 return rawEra && !rawEra.includes('\n');
