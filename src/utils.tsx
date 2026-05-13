@@ -474,8 +474,8 @@ export interface SongMeta {
   artworkUrl?: string;
 }
 
-export async function detectAudioExt(blob: Blob): Promise<'.mp3' | '.wav' | '.flac' | '.aiff' | '.m4a' | '.ogg' | '.zip'> {
-  const header = await blob.slice(0, 12).arrayBuffer();
+export async function detectAudioExt(blob: Blob): Promise<'.mp3' | '.wav' | '.flac' | '.aiff' | '.zip'> {
+  const header = await blob.slice(0, 4).arrayBuffer();
   const bytes = new Uint8Array(header);
   // RIFF....WAVE
   if (bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46) return '.wav';
@@ -485,13 +485,6 @@ export async function detectAudioExt(blob: Blob): Promise<'.mp3' | '.wav' | '.fl
   if (bytes[0] === 0x46 && bytes[1] === 0x4F && bytes[2] === 0x52 && bytes[3] === 0x4D) return '.aiff';
   // PK (ZIP)
   if (bytes[0] === 0x50 && bytes[1] === 0x4B) return '.zip';
-  // ftyp atom (M4A, AAC, MP4) — bytes 4-7 are "ftyp"
-  if (bytes[4] === 0x66 && bytes[5] === 0x74 && bytes[6] === 0x79 && bytes[7] === 0x70) return '.m4a';
-  // OggS
-  if (bytes[0] === 0x4F && bytes[1] === 0x67 && bytes[2] === 0x67 && bytes[3] === 0x53) return '.ogg';
-  // ID3 header or MPEG sync word — confirmed MP3
-  if ((bytes[0] === 0x49 && bytes[1] === 0x44 && bytes[2] === 0x33) ||
-      (bytes[0] === 0xFF && (bytes[1] & 0xE0) === 0xE0)) return '.mp3';
   return '.mp3';
 }
 
