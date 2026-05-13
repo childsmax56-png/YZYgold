@@ -530,11 +530,6 @@ async function fetchArtworkBuffer(artworkUrl: string): Promise<ArrayBuffer | nul
 
 export async function embedID3Tags(blob: Blob, meta: SongMeta, cleanTitle: string): Promise<Blob> {
   const audioBuffer = await blob.arrayBuffer();
-  const header = new Uint8Array(audioBuffer, 0, Math.min(4, audioBuffer.byteLength));
-  const isId3Header = header[0] === 0x49 && header[1] === 0x44 && header[2] === 0x33;
-  const isMpegSync = header[0] === 0xFF && (header[1] & 0xE0) === 0xE0;
-  if (!isId3Header && !isMpegSync) return blob;
-
   const writer = new ID3Writer(audioBuffer);
 
   if (meta.title || cleanTitle) writer.setFrame('TIT2', meta.title || cleanTitle);
