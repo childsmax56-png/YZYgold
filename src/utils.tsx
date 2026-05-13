@@ -31,6 +31,7 @@ export const CUSTOM_IMAGES: Record<string, string> = {
   "Cruel Winter [V1]": "https://i.ibb.co/tPDQhJ3V/image-2026-05-04-074608802.png",
   "Yeezus 2": "https://i.ibb.co/gL2VPWGD/image-2026-05-04-074633664.png",
   "SWISH": "https://i.ibb.co/vvdd31rM/image-2026-05-04-074736182.png",
+  "808s & Heartbreak: Live At The Hollywood Bowl": "https://i.ibb.co/gMW718Hb/i-made-the-808s-heartbreak-live-at-the-hollywood-bowl-on-v0-mz7y867oig3g1.webp",
   "ye": "https://i.ibb.co/4ffBbzd/0a170099-f725-41f6-88a9-c28ab2a6bdb8.jpg",
   "KIDS SEE GHOSTS": "https://i.ibb.co/xsRLz4k/28ef3e62-abba-4064-9dd7-44dd37803981.jpg",
   "KIDSSEEGHOSTS": "https://i.ibb.co/xsRLz4k/28ef3e62-abba-4064-9dd7-44dd37803981.jpg",
