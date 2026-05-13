@@ -8,6 +8,7 @@ import { SiLastdotfm } from 'react-icons/si';
 import { isLastfmLoggedIn } from '../lastfm';
 import { saveAs } from 'file-saver';
 import { Era } from '../types';
+import { embedID3Tags, detectAudioExt, ALBUM_RELEASE_DATES, CUSTOM_IMAGES, buildArtistTag } from '../utils';
 import { ArtEntry } from './ArtGallery';
 import { StemEntry } from './StemsView';
 import { MiscEntry } from './MiscView';
@@ -53,12 +54,12 @@ export function SettingsView({ onCategoryChange, searchQuery, eras = [], artData
 
   const handleDownloadUnreleased = async () => {
     if (dlProgress['unreleased']) return;
-    const songs: { name: string; era: string; url: string }[] = [];
+    const songs: { name: string; era: string; eraImage?: string; songImage?: string; url: string }[] = [];
     for (const era of eras) {
       for (const tracks of Object.values(era.data || {})) {
         for (const song of tracks) {
           const url = song.url || (song.urls && song.urls[0]) || '';
-          if (url) songs.push({ name: song.name, era: era.name, url });
+          if (url) songs.push({ name: song.name, era: era.name, eraImage: era.image, songImage: song.image, url });
         }
       }
     }
@@ -67,13 +68,26 @@ export function SettingsView({ onCategoryChange, searchQuery, eras = [], artData
     const JSZip = (await import('jszip')).default;
     const zip = new JSZip();
     let done = 0;
-    await Promise.all(songs.map(async ({ name, era, url }) => {
+    await Promise.all(songs.map(async ({ name, era, eraImage, songImage, url }) => {
       try {
         const fetchUrl = await resolveAudioUrl(url);
         const res = await fetch(fetchUrl);
         if (!res.ok) throw new Error('fetch failed');
-        const blob = await res.blob();
-        const ext = blob.type.includes('wav') ? '.wav' : blob.type.includes('flac') ? '.flac' : '.mp3';
+        let blob = await res.blob();
+        const ext = await detectAudioExt(blob);
+        if (settings.embedMetadata && ext === '.mp3') {
+          const artUrl = songImage || CUSTOM_IMAGES[era] || eraImage;
+          const songTitle = name.includes(' - ') ? name.substring(name.indexOf(' - ') + 3) : name;
+          try {
+            blob = await embedID3Tags(blob, {
+              title: songTitle,
+              artist: buildArtistTag(name, era),
+              album: era,
+              year: ALBUM_RELEASE_DATES[era]?.split('/').pop(),
+              artworkUrl: artUrl,
+            }, songTitle);
+          } catch { /* skip tagging, save raw */ }
+        }
         zip.file(`${sanitizeFilename(era)}/${sanitizeFilename(name)}${ext}`, blob);
       } catch { /* skip */ } finally {
         done++;
@@ -126,7 +140,7 @@ export function SettingsView({ onCategoryChange, searchQuery, eras = [], artData
         const res = await fetch(fetchUrl);
         if (!res.ok) throw new Error('fetch failed');
         const blob = await res.blob();
-        const ext = blob.type.includes('wav') ? '.wav' : blob.type.includes('flac') ? '.flac' : blob.type.includes('zip') ? '.zip' : '.mp3';
+        const ext = await detectAudioExt(blob);
         zip.file(`${sanitizeFilename(item.Era || 'misc')}/${sanitizeFilename(item.Name)}${ext}`, blob);
       } catch { /* skip */ } finally {
         done++;
@@ -153,7 +167,8 @@ export function SettingsView({ onCategoryChange, searchQuery, eras = [], artData
         const res = await fetch(fetchUrl);
         if (!res.ok) throw new Error('fetch failed');
         const blob = await res.blob();
-        const ext = blob.type.includes('wav') ? '.wav' : blob.type.includes('flac') ? '.flac' : blob.type.includes('png') ? '.png' : blob.type.includes('jpg') ? '.jpg' : '.mp3';
+        const isImg = blob.type.includes('png') || blob.type.includes('jpg') || blob.type.includes('jpeg') || blob.type.includes('gif') || blob.type.includes('webp');
+        const ext = isImg ? (blob.type.includes('png') ? '.png' : blob.type.includes('gif') ? '.gif' : blob.type.includes('webp') ? '.webp' : '.jpg') : await detectAudioExt(blob);
         zip.file(`${sanitizeFilename(item.Era || 'misc')}/${sanitizeFilename(item.Name)}${ext}`, blob);
       } catch { /* skip */ } finally {
         done++;
@@ -170,12 +185,12 @@ export function SettingsView({ onCategoryChange, searchQuery, eras = [], artData
     const JSZip = (await import('jszip')).default;
     const zip = new JSZip();
 
-    const songs: { name: string; era: string; url: string }[] = [];
+    const songs: { name: string; era: string; eraImage?: string; songImage?: string; url: string }[] = [];
     for (const era of eras) {
       for (const tracks of Object.values(era.data || {})) {
         for (const song of tracks) {
           const url = song.url || (song.urls && song.urls[0]) || '';
-          if (url) songs.push({ name: song.name, era: era.name, url });
+          if (url) songs.push({ name: song.name, era: era.name, eraImage: era.image, songImage: song.image, url });
         }
       }
     }
@@ -191,13 +206,26 @@ export function SettingsView({ onCategoryChange, searchQuery, eras = [], artData
     setProgress('everything', `0 / ${total}`);
 
     await Promise.all([
-      ...songs.map(async ({ name, era, url }) => {
+      ...songs.map(async ({ name, era, eraImage, songImage, url }) => {
         try {
           const fetchUrl = await resolveAudioUrl(url);
           const res = await fetch(fetchUrl);
           if (!res.ok) throw new Error('fetch failed');
-          const blob = await res.blob();
-          const ext = blob.type.includes('wav') ? '.wav' : blob.type.includes('flac') ? '.flac' : '.mp3';
+          let blob = await res.blob();
+          const ext = await detectAudioExt(blob);
+          if (settings.embedMetadata && ext === '.mp3') {
+            const artUrl = songImage || CUSTOM_IMAGES[era] || eraImage;
+            const songTitle = name.includes(' - ') ? name.substring(name.indexOf(' - ') + 3) : name;
+            try {
+              blob = await embedID3Tags(blob, {
+                title: songTitle,
+                artist: buildArtistTag(name, era),
+                album: era,
+                year: ALBUM_RELEASE_DATES[era]?.split('/').pop(),
+                artworkUrl: artUrl,
+              }, songTitle);
+            } catch { /* skip tagging, save raw */ }
+          }
           zip.file(`unreleased/${sanitizeFilename(era)}/${sanitizeFilename(name)}${ext}`, blob);
         } catch { /* skip */ } finally { tick(); }
       }),
@@ -218,7 +246,7 @@ export function SettingsView({ onCategoryChange, searchQuery, eras = [], artData
           const res = await fetch(fetchUrl);
           if (!res.ok) throw new Error('fetch failed');
           const blob = await res.blob();
-          const ext = blob.type.includes('wav') ? '.wav' : blob.type.includes('flac') ? '.flac' : blob.type.includes('zip') ? '.zip' : '.mp3';
+          const ext = await detectAudioExt(blob);
           zip.file(`stems/${sanitizeFilename(item.Era || 'misc')}/${sanitizeFilename(item.Name)}${ext}`, blob);
         } catch { /* skip */ } finally { tick(); }
       }),
@@ -229,7 +257,8 @@ export function SettingsView({ onCategoryChange, searchQuery, eras = [], artData
           const res = await fetch(fetchUrl);
           if (!res.ok) throw new Error('fetch failed');
           const blob = await res.blob();
-          const ext = blob.type.includes('wav') ? '.wav' : blob.type.includes('flac') ? '.flac' : blob.type.includes('png') ? '.png' : blob.type.includes('jpg') ? '.jpg' : '.mp3';
+          const isImg = blob.type.includes('png') || blob.type.includes('jpg') || blob.type.includes('jpeg') || blob.type.includes('gif') || blob.type.includes('webp');
+          const ext = isImg ? (blob.type.includes('png') ? '.png' : blob.type.includes('gif') ? '.gif' : blob.type.includes('webp') ? '.webp' : '.jpg') : await detectAudioExt(blob);
           zip.file(`misc/${sanitizeFilename(item.Era || 'misc')}/${sanitizeFilename(item.Name)}${ext}`, blob);
         } catch { /* skip */ } finally { tick(); }
       }),

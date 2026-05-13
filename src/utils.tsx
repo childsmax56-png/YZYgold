@@ -474,6 +474,33 @@ export interface SongMeta {
   artworkUrl?: string;
 }
 
+export async function detectAudioExt(blob: Blob): Promise<'.mp3' | '.wav' | '.flac' | '.aiff' | '.zip'> {
+  const header = await blob.slice(0, 12).arrayBuffer();
+  const bytes = new Uint8Array(header);
+  // RIFF....WAVE
+  if (bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46) return '.wav';
+  // fLaC
+  if (bytes[0] === 0x66 && bytes[1] === 0x4C && bytes[2] === 0x61 && bytes[3] === 0x43) return '.flac';
+  // FORM....AIFF or AIFC
+  if (bytes[0] === 0x46 && bytes[1] === 0x4F && bytes[2] === 0x52 && bytes[3] === 0x4D) return '.aiff';
+  // PK (ZIP)
+  if (bytes[0] === 0x50 && bytes[1] === 0x4B) return '.zip';
+  return '.mp3';
+}
+
+function isImageBuffer(buf: ArrayBuffer): boolean {
+  const b = new Uint8Array(buf, 0, 12);
+  // JPEG: FF D8
+  if (b[0] === 0xFF && b[1] === 0xD8) return true;
+  // PNG: 89 50 4E 47
+  if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4E && b[3] === 0x47) return true;
+  // GIF: 47 49 46
+  if (b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46) return true;
+  // WebP: 52 49 46 46 .... 57 45 42 50
+  if (b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 && b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50) return true;
+  return false;
+}
+
 async function fetchArtworkBuffer(artworkUrl: string): Promise<ArrayBuffer | null> {
   const proxies = [
     artworkUrl,
@@ -483,7 +510,10 @@ async function fetchArtworkBuffer(artworkUrl: string): Promise<ArrayBuffer | nul
   for (const url of proxies) {
     try {
       const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
-      if (res.ok) return await res.arrayBuffer();
+      if (res.ok) {
+        const buf = await res.arrayBuffer();
+        if (isImageBuffer(buf)) return buf;
+      }
     } catch {
       // try next proxy
     }
@@ -646,7 +676,7 @@ export async function handleDownloadFile(url: string, suggestedName: string, tag
       }
       blob = await response.blob();
       if (!isImage) {
-        const actualExt = blob.type.includes('wav') ? '.wav' : blob.type.includes('flac') ? '.flac' : '.mp3';
+        const actualExt = await detectAudioExt(blob);
         if (actualExt !== '.mp3' && fileName.endsWith('.mp3')) {
           fileName = fileName.slice(0, -4) + actualExt;
         }
