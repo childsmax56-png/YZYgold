@@ -570,10 +570,16 @@ export default function App() {
 
       const categories = targetJson.eras[eraName].data || {};
 
-      // Skip if a song with this name already exists anywhere in the era
+      // Skip if a song with the same name, credits, and notes already exists in the era
       const nameNorm = songName.toLowerCase().trim();
+      const extraNorm = (extra || '').toLowerCase().trim();
+      const notesNorm = (item.Notes || '').toLowerCase().trim();
       const alreadyExists = Object.values(categories).some((list: any) =>
-        (list as Song[]).some(s => s.name?.toLowerCase().trim() === nameNorm)
+        (list as Song[]).some(s =>
+          s.name?.toLowerCase().trim() === nameNorm &&
+          (s.extra || '').toLowerCase().trim() === extraNorm &&
+          (s.description || '').toLowerCase().trim() === notesNorm
+        )
       );
       if (alreadyExists) return;
 
