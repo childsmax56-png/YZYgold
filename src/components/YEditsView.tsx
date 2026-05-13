@@ -102,7 +102,10 @@ function applyTracklistOrder(songs: Song[], tracklistText: string): Song[] {
       return c === colLine || c.includes(colLine) || colLine.includes(c);
     });
 
-    if (idx !== -1) ordered.push(remaining.splice(idx, 1)[0]);
+    if (idx !== -1) {
+      const song = remaining.splice(idx, 1)[0];
+      ordered.push({ ...song, name: line });
+    }
   }
   return [...ordered, ...remaining];
 }
