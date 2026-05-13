@@ -6,7 +6,7 @@ import { Song, Era } from '../types';
 
 const AUDIO_EXTS = /\.(mp3|m4a|wav|ogg|flac|aac)$/i;
 const IMAGE_EXTS = /\.(png|jpe?g|gif|webp)$/i;
-const TRACKLIST_FILE = /YZYgold\s+tracklist/i;
+const TRACKLIST_FILE = /YZYgold/i;
 const BACK_COVER_FILE = /back\s*cover/i;
 
 interface YEditsGroup {
@@ -66,6 +66,17 @@ function parseGroups(keys: string[]): YEditsGroup[] {
     });
 }
 
+function normalizeTitle(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/\(interlude\)/gi, 'int')
+    .replace(/\(intro\)/gi, 'intro')
+    .replace(/\(outro\)/gi, 'outro')
+    .replace(/[^\w\s]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 function applyTracklistOrder(songs: Song[], tracklistText: string): Song[] {
   const lines = tracklistText
     .split('\n')
@@ -75,11 +86,11 @@ function applyTracklistOrder(songs: Song[], tracklistText: string): Song[] {
   const remaining = [...songs];
   const ordered: Song[] = [];
   for (const line of lines) {
-    const idx = remaining.findIndex(s =>
-      s.name.toLowerCase() === line.toLowerCase() ||
-      s.name.toLowerCase().includes(line.toLowerCase()) ||
-      line.toLowerCase().includes(s.name.toLowerCase())
-    );
+    const normLine = normalizeTitle(line);
+    const idx = remaining.findIndex(s => {
+      const normName = normalizeTitle(s.name);
+      return normName === normLine || normName.includes(normLine) || normLine.includes(normName);
+    });
     if (idx !== -1) ordered.push(remaining.splice(idx, 1)[0]);
   }
   return [...ordered, ...remaining];
@@ -117,7 +128,7 @@ export function YEditsView({ searchQuery, onPlaySong, currentSong, isPlaying }: 
     Promise.all(
       withTracklist.map(g =>
         fetch(`/api/yedits-file?key=${encodeURIComponent(g.tracklistKey!)}`)
-          .then(r => r.text())
+          .then(r => { if (!r.ok) throw new Error(); return r.text(); })
           .then(text => [g.folderPath, applyTracklistOrder(g.songs, text)] as [string, Song[]])
           .catch(() => null)
       )
