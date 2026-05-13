@@ -73,6 +73,10 @@ function normalizeTitle(s: string): string {
     .trim();
 }
 
+function collapseTitle(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
 function applyTracklistOrder(songs: Song[], tracklistText: string): Song[] {
   const lines = tracklistText
     .split('\n')
@@ -83,10 +87,21 @@ function applyTracklistOrder(songs: Song[], tracklistText: string): Song[] {
   const ordered: Song[] = [];
   for (const line of lines) {
     const normLine = normalizeTitle(line);
-    const idx = remaining.findIndex(s => {
-      const normName = normalizeTitle(s.name);
-      return normName === normLine || normName.includes(normLine) || normLine.includes(normName);
+    const colLine = collapseTitle(line);
+
+    // 1. exact normalized match
+    let idx = remaining.findIndex(s => normalizeTitle(s.name) === normLine);
+    // 2. normalized substring match
+    if (idx === -1) idx = remaining.findIndex(s => {
+      const n = normalizeTitle(s.name);
+      return n.includes(normLine) || normLine.includes(n);
     });
+    // 3. collapsed match — handles apostrophe→space differences like "you're" vs "you re"
+    if (idx === -1) idx = remaining.findIndex(s => {
+      const c = collapseTitle(s.name);
+      return c === colLine || c.includes(colLine) || colLine.includes(c);
+    });
+
     if (idx !== -1) ordered.push(remaining.splice(idx, 1)[0]);
   }
   return [...ordered, ...remaining];
