@@ -1,27 +1,26 @@
 import { motion, AnimatePresence } from 'motion/react';
 import { createPortal } from 'react-dom';
-import { ArrowLeft, Play, Volume2, Download, Loader2 } from 'lucide-react';
+import { ArrowLeft, Play, Volume2, Download, Loader2, FlipHorizontal2 } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { Song, Era } from '../types';
 
 const AUDIO_EXTS = /\.(mp3|m4a|wav|ogg|flac|aac)$/i;
 const IMAGE_EXTS = /\.(png|jpe?g|gif|webp)$/i;
-
-const FOLDER_CREATORS: Record<string, string> = {
-  'Bully by dangerous contact': 'Dangerous Contact',
-  'the overground hell road': 'Careless Basket',
-};
+const TRACKLIST_FILE = /YZYgold\s+tracklist/i;
+const BACK_COVER_FILE = /back\s*cover/i;
 
 interface YEditsGroup {
   folderPath: string;
   displayName: string;
   parentName: string;
   imageUrl?: string;
+  backCoverUrl?: string;
+  tracklistKey?: string;
   songs: Song[];
 }
 
 function parseGroups(keys: string[]): YEditsGroup[] {
-  const folderMap = new Map<string, { imageKey?: string; audioKeys: string[] }>();
+  const folderMap = new Map<string, { imageKey?: string; backCoverKey?: string; tracklistKey?: string; audioKeys: string[] }>();
 
   for (const key of keys) {
     const lastSlash = key.lastIndexOf('/');
@@ -37,27 +36,53 @@ function parseGroups(keys: string[]): YEditsGroup[] {
     if (AUDIO_EXTS.test(filename)) {
       entry.audioKeys.push(key);
     } else if (IMAGE_EXTS.test(filename)) {
-      entry.imageKey = key;
+      if (BACK_COVER_FILE.test(filename)) {
+        entry.backCoverKey = key;
+      } else {
+        entry.imageKey = key;
+      }
+    } else if (TRACKLIST_FILE.test(filename)) {
+      entry.tracklistKey = key;
     }
   }
 
   return Array.from(folderMap.entries())
     .filter(([, { audioKeys }]) => audioKeys.length > 0)
-    .map(([folderPath, { imageKey, audioKeys }]) => {
+    .map(([folderPath, { imageKey, backCoverKey, tracklistKey, audioKeys }]) => {
       const parts = folderPath.split('/');
       const displayName = parts[parts.length - 1].trim() || folderPath;
-      const parentName = parts.length > 1
-        ? parts[0].trim()
-        : (FOLDER_CREATORS[parts[0].trim()] ?? '');
+      const parentName = parts.length > 1 ? parts[0].trim() : '';
       const imageUrl = imageKey
         ? `/api/yedits-file?key=${encodeURIComponent(imageKey)}`
+        : undefined;
+      const backCoverUrl = backCoverKey
+        ? `/api/yedits-file?key=${encodeURIComponent(backCoverKey)}`
         : undefined;
       const songs: Song[] = audioKeys.map(key => ({
         name: key.split('/').pop()!.replace(/\.[^.]+$/, ''),
         url: `/api/yedits-file?key=${encodeURIComponent(key)}`,
       }));
-      return { folderPath, displayName, parentName, imageUrl, songs };
+      return { folderPath, displayName, parentName, imageUrl, backCoverUrl, tracklistKey, songs };
     });
+}
+
+function applyTracklistOrder(songs: Song[], tracklistText: string): Song[] {
+  const lines = tracklistText
+    .split('\n')
+    .map(l => l.replace(/^\s*\d+[\.\)]\s*/, '').trim())
+    .filter(Boolean);
+
+  const remaining = [...songs];
+  const ordered: Song[] = [];
+  for (const line of lines) {
+    const idx = remaining.findIndex(s =>
+      s.name.toLowerCase() === line.toLowerCase() ||
+      s.name.toLowerCase().includes(line.toLowerCase()) ||
+      line.toLowerCase().includes(s.name.toLowerCase())
+    );
+    if (idx !== -1) ordered.push(remaining.splice(idx, 1)[0]);
+  }
+  return [...ordered, ...remaining];
 }
 
 interface YEditsViewProps {
@@ -74,6 +99,8 @@ export function YEditsView({ searchQuery, onPlaySong, currentSong, isPlaying }: 
   const [selectedGroup, setSelectedGroup] = useState<YEditsGroup | null>(null);
   const [selectedCreator, setSelectedCreator] = useState<string | null>(null);
   const [zoomedImage, setZoomedImage] = useState(false);
+  const [showBackCover, setShowBackCover] = useState(false);
+  const [tracklistOverrides, setTracklistOverrides] = useState<Map<string, Song[]>>(new Map());
 
   useEffect(() => {
     fetch('/api/yedits')
@@ -83,6 +110,23 @@ export function YEditsView({ searchQuery, onPlaySong, currentSong, isPlaying }: 
   }, []);
 
   const groups = useMemo(() => parseGroups(keys), [keys]);
+
+  useEffect(() => {
+    const withTracklist = groups.filter(g => g.tracklistKey);
+    if (withTracklist.length === 0) return;
+    Promise.all(
+      withTracklist.map(g =>
+        fetch(`/api/yedits-file?key=${encodeURIComponent(g.tracklistKey!)}`)
+          .then(r => r.text())
+          .then(text => [g.folderPath, applyTracklistOrder(g.songs, text)] as [string, Song[]])
+          .catch(() => null)
+      )
+    ).then(results => {
+      const map = new Map<string, Song[]>();
+      for (const r of results) { if (r) map.set(r[0], r[1]); }
+      setTracklistOverrides(map);
+    });
+  }, [groups]);
 
   const creators = useMemo(() => {
     const map = new Map<string, { albumCount: number; previewImage?: string }>();
@@ -110,10 +154,11 @@ export function YEditsView({ searchQuery, onPlaySong, currentSong, isPlaying }: 
 
   const filteredSongs = useMemo(() => {
     if (!selectedGroup) return [];
-    if (!searchQuery.trim()) return selectedGroup.songs;
+    const songs = tracklistOverrides.get(selectedGroup.folderPath) ?? selectedGroup.songs;
+    if (!searchQuery.trim()) return songs;
     const q = searchQuery.toLowerCase();
-    return selectedGroup.songs.filter(s => s.name.toLowerCase().includes(q));
-  }, [selectedGroup, searchQuery]);
+    return songs.filter(s => s.name.toLowerCase().includes(q));
+  }, [selectedGroup, searchQuery, tracklistOverrides]);
 
   if (loading) {
     return (
@@ -136,23 +181,26 @@ export function YEditsView({ searchQuery, onPlaySong, currentSong, isPlaying }: 
 
   // DETAIL VIEW
   if (selectedGroup) {
+    const orderedSongs = tracklistOverrides.get(selectedGroup.folderPath) ?? selectedGroup.songs;
     const era: Era = {
       name: selectedGroup.displayName,
       image: selectedGroup.imageUrl,
-      data: { Yedits: selectedGroup.songs },
+      data: { Yedits: orderedSongs },
     };
+    const activeCoverUrl = showBackCover ? selectedGroup.backCoverUrl : selectedGroup.imageUrl;
+    const hasBackCover = !!selectedGroup.backCoverUrl;
 
     return (
       <>
         {typeof document !== 'undefined' && createPortal(
           <AnimatePresence>
-            {zoomedImage && selectedGroup.imageUrl && (
+            {zoomedImage && activeCoverUrl && (
               <motion.div
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 onClick={() => setZoomedImage(false)}
                 className="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center p-4 cursor-zoom-out backdrop-blur-sm"
               >
-                <img src={selectedGroup.imageUrl} alt={selectedGroup.displayName}
+                <img src={activeCoverUrl} alt={selectedGroup.displayName}
                   className="max-w-full max-h-full object-contain shadow-2xl rounded-md" />
               </motion.div>
             )}
@@ -170,23 +218,34 @@ export function YEditsView({ searchQuery, onPlaySong, currentSong, isPlaying }: 
         >
           <div className="p-6 md:p-8 flex flex-col md:flex-row items-start gap-6 md:gap-8 border-b border-white/5 bg-white/5">
             <button
-              onClick={() => { setSelectedGroup(null); setZoomedImage(false); }}
+              onClick={() => { setSelectedGroup(null); setZoomedImage(false); setShowBackCover(false); }}
               className="cursor-pointer mt-1 flex items-center justify-center w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors shrink-0"
             >
               <ArrowLeft className="w-4 h-4" />
             </button>
 
-            <div
-              className={`w-32 h-32 md:w-48 md:h-48 rounded-md overflow-hidden bg-white/5 shrink-0 shadow-xl ${selectedGroup.imageUrl ? 'cursor-pointer' : ''}`}
-              onClick={() => { if (selectedGroup.imageUrl) setZoomedImage(true); }}
-              title={selectedGroup.imageUrl ? 'Click to zoom' : undefined}
-            >
-              {selectedGroup.imageUrl ? (
-                <img src={selectedGroup.imageUrl} alt={selectedGroup.displayName} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-4xl font-bold text-white/20 text-center p-4">
-                  {selectedGroup.displayName}
-                </div>
+            <div className="relative shrink-0">
+              <div
+                className={`w-32 h-32 md:w-48 md:h-48 rounded-md overflow-hidden bg-white/5 shadow-xl ${activeCoverUrl ? 'cursor-pointer' : ''}`}
+                onClick={() => { if (activeCoverUrl) setZoomedImage(true); }}
+                title={activeCoverUrl ? 'Click to zoom' : undefined}
+              >
+                {activeCoverUrl ? (
+                  <img src={activeCoverUrl} alt={selectedGroup.displayName} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-4xl font-bold text-white/20 text-center p-4">
+                    {selectedGroup.displayName}
+                  </div>
+                )}
+              </div>
+              {hasBackCover && (
+                <button
+                  onClick={() => setShowBackCover(v => !v)}
+                  className="absolute bottom-2 right-2 flex items-center justify-center w-7 h-7 rounded-full bg-black/60 hover:bg-black/80 text-white/70 hover:text-white transition-colors backdrop-blur-sm"
+                  title={showBackCover ? 'Show front cover' : 'Show back cover'}
+                >
+                  <FlipHorizontal2 className="w-3.5 h-3.5" />
+                </button>
               )}
             </div>
 
