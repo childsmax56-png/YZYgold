@@ -74,7 +74,7 @@ Guidelines:
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: systemPrompt }] },
           contents,
-          generationConfig: { maxOutputTokens: 1024, temperature: 0.7 },
+          generationConfig: { maxOutputTokens: 4096, temperature: 0.7 },
         }),
       }
     );
