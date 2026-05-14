@@ -88,8 +88,8 @@ export function ChatBubble({ data, screenContext, showPlayer }: ChatBubbleProps)
         }),
       });
 
-      const json = await res.json() as { reply?: string; error?: string };
-      const reply = json.reply ?? json.error ?? 'Something went wrong.';
+      const json = await res.json() as { reply?: string; error?: string; details?: string };
+      const reply = json.reply ?? (json.details ? `Error: ${json.details}` : json.error) ?? 'Something went wrong.';
       setMessages([...nextHistory, { role: 'model', content: reply }]);
     } catch {
       setMessages([...nextHistory, { role: 'model', content: 'Failed to get a response. Please try again.' }]);
