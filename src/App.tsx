@@ -78,6 +78,7 @@ import { CompsView } from './components/CompsView';
 import { ReleasedView, ReleasedEntry } from './components/ReleasedView';
 import { YEditsView } from './components/YEditsView';
 import { VideosView, VideoRawEntry } from './components/VideosView';
+import { ChatBubble } from './components/ChatBubble';
 import { useSettings, LOADING_SCREENS } from './SettingsContext';
 import { recordListeningHistory } from './history';
 
@@ -2786,6 +2787,17 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
         </AnimatePresence>,
         document.body
       )}
+
+      <ChatBubble
+        data={data}
+        screenContext={{
+          activeCategory,
+          selectedAlbumName: selectedAlbum?.name,
+          currentSongName: currentSong?.name,
+          currentEraName: currentEra?.name,
+        }}
+        showPlayer={showPlayer}
+      />
     </div>
   );
 }
