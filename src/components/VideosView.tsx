@@ -1,8 +1,10 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, ExternalLink, ChevronDown, ChevronUp, Film } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { ArrowLeft, ExternalLink, ChevronDown, ChevronUp, Film, Maximize2, Minimize2, X } from 'lucide-react';
 import { Era } from '../types';
 import { createSlug, CUSTOM_IMAGES } from '../utils';
+import { useSettings } from '../SettingsContext';
 
 export interface VideoRawEntry {
   Era: string;
@@ -35,6 +37,11 @@ interface VideoEraGroup {
   unreleased: VideoEntry[];
   released: VideoEntry[];
   total: number;
+}
+
+interface MiniPlayerState {
+  entry: VideoEntry;
+  linkIndex: number;
 }
 
 function extractYouTubeId(url: string): string | null {
@@ -174,31 +181,246 @@ const AVAILABLE_LENGTH_COLORS: Record<string, string> = {
   'Never Recorded': 'text-red-400/50 border-red-500/10 bg-red-500/5',
 };
 
-function VideoRow({ entry }: { entry: VideoEntry }) {
+// ─── Embed renderer (shared by inline and mini player) ─────────────────────
+
+function EmbedPlayer({ embed, className = '' }: { embed: EmbedInfo; className?: string }) {
+  if (!embed) return null;
+
+  if (embed.type === 'youtube' || embed.type === 'drive') {
+    return (
+      <iframe
+        src={embed.src}
+        className={`w-full h-full ${className}`}
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+        allowFullScreen
+      />
+    );
+  }
+
+  if (embed.type === 'pillowcase') {
+    return (
+      <video
+        src={embed.src}
+        controls
+        className={`w-full h-full object-contain ${className}`}
+        preload="metadata"
+      />
+    );
+  }
+
+  return null;
+}
+
+// ─── Mini / fullscreen player portal ───────────────────────────────────────
+
+interface MiniPlayerProps {
+  state: MiniPlayerState;
+  onClose: () => void;
+  onLinkChange: (i: number) => void;
+}
+
+function MiniPlayer({ state, onClose, onLinkChange }: MiniPlayerProps) {
+  const [isFullScreen, setIsFullScreen] = useState(false);
+  const activeLink = state.entry.links[state.linkIndex] ?? state.entry.links[0];
+  const embed = activeLink ? getEmbedInfo([activeLink]) : null;
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (isFullScreen) setIsFullScreen(false);
+        else onClose();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isFullScreen, onClose]);
+
+  const linkTabs = state.entry.links.length > 1 ? (
+    <div className="flex gap-1.5 flex-wrap px-3 pb-2">
+      {state.entry.links.map((link, i) => (
+        <button
+          key={i}
+          onClick={() => onLinkChange(i)}
+          className={`text-[10px] px-2.5 py-0.5 rounded-full border transition-colors cursor-pointer ${
+            i === state.linkIndex
+              ? 'border-[var(--theme-color)] text-[var(--theme-color)] bg-[var(--theme-color)]/10'
+              : 'border-white/10 text-white/50 hover:border-white/30 hover:text-white'
+          }`}
+        >
+          {getLinkLabel(link)}
+        </button>
+      ))}
+    </div>
+  ) : null;
+
+  return createPortal(
+    <>
+      {/* Fullscreen overlay */}
+      <AnimatePresence>
+        {isFullScreen && (
+          <motion.div
+            key="fs-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[9100] bg-black flex flex-col"
+          >
+            {/* FS header */}
+            <div className="flex items-center justify-between px-4 py-3 bg-white/5 border-b border-white/10 shrink-0">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-white truncate">{state.entry.name}</p>
+                <p className="text-xs text-white/40">{state.entry.era}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsFullScreen(false)}
+                  title="Exit fullscreen"
+                  className="flex items-center justify-center w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+                >
+                  <Minimize2 className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={onClose}
+                  title="Close"
+                  className="flex items-center justify-center w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* FS link tabs */}
+            {state.entry.links.length > 1 && (
+              <div className="flex gap-1.5 flex-wrap px-4 pt-3 shrink-0">
+                {state.entry.links.map((link, i) => (
+                  <button
+                    key={i}
+                    onClick={() => onLinkChange(i)}
+                    className={`text-xs px-3 py-1 rounded-full border transition-colors cursor-pointer ${
+                      i === state.linkIndex
+                        ? 'border-[var(--theme-color)] text-[var(--theme-color)] bg-[var(--theme-color)]/10'
+                        : 'border-white/10 text-white/50 hover:border-white/30 hover:text-white'
+                    }`}
+                  >
+                    {getLinkLabel(link)}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* FS video */}
+            <div className="flex-1 min-h-0 p-4">
+              {embed ? (
+                <EmbedPlayer embed={embed} />
+              ) : (
+                <div className="flex items-center justify-center h-full text-white/30 text-sm">
+                  No embeddable source available.
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Mini player (always rendered while state is set, hidden during fullscreen) */}
+      {!isFullScreen && (
+        <motion.div
+          key="mini-player"
+          initial={{ opacity: 0, y: 20, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 20, scale: 0.95 }}
+          transition={{ duration: 0.25, ease: 'easeOut' }}
+          className="fixed bottom-36 right-4 z-[9000] w-80 rounded-xl overflow-hidden bg-[#111] border border-white/10 shadow-[0_8px_40px_rgba(0,0,0,0.7)]"
+        >
+          {/* Mini header */}
+          <div className="flex items-center gap-2 px-3 py-2 bg-white/5 border-b border-white/10">
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-white truncate leading-tight">{state.entry.name}</p>
+              <p className="text-[10px] text-white/40 truncate">{state.entry.era}</p>
+            </div>
+            <button
+              onClick={() => setIsFullScreen(true)}
+              title="Fullscreen"
+              className="flex items-center justify-center w-6 h-6 rounded-full hover:bg-white/10 text-white/60 hover:text-white transition-colors cursor-pointer shrink-0"
+            >
+              <Maximize2 className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={onClose}
+              title="Close"
+              className="flex items-center justify-center w-6 h-6 rounded-full hover:bg-white/10 text-white/60 hover:text-white transition-colors cursor-pointer shrink-0"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {/* Mini video */}
+          <div className="aspect-video w-full bg-black">
+            {embed ? (
+              <EmbedPlayer embed={embed} />
+            ) : (
+              <div className="flex items-center justify-center h-full text-white/30 text-xs">
+                No embeddable source
+              </div>
+            )}
+          </div>
+
+          {/* Link tabs */}
+          {linkTabs && <div className="pt-2">{linkTabs}</div>}
+        </motion.div>
+      )}
+    </>,
+    document.body
+  );
+}
+
+// ─── Video row ──────────────────────────────────────────────────────────────
+
+interface VideoRowProps {
+  entry: VideoEntry;
+  miniPlayerMode: boolean;
+  activeMiniEntry: VideoEntry | null;
+  onOpenMiniPlayer: (entry: VideoEntry) => void;
+}
+
+function VideoRow({ entry, miniPlayerMode, activeMiniEntry, onOpenMiniPlayer }: VideoRowProps) {
   const [expanded, setExpanded] = useState(false);
   const [activeLink, setActiveLink] = useState(0);
 
-  const embed = useMemo(() => getEmbedInfo(entry.links), [entry.links]);
-  const isUnavailable = !entry.links.length || ['Confirmed', 'Rumored', 'Never Recorded', 'Not Available'].includes(entry.availableLength);
+  const isUnavailable = !entry.links.length;
   const availColor = AVAILABLE_LENGTH_COLORS[entry.availableLength] || 'text-white/40 border-white/10 bg-white/5';
   const isStarred = entry.name.startsWith('⭐');
+  const isInMiniPlayer = miniPlayerMode && activeMiniEntry === entry;
 
   const handleClick = () => {
-    if (!isUnavailable || entry.links.length > 0) setExpanded(e => !e);
+    if (isUnavailable) return;
+    if (miniPlayerMode) {
+      onOpenMiniPlayer(entry);
+    } else {
+      setExpanded(e => !e);
+    }
   };
 
-  const allLinks = entry.links;
-  const activeEmbedLink = allLinks[activeLink] || allLinks[0];
+  const activeEmbedLink = entry.links[activeLink] ?? entry.links[0];
   const activeEmbed = activeEmbedLink ? getEmbedInfo([activeEmbedLink]) : null;
 
   return (
-    <div className={`rounded-md overflow-hidden border transition-colors ${expanded ? 'border-white/15 bg-white/[0.03]' : 'border-transparent hover:border-white/10 hover:bg-white/[0.02]'}`}>
+    <div className={`rounded-md overflow-hidden border transition-colors ${
+      isInMiniPlayer
+        ? 'border-[var(--theme-color)]/30 bg-[var(--theme-color)]/5'
+        : expanded
+        ? 'border-white/15 bg-white/[0.03]'
+        : 'border-transparent hover:border-white/10 hover:bg-white/[0.02]'
+    }`}>
       <div
         onClick={handleClick}
-        className={`flex items-start gap-3 px-3 py-2.5 ${isUnavailable && !entry.links.length ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+        className={`flex items-start gap-3 px-3 py-2.5 ${isUnavailable ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
       >
         <div className="mt-0.5 shrink-0">
-          {expanded ? (
+          {miniPlayerMode ? (
+            <Film className={`w-4 h-4 ${isInMiniPlayer ? 'text-[var(--theme-color)]' : 'text-white/20'}`} />
+          ) : expanded ? (
             <ChevronUp className="w-4 h-4 text-white/40" />
           ) : (
             <ChevronDown className="w-4 h-4 text-white/20" />
@@ -207,7 +429,9 @@ function VideoRow({ entry }: { entry: VideoEntry }) {
 
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-2 flex-wrap">
-            <span className={`text-sm font-medium ${isStarred ? 'text-yellow-300' : 'text-white'} truncate`}>
+            <span className={`text-sm font-medium truncate ${
+              isInMiniPlayer ? 'text-[var(--theme-color)]' : isStarred ? 'text-yellow-300' : 'text-white'
+            }`}>
               {entry.name}
             </span>
             {entry.length && (
@@ -230,14 +454,15 @@ function VideoRow({ entry }: { entry: VideoEntry }) {
               {entry.quality}
             </span>
           )}
-          {allLinks.length > 0 && !expanded && (
+          {entry.links.length > 0 && !expanded && !miniPlayerMode && (
             <ExternalLink className="w-3.5 h-3.5 text-white/30" />
           )}
         </div>
       </div>
 
+      {/* Inline expand (only in non-mini-player mode) */}
       <AnimatePresence>
-        {expanded && (
+        {!miniPlayerMode && expanded && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
@@ -246,9 +471,9 @@ function VideoRow({ entry }: { entry: VideoEntry }) {
             className="overflow-hidden"
           >
             <div className="px-3 pb-4 space-y-3">
-              {allLinks.length > 1 && (
+              {entry.links.length > 1 && (
                 <div className="flex gap-2 flex-wrap">
-                  {allLinks.map((link, i) => (
+                  {entry.links.map((link, i) => (
                     <button
                       key={i}
                       onClick={() => setActiveLink(i)}
@@ -258,54 +483,29 @@ function VideoRow({ entry }: { entry: VideoEntry }) {
                           : 'border-white/10 text-white/50 hover:border-white/30 hover:text-white'
                       }`}
                     >
-                      {getLinkLabel(link)} {allLinks.filter(l => getLinkLabel(l) === getLinkLabel(link)).length > 1 ? `#${allLinks.slice(0, i + 1).filter(l => getLinkLabel(l) === getLinkLabel(link)).length}` : ''}
+                      {getLinkLabel(link)}
                     </button>
                   ))}
                 </div>
               )}
 
-              {activeEmbed?.type === 'youtube' && (
-                <div className="aspect-video w-full rounded-md overflow-hidden bg-black">
-                  <iframe
-                    src={activeEmbed.src}
-                    className="w-full h-full"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
+              {activeEmbed ? (
+                <div className={`w-full rounded-md overflow-hidden bg-black ${
+                  activeEmbed.type === 'pillowcase' ? '' : 'aspect-video'
+                }`}>
+                  <EmbedPlayer embed={activeEmbed} />
                 </div>
+              ) : (
+                entry.links.length > 0 && (
+                  <div className="text-xs text-white/40 italic">
+                    No embeddable player available for this source.
+                  </div>
+                )
               )}
 
-              {activeEmbed?.type === 'drive' && (
-                <div className="aspect-video w-full rounded-md overflow-hidden bg-black">
-                  <iframe
-                    src={activeEmbed.src}
-                    className="w-full h-full"
-                    allow="autoplay"
-                    allowFullScreen
-                  />
-                </div>
-              )}
-
-              {activeEmbed?.type === 'pillowcase' && (
-                <div className="w-full rounded-md overflow-hidden bg-black">
-                  <video
-                    src={activeEmbed.src}
-                    controls
-                    className="w-full max-h-[60vh]"
-                    preload="metadata"
-                  />
-                </div>
-              )}
-
-              {!activeEmbed && allLinks.length > 0 && (
-                <div className="text-xs text-white/40 italic">
-                  No embeddable player available for this source.
-                </div>
-              )}
-
-              {allLinks.length > 0 && (
+              {entry.links.length > 0 && (
                 <div className="flex gap-2 flex-wrap">
-                  {allLinks.map((link, i) => (
+                  {entry.links.map((link, i) => (
                     <a
                       key={i}
                       href={link}
@@ -331,13 +531,18 @@ function VideoRow({ entry }: { entry: VideoEntry }) {
   );
 }
 
+// ─── Era detail view ────────────────────────────────────────────────────────
+
 interface EraDetailViewProps {
   eraGroup: VideoEraGroup;
   onBack: () => void;
   searchQuery: string;
+  miniPlayerMode: boolean;
+  activeMiniEntry: VideoEntry | null;
+  onOpenMiniPlayer: (entry: VideoEntry) => void;
 }
 
-function EraDetailView({ eraGroup, onBack, searchQuery }: EraDetailViewProps) {
+function EraDetailView({ eraGroup, onBack, searchQuery, miniPlayerMode, activeMiniEntry, onOpenMiniPlayer }: EraDetailViewProps) {
   const filterEntries = (entries: VideoEntry[]) => {
     if (!searchQuery) return entries;
     const q = searchQuery.toLowerCase();
@@ -404,7 +609,13 @@ function EraDetailView({ eraGroup, onBack, searchQuery }: EraDetailViewProps) {
             </h2>
             <div className="space-y-1">
               {filteredUnreleased.map((entry, i) => (
-                <VideoRow key={i} entry={entry} />
+                <VideoRow
+                  key={i}
+                  entry={entry}
+                  miniPlayerMode={miniPlayerMode}
+                  activeMiniEntry={activeMiniEntry}
+                  onOpenMiniPlayer={onOpenMiniPlayer}
+                />
               ))}
             </div>
           </section>
@@ -418,7 +629,13 @@ function EraDetailView({ eraGroup, onBack, searchQuery }: EraDetailViewProps) {
             </h2>
             <div className="space-y-1">
               {filteredReleased.map((entry, i) => (
-                <VideoRow key={i} entry={entry} />
+                <VideoRow
+                  key={i}
+                  entry={entry}
+                  miniPlayerMode={miniPlayerMode}
+                  activeMiniEntry={activeMiniEntry}
+                  onOpenMiniPlayer={onOpenMiniPlayer}
+                />
               ))}
             </div>
           </section>
@@ -432,6 +649,8 @@ function EraDetailView({ eraGroup, onBack, searchQuery }: EraDetailViewProps) {
   );
 }
 
+// ─── Main view ──────────────────────────────────────────────────────────────
+
 interface VideosViewProps {
   eras: Era[];
   videosData: VideoRawEntry[];
@@ -439,9 +658,23 @@ interface VideosViewProps {
 }
 
 export function VideosView({ eras, videosData, searchQuery }: VideosViewProps) {
+  const { settings } = useSettings();
   const [selectedEra, setSelectedEra] = useState<string | null>(null);
+  const [miniPlayer, setMiniPlayer] = useState<MiniPlayerState | null>(null);
 
   const eraGroups = useMemo(() => parseVideosData(videosData, eras), [videosData, eras]);
+
+  const openMiniPlayer = useCallback((entry: VideoEntry) => {
+    setMiniPlayer(prev =>
+      prev?.entry === entry ? prev : { entry, linkIndex: 0 }
+    );
+  }, []);
+
+  const closeMiniPlayer = useCallback(() => setMiniPlayer(null), []);
+
+  const changeMiniLink = useCallback((i: number) => {
+    setMiniPlayer(prev => prev ? { ...prev, linkIndex: i } : null);
+  }, []);
 
   useEffect(() => {
     const path = window.location.pathname;
@@ -482,6 +715,9 @@ export function VideosView({ eras, videosData, searchQuery }: VideosViewProps) {
     return () => window.removeEventListener('popstate', handlePopState);
   }, [eraGroups]);
 
+  // Close mini player when leaving videos tab (handled by parent unmounting)
+  useEffect(() => () => setMiniPlayer(null), []);
+
   const filteredGroups = useMemo(() => {
     if (!searchQuery) return eraGroups;
     const q = searchQuery.toLowerCase();
@@ -498,75 +734,92 @@ export function VideosView({ eras, videosData, searchQuery }: VideosViewProps) {
     [eraGroups, selectedEra]
   );
 
-  if (selectedGroup) {
-    return (
-      <EraDetailView
-        eraGroup={selectedGroup}
-        onBack={() => setSelectedEra(null)}
-        searchQuery={searchQuery}
-      />
-    );
-  }
+  const miniPlayerMode = settings.videosMiniPlayer;
 
   return (
-    <motion.div
-      key="videos-grid"
-      initial={{ opacity: 0, filter: 'blur(10px)' }}
-      animate={{ opacity: 1, filter: 'blur(0px)' }}
-      exit={{ opacity: 0, filter: 'blur(10px)' }}
-      transition={{ duration: 0.4, ease: 'easeOut' }}
-      className="p-6 md:p-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6 pb-32"
-    >
-      {filteredGroups.map((group, i) => (
+    <>
+      {selectedGroup ? (
+        <EraDetailView
+          eraGroup={selectedGroup}
+          onBack={() => setSelectedEra(null)}
+          searchQuery={searchQuery}
+          miniPlayerMode={miniPlayerMode}
+          activeMiniEntry={miniPlayer?.entry ?? null}
+          onOpenMiniPlayer={openMiniPlayer}
+        />
+      ) : (
         <motion.div
-          key={group.name}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: Math.min(i * 0.02, 0.5), duration: 0.3 }}
-          onClick={() => setSelectedEra(group.name)}
-          className="group flex flex-col gap-3 cursor-pointer"
+          key="videos-grid"
+          initial={{ opacity: 0, filter: 'blur(10px)' }}
+          animate={{ opacity: 1, filter: 'blur(0px)' }}
+          exit={{ opacity: 0, filter: 'blur(10px)' }}
+          transition={{ duration: 0.4, ease: 'easeOut' }}
+          className="p-6 md:p-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6 pb-32"
         >
-          <div className="relative aspect-square rounded-md overflow-hidden bg-white/5 border border-white/5 group-hover:border-white/20 transition-colors">
-            {group.image ? (
-              <img
-                src={group.image}
-                alt={group.name}
-                className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
-                referrerPolicy="no-referrer"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-white/5">
-                <Film className="w-10 h-10 text-white/20" />
+          {filteredGroups.map((group, i) => (
+            <motion.div
+              key={group.name}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: Math.min(i * 0.02, 0.5), duration: 0.3 }}
+              onClick={() => setSelectedEra(group.name)}
+              className="group flex flex-col gap-3 cursor-pointer"
+            >
+              <div className="relative aspect-square rounded-md overflow-hidden bg-white/5 border border-white/5 group-hover:border-white/20 transition-colors">
+                {group.image ? (
+                  <img
+                    src={group.image}
+                    alt={group.name}
+                    className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-white/5">
+                    <Film className="w-10 h-10 text-white/20" />
+                  </div>
+                )}
+                <div className="absolute bottom-2 right-2 flex flex-col gap-1 items-end">
+                  {group.unreleased.length > 0 && (
+                    <span className="bg-black/70 backdrop-blur-sm text-orange-400 text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded">
+                      {group.unreleased.length} Unrel.
+                    </span>
+                  )}
+                  {group.released.length > 0 && (
+                    <span className="bg-black/70 backdrop-blur-sm text-green-400 text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded">
+                      {group.released.length} Rel.
+                    </span>
+                  )}
+                </div>
               </div>
-            )}
-            <div className="absolute bottom-2 right-2 flex flex-col gap-1 items-end">
-              {group.unreleased.length > 0 && (
-                <span className="bg-black/70 backdrop-blur-sm text-orange-400 text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded">
-                  {group.unreleased.length} Unrel.
-                </span>
-              )}
-              {group.released.length > 0 && (
-                <span className="bg-black/70 backdrop-blur-sm text-green-400 text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded">
-                  {group.released.length} Rel.
-                </span>
-              )}
+
+              <div>
+                <h3 className="text-sm font-bold text-white group-hover:underline truncate">
+                  {group.name}
+                </h3>
+                <p className="text-xs text-white/40">{group.total} video{group.total !== 1 ? 's' : ''}</p>
+              </div>
+            </motion.div>
+          ))}
+
+          {filteredGroups.length === 0 && (
+            <div className="col-span-full text-center py-16 text-white/30 text-sm">
+              No eras found.
             </div>
-          </div>
-
-          <div>
-            <h3 className="text-sm font-bold text-white group-hover:underline truncate">
-              {group.name}
-            </h3>
-            <p className="text-xs text-white/40">{group.total} video{group.total !== 1 ? 's' : ''}</p>
-          </div>
+          )}
         </motion.div>
-      ))}
-
-      {filteredGroups.length === 0 && (
-        <div className="col-span-full text-center py-16 text-white/30 text-sm">
-          No eras found.
-        </div>
       )}
-    </motion.div>
+
+      {/* Mini player portal */}
+      <AnimatePresence>
+        {miniPlayerMode && miniPlayer && (
+          <MiniPlayer
+            key="mini-player"
+            state={miniPlayer}
+            onClose={closeMiniPlayer}
+            onLinkChange={changeMiniLink}
+          />
+        )}
+      </AnimatePresence>
+    </>
   );
 }
