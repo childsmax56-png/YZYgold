@@ -2354,6 +2354,7 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
                   soundcloudReady={soundcloudState.isReady}
                   onPlaySoundCloud={handlePlaySoundCloudTrack}
                   onPlayArchive={handlePlayArchiveTrack}
+                  onEmbed={() => { audioRef.current?.pause(); setIsPlaying(false); }}
                 />
               ) : activeCategory === 'recent' ? (
                 <EraDetail

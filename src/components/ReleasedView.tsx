@@ -36,6 +36,7 @@ interface ReleasedViewProps {
   soundcloudReady?: boolean;
   onPlaySoundCloud?: (url: string) => void;
   onPlayArchive?: (archiveId: string, title: string, eraName: string) => void;
+  onEmbed?: () => void;
 }
 
 // ─── embed helpers ───────────────────────────────────────────────────────────
@@ -210,7 +211,7 @@ function groupByEra(data: ReleasedEntry[], allEras: Era[]): ReleasedEraGroup[] {
 
 // ─── main component ───────────────────────────────────────────────────────────
 
-export function ReleasedView({ eras, releasedData, searchQuery, spotifyLoggedIn, spotifyReady, onPlaySpotify, youtubeReady, onPlayYoutube, onPlayAudio, soundcloudReady, onPlaySoundCloud, onPlayArchive }: ReleasedViewProps) {
+export function ReleasedView({ eras, releasedData, searchQuery, spotifyLoggedIn, spotifyReady, onPlaySpotify, youtubeReady, onPlayYoutube, onPlayAudio, soundcloudReady, onPlaySoundCloud, onPlayArchive, onEmbed }: ReleasedViewProps) {
   const [selectedEra, setSelectedEra] = useState<string | null>(null);
   const [isDescExpanded, setIsDescExpanded] = useState(false);
   // key: `${trackIdx}-${linkIdx}`
@@ -399,6 +400,7 @@ export function ReleasedView({ eras, releasedData, searchQuery, spotifyLoggedIn,
                             } else if (useArchiveSDK && archiveIdMatch) {
                               onPlayArchive!(archiveIdMatch, track.Name.split('\n')[0], selectedGroup.eraName);
                             } else if (canEmbed) {
+                              if (!isOpen) onEmbed?.();
                               setOpenEmbed(isOpen ? null : key);
                             } else {
                               window.open(link.url, '_blank');
