@@ -88,7 +88,7 @@ export const defaultSettings: AppSettings = {
   googleSheetsUrl: '',
   downloadAsOgFilename: false,
   embedMetadata: true,
-  videosMiniPlayer: false,
+  videosMiniPlayer: true,
   aiErrorDetails: false,
 };
 
