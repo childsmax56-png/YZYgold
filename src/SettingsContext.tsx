@@ -51,6 +51,8 @@ export interface AppSettings {
   downloadAsOgFilename: boolean;
   embedMetadata: boolean;
   lastfmEraOverrides: Record<string, string>;
+  videosMiniPlayer: boolean;
+  aiErrorDetails: boolean;
 }
 
 interface SettingsContextType {
@@ -88,6 +90,8 @@ export const defaultSettings: AppSettings = {
   downloadAsOgFilename: false,
   embedMetadata: true,
   lastfmEraOverrides: {},
+  videosMiniPlayer: true,
+  aiErrorDetails: false,
 };
 
 const SettingsContext = createContext<SettingsContextType>({
