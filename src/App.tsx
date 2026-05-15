@@ -28,6 +28,7 @@ const CUSTOM_ALBUM_INFO: Record<string, string[]> = {
   "The Life Of Pablo": ["51 OG File(s)", "23 Full", "3 Tagged", "7 Partial", "19 Snippet(s)", "2 Stem Bounce(s)", "35 Unavailable"],
   "Turbo Grafx 16": ["20 OG File(s)", "11 Full", "0 Tagged", "0 Partial", "6 Snippet(s)", "2 Stem Bounce(s)", "50 Unavailable"],
   "The Elementary School Dropout": ["0 OG File(s)", "0 Full", "0 Tagged", "0 Partial", "3 Snippet(s)", "0 Stem Bounce(s)", "15 Unavailable"],
+  "Wolves": ["1 OG File(s)", "8 Full", "0 Tagged", "1 Partial", "0 Snippet(s)", "0 Stem Bounce(s)", "8 Unavailable"],
 };
 
 export interface MvEntry {
@@ -1914,17 +1915,20 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
   if (anchor !== -1 && toInsert.length > 0) relatedErasArray.splice(anchor + 1, 0, ...toInsert);
 }
 
-// Turbo Grafx 16 can end up out of position (renamed from "Turbo Grafx 16" via ERA_MAPPINGS).
-// Reinsert right after Cruel Winter [V2].
+// Turbo Grafx 16 and Wolves can end up out of position (Turbo gets renamed from
+// "TurboGrafx 16" via ERA_MAPPINGS, Wolves may be appended after myk merge).
+// Reinsert both right after Cruel Winter [V2]: CW[V2] → Turbo Grafx 16 → Wolves.
 {
   const cwV2Idx = erasArray.findIndex(e => e.name === "Cruel Winter [V2]");
   const turboIdx = erasArray.findIndex(e => e.name === "Turbo Grafx 16");
+  const wolvesIdx = erasArray.findIndex(e => e.name === "Wolves");
 
-  if (cwV2Idx !== -1 && turboIdx !== -1) {
+  if (cwV2Idx !== -1 && turboIdx !== -1 && wolvesIdx !== -1) {
     const turboEra = erasArray[turboIdx];
-    erasArray.splice(turboIdx, 1);
+    const wolvesEra = erasArray[wolvesIdx];
+    [turboIdx, wolvesIdx].sort((a, b) => b - a).forEach(i => erasArray.splice(i, 1));
     const newCwV2Idx = erasArray.findIndex(e => e.name === "Cruel Winter [V2]");
-    erasArray.splice(newCwV2Idx + 1, 0, turboEra);
+    erasArray.splice(newCwV2Idx + 1, 0, turboEra, wolvesEra);
   }
 }
 
