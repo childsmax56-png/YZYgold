@@ -1403,14 +1403,14 @@ export default function App() {
   useEffect(() => {
     if (lastfmLoggedIn && isPlaying && currentSong && currentEra) {
       const actualEraName = (currentSong as any).realEra?.name || currentEra.name;
-      const cleanActualEraName = cleanAlbumName(actualEraName).replace(/ \[Fake\]$/i, '');
+      const cleanActualEraName = settings.lastfmEraOverrides[actualEraName] ?? cleanAlbumName(actualEraName).replace(/ \[Fake\]$/i, '');
       const cleanRealTrackName = currentSong.name.replace(/ \[Fake\]$/i, '');
       const lfmArtist = parseArtistFromSong(cleanRealTrackName, currentSong.extra, actualEraName);
-      
+
       const lfmTrack = cleanTrackName(cleanRealTrackName, currentSong.extra, settings.lastfmShowVersion, settings.lastfmShowTags, settings.lastfmShowFeats);
       updateNowPlaying(lfmTrack, lfmArtist, cleanActualEraName);
     }
-  }, [isPlaying, currentSong, currentEra, lastfmLoggedIn, settings.lastfmShowVersion, settings.lastfmShowTags, settings.lastfmShowFeats]);
+  }, [isPlaying, currentSong, currentEra, lastfmLoggedIn, settings.lastfmShowVersion, settings.lastfmShowTags, settings.lastfmShowFeats, settings.lastfmEraOverrides]);
 
   useEffect(() => {
     if (selectedAlbum) {
@@ -1711,7 +1711,7 @@ export default function App() {
         if (dur > 30 && (cur > dur / 2 || cur > 240)) {
           scrobbledRef.current = true;
           const actualEraName = (currentSong as any).realEra?.name || currentEra.name;
-          const cleanActualEraName = cleanAlbumName(actualEraName).replace(/ \[Fake\]$/i, '');
+          const cleanActualEraName = settings.lastfmEraOverrides[actualEraName] ?? cleanAlbumName(actualEraName).replace(/ \[Fake\]$/i, '');
           const cleanRealTrackName = currentSong.name.replace(/ \[Fake\]$/i, '');
           const lfmTrack = cleanTrackName(cleanRealTrackName, currentSong.extra, settings.lastfmShowVersion, settings.lastfmShowTags, settings.lastfmShowFeats);
           const lfmArtist = parseArtistFromSong(cleanRealTrackName, currentSong.extra, actualEraName);
