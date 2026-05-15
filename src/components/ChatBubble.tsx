@@ -21,6 +21,10 @@ interface ChatBubbleProps {
   showPlayer: boolean;
 }
 
+function cleanSongName(name: string): string {
+  return name.replace(/\s*[\[(][^\])[]*[\])]/g, '').trim();
+}
+
 function eraSlug(name: string): string {
   return encodeURIComponent(
     name.replace(/[^\p{L}\p{N}\s-]/gu, '').trim().replace(/\s+/g, '-')
@@ -37,7 +41,7 @@ function buildTrackerSummary(data: TrackerData): string {
     const allSongs: string[] = [];
     for (const [, songs] of categories) {
       for (const song of songs as Song[]) {
-        const parts = [song.name];
+        const parts = [cleanSongName(song.name)];
         if (song.quality) parts.push(`quality:${song.quality}`);
         if (song.available_length) parts.push(`length:${song.available_length}`);
         if (song.leak_date) parts.push(`leaked:${song.leak_date}`);
