@@ -19,7 +19,7 @@ import { TrackerData, Era, Song, SearchFilters } from './types';
 import { matchesFilters, createSlug, getSongSlug, getCleanSongNameWithTags, isSongNotAvailable, formatTextForNotification, CUSTOM_IMAGES, HIDDEN_ALBUMS, ALBUM_RELEASE_DATES, getArtistName, buildArtistTag, handleDownloadFile } from './utils';
 import { isLastfmLoggedIn, saveLastfmSession, clearLastfmSession, scrobbleTrack, updateNowPlaying, cleanTrackName, parseArtistFromSong, cleanAlbumName } from './lastfm';
 import { isSpotifyLoggedIn, clearSpotifySession, startSpotifyAuth, handleSpotifyCallback } from './spotify';
-import { useSpotify, SpotifyTrack } from './useSpotify';
+import { useSpotifyConnect, SpotifyTrack } from './useSpotifyConnect';
 import { useYoutube } from './useYoutube';
 import { useSoundCloud } from './useSoundCloud';
 
@@ -390,7 +390,7 @@ export default function App() {
   const [lastfmLoggedIn, setLastfmLoggedIn] = useState(isLastfmLoggedIn());
   const [spotifyLoggedIn, setSpotifyLoggedIn] = useState(isSpotifyLoggedIn());
   const [activePlayer, setActivePlayer] = useState<'audio' | 'spotify' | 'youtube' | 'soundcloud'>('audio');
-  const { state: spotifyState, controls: spotifyControls } = useSpotify(spotifyLoggedIn);
+  const { state: spotifyState, controls: spotifyControls } = useSpotifyConnect(spotifyLoggedIn);
   const { state: youtubeState, controls: youtubeControls } = useYoutube();
   const { state: soundcloudState, controls: soundcloudControls } = useSoundCloud();
   const scrobbledRef = useRef(false);
@@ -1747,7 +1747,6 @@ export default function App() {
   };
 
   const handlePlaySpotifyTrack = async (uri: string) => {
-    if (!spotifyState.isReady) return;
     if (audioRef.current) {
       audioRef.current.pause();
       setIsPlaying(false);
