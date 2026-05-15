@@ -21,11 +21,18 @@ interface ChatBubbleProps {
   showPlayer: boolean;
 }
 
+function eraSlug(name: string): string {
+  return encodeURIComponent(
+    name.replace(/[^\p{L}\p{N}\s-]/gu, '').trim().replace(/\s+/g, '-')
+  );
+}
+
 function buildTrackerSummary(data: TrackerData): string {
   const eras = Object.values(data.eras || {}) as Era[];
   const lines: string[] = [];
 
   for (const era of eras) {
+    const slug = eraSlug(era.name);
     const categories = Object.entries(era.data || {});
     const allSongs: string[] = [];
     for (const [, songs] of categories) {
@@ -38,11 +45,47 @@ function buildTrackerSummary(data: TrackerData): string {
         allSongs.push(parts.join(' | '));
       }
     }
-    lines.push(`=== ${era.name} ===`);
+    lines.push(`=== ${era.name} | url:/album/${slug} ===`);
     lines.push(...allSongs);
   }
 
   return lines.join('\n');
+}
+
+function renderMessage(text: string) {
+  const lines = text.split('\n');
+  return lines.map((line, li) => {
+    const tokens = line.split(/(\[([^\]]+)\]\(([^)]+)\)|\*\*([^*]+)\*\*)/);
+    return (
+      <span key={li}>
+        {li > 0 && <br />}
+        {tokens.map((token, ti) => {
+          const linkMatch = token.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+          if (linkMatch) {
+            return (
+              <a
+                key={ti}
+                href={linkMatch[2]}
+                className="underline text-[var(--theme-color)] hover:opacity-80"
+                onClick={e => {
+                  if (linkMatch[2].startsWith('/')) {
+                    e.preventDefault();
+                    window.history.pushState({}, '', linkMatch[2]);
+                    window.dispatchEvent(new PopStateEvent('popstate'));
+                  }
+                }}
+              >
+                {linkMatch[1]}
+              </a>
+            );
+          }
+          const boldMatch = token.match(/^\*\*([^*]+)\*\*$/);
+          if (boldMatch) return <strong key={ti}>{boldMatch[1]}</strong>;
+          return token;
+        })}
+      </span>
+    );
+  });
 }
 
 export function ChatBubble({ data, screenContext, showPlayer }: ChatBubbleProps) {
@@ -144,13 +187,13 @@ export function ChatBubble({ data, screenContext, showPlayer }: ChatBubbleProps)
               {messages.map((msg, i) => (
                 <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div
-                    className={`max-w-[85%] px-3 py-2 rounded-xl text-xs leading-relaxed whitespace-pre-wrap ${
+                    className={`max-w-[85%] px-3 py-2 rounded-xl text-xs leading-relaxed ${
                       msg.role === 'user'
                         ? 'bg-[var(--theme-color)] text-white rounded-br-sm'
                         : 'bg-white/8 text-white/85 rounded-bl-sm border border-white/8'
                     }`}
                   >
-                    {msg.content}
+                    {msg.role === 'user' ? msg.content : renderMessage(msg.content)}
                   </div>
                 </div>
               ))}

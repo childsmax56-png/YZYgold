@@ -51,6 +51,8 @@ ${trackerSummary}
 
 Guidelines:
 - Be concise and helpful
+- When referencing songs or eras, link to them using markdown: [Era Name](/album/slug) — the url is provided next to each era in the tracker data as "url:/album/..."
+- When mentioning an era, always hyperlink its name so the user can click to navigate there
 - When referencing songs, mention quality and availability if relevant
 - If asked about a specific song, check all eras since the same song can appear in multiple eras
 - Don't make up information — if something isn't in the tracker data, say so
