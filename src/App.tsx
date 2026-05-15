@@ -28,7 +28,6 @@ const CUSTOM_ALBUM_INFO: Record<string, string[]> = {
   "The Life Of Pablo": ["51 OG File(s)", "23 Full", "3 Tagged", "7 Partial", "19 Snippet(s)", "2 Stem Bounce(s)", "35 Unavailable"],
   "Turbo Grafx 16": ["20 OG File(s)", "11 Full", "0 Tagged", "0 Partial", "6 Snippet(s)", "2 Stem Bounce(s)", "50 Unavailable"],
   "The Elementary School Dropout": ["0 OG File(s)", "0 Full", "0 Tagged", "0 Partial", "3 Snippet(s)", "0 Stem Bounce(s)", "15 Unavailable"],
-  "Wolves": ["1 OG File(s)", "4 Full", "0 Tagged", "1 Partial", "0 Snippet(s)", "0 Stem Bounce(s)", "12 Unavailable"]
 };
 
 export interface MvEntry {
@@ -669,18 +668,6 @@ export default function App() {
         if (Array.isArray(mykData)) {
           const nextJson = JSON.parse(JSON.stringify(json));
           
-          if (!nextJson.eras["Wolves"]) {
-            nextJson.eras["Wolves"] = {
-              name: "Wolves",
-              image: "https://i.ibb.co/ydSS4sG/Wolves.png",
-              extra: "(Collaboration with Drake) (New Abu Dhabi, Calabasas Is The New Abu Dhabi)",
-              data: {
-                "Main Tracks": [],
-                "Snippets & Leaks": []
-              }
-            };
-          }
-
           if (!nextJson.eras["Ongoing"]) {
             nextJson.eras["Ongoing"] = {
               name: "Ongoing",
@@ -761,12 +748,6 @@ export default function App() {
                 }
               }
 
-              if (!matched && eraName === "Wolves") {
-                if (!categories["Main Tracks"]) {
-                  categories["Main Tracks"] = [];
-                }
-                categories["Main Tracks"].push(newSong);
-              }
             }
           });
           applyLocalSongs(nextJson, localRes.data);
@@ -774,14 +755,6 @@ export default function App() {
           setData(nextJson);
         } else {
           const baseJson = JSON.parse(JSON.stringify(json));
-          if (!baseJson.eras["Wolves"]) {
-            baseJson.eras["Wolves"] = {
-              name: "Wolves",
-              image: "https://i.ibb.co/ydSS4sG/Wolves.png",
-              extra: "(Collaboration with Drake) (New Abu Dhabi, Calabasas Is The New Abu Dhabi)",
-              data: { "Main Tracks": [], "Snippets & Leaks": [] }
-            };
-          }
           if (!baseJson.eras["Ongoing"]) {
             baseJson.eras["Ongoing"] = {
               name: "Ongoing",
@@ -1941,20 +1914,17 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
   if (anchor !== -1 && toInsert.length > 0) relatedErasArray.splice(anchor + 1, 0, ...toInsert);
 }
 
-// Turbo Grafx 16 and Wolves can end up out of position (Turbo gets renamed from
-// "Turbo Grafx 16", Wolves has no CSV entry). Pull both out and reinsert right after
-// Cruel Winter [V2] so the order is always: CW[V2] → Turbo Grafx 16 → Wolves.
+// Turbo Grafx 16 can end up out of position (renamed from "Turbo Grafx 16" via ERA_MAPPINGS).
+// Reinsert right after Cruel Winter [V2].
 {
   const cwV2Idx = erasArray.findIndex(e => e.name === "Cruel Winter [V2]");
-  const turboIdx = erasArray.findIndex(e => e.name === "Turbo Grafx 16" || e.name === "Turbo Grafx 16");
-  const wolvesIdx = erasArray.findIndex(e => e.name === "Wolves");
+  const turboIdx = erasArray.findIndex(e => e.name === "Turbo Grafx 16");
 
-  if (cwV2Idx !== -1 && turboIdx !== -1 && wolvesIdx !== -1) {
+  if (cwV2Idx !== -1 && turboIdx !== -1) {
     const turboEra = erasArray[turboIdx];
-    const wolvesEra = erasArray[wolvesIdx];
-    [turboIdx, wolvesIdx].sort((a, b) => b - a).forEach(i => erasArray.splice(i, 1));
+    erasArray.splice(turboIdx, 1);
     const newCwV2Idx = erasArray.findIndex(e => e.name === "Cruel Winter [V2]");
-    erasArray.splice(newCwV2Idx + 1, 0, turboEra, wolvesEra);
+    erasArray.splice(newCwV2Idx + 1, 0, turboEra);
   }
 }
 
