@@ -81,15 +81,16 @@ function getEmbedInfo(links: string[]): EmbedInfo {
     }
   }
   for (const link of links) {
-    if (link.includes('pillows.su/f/')) {
-      const id = extractPillowId(link);
-      if (id) return { type: 'pillowcase', src: `https://api.pillows.su/api/get/${id}` };
-    }
-  }
-  for (const link of links) {
     if (link.includes('drive.google.com')) {
       const id = extractDriveId(link);
       if (id) return { type: 'drive', src: `https://drive.google.com/file/d/${id}/preview` };
+    }
+  }
+  // Pillowcase last — only if no other embeddable source exists
+  for (const link of links) {
+    if (link.includes('pillows.su/f/')) {
+      const id = extractPillowId(link);
+      if (id) return { type: 'pillowcase', src: `https://api.pillows.su/api/get/${id}` };
     }
   }
   return null;
