@@ -105,6 +105,7 @@ export function useSpotify(enabled: boolean): { state: SpotifyState; controls: S
         volume: 0.5,
       });
 
+      console.log('[Spotify SDK] player created:', !!player);
       playerRef.current = player;
 
       player.addListener('ready', ({ device_id }: { device_id: string }) => {
