@@ -406,7 +406,7 @@ export function ReleasedView({ eras, releasedData, searchQuery, spotifyLoggedIn,
                               window.open(link.url, '_blank');
                             }
                           }}
-                          title={useSpotifySDK ? 'Play via Spotify' : useYoutubeSDK ? 'Play via YouTube' : useAudioSDK ? 'Play' : useSoundCloudSDK ? 'Play via SoundCloud' : useArchiveSDK ? 'Play via Archive.org' : link.label}
+                          title={useSpotifySDK && !spotifyReady ? 'Spotify connecting...' : useSpotifySDK ? 'Play via Spotify' : useYoutubeSDK ? 'Play via YouTube' : useAudioSDK ? 'Play' : useSoundCloudSDK ? 'Play via SoundCloud' : useArchiveSDK ? 'Play via Archive.org' : link.label}
                           className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-semibold border border-white/10 bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
                           style={{ color: PLATFORM_COLOR[link.platform] }}
                         >
