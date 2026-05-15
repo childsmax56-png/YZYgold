@@ -22,7 +22,7 @@ export interface SpotifyState {
 }
 
 export interface SpotifyControls {
-  playUri: (uri: string) => Promise<void>;
+  playUri: (uri: string) => Promise<boolean>;
   togglePlay: () => Promise<void>;
   seek: (posMs: number) => Promise<void>;
   setVolume: (pct: number) => Promise<void>;
@@ -132,15 +132,21 @@ export function useSpotifyConnect(enabled: boolean): { state: SpotifyState; cont
   }, [state.isPlaying]);
 
   const controls: SpotifyControls = {
-    playUri: useCallback(async (uri: string) => {
+    playUri: useCallback(async (uri: string): Promise<boolean> => {
       try {
-        await spotifyRequest('/me/player/play', {
+        const res = await spotifyRequest('/me/player/play', {
           method: 'PUT',
           body: JSON.stringify({ uris: [uri] }),
         });
+        if (!res.ok) {
+          setState(s => ({ ...s, error: 'No active Spotify device. Open Spotify on any device first.' }));
+          return false;
+        }
         setTimeout(poll, 300);
+        return true;
       } catch {
         setState(s => ({ ...s, error: 'No active Spotify device. Open Spotify on any device first.' }));
+        return false;
       }
     }, [poll]),
 

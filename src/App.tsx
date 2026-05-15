@@ -1747,13 +1747,14 @@ export default function App() {
   };
 
   const handlePlaySpotifyTrack = async (uri: string) => {
+    const ok = await spotifyControls.playUri(uri);
+    if (!ok) return;
     if (audioRef.current) {
       audioRef.current.pause();
       setIsPlaying(false);
     }
     setActivePlayer('spotify');
     setIsPlayerClosed(false);
-    await spotifyControls.playUri(uri);
   };
 
   const handlePlayReleasedAudio = (url: string, name: string, eraName: string, length?: string) => {
