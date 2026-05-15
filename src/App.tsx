@@ -1747,7 +1747,7 @@ export default function App() {
   };
 
   const handlePlaySpotifyTrack = async (uri: string) => {
-    if (!spotifyState.isReady) return;
+    if (!spotifyState.isReady) { showToast('Spotify is still connecting...'); return; }
     if (audioRef.current) {
       audioRef.current.pause();
       setIsPlaying(false);

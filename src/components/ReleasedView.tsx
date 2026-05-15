@@ -366,7 +366,7 @@ export function ReleasedView({ eras, releasedData, searchQuery, spotifyLoggedIn,
                       const isOpen = openEmbed === key;
 
                       // Spotify: use SDK player if logged in + ready
-                      const useSpotifySDK = link.platform === 'spotify' && spotifyLoggedIn && spotifyReady && onPlaySpotify;
+                      const useSpotifySDK = link.platform === 'spotify' && spotifyLoggedIn && onPlaySpotify;
                       const spotifyUri = useSpotifySDK
                         ? (link.url.match(/open\.spotify\.com(?:\/intl-[a-z]+)?\/(track|album)\/([A-Za-z0-9]+)/)
                             ? `spotify:${link.url.match(/open\.spotify\.com(?:\/intl-[a-z]+)?\/(track|album)\/([A-Za-z0-9]+)/)![1]}:${link.url.match(/open\.spotify\.com(?:\/intl-[a-z]+)?\/(track|album)\/([A-Za-z0-9]+)/)![2]}`
