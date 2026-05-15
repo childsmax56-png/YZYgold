@@ -51,10 +51,16 @@ export async function handleSpotifyCallback(): Promise<boolean> {
   const code = params.get('code');
   const state = params.get('state');
 
-  if (params.get('error') || !code) return false;
+  console.log('[Spotify] callback params:', { code: !!code, state, error: params.get('error') });
+
+  if (params.get('error') || !code) {
+    console.log('[Spotify] aborted: error or no code', params.get('error'));
+    return false;
+  }
 
   const storedState = localStorage.getItem('spotify_state');
   const codeVerifier = localStorage.getItem('spotify_code_verifier');
+  console.log('[Spotify] state match:', state === storedState, '| verifier present:', !!codeVerifier);
   if (state !== storedState || !codeVerifier) return false;
 
   localStorage.removeItem('spotify_state');
@@ -73,7 +79,12 @@ export async function handleSpotifyCallback(): Promise<boolean> {
     }),
   });
 
-  if (!res.ok) return false;
+  console.log('[Spotify] token response status:', res.status);
+  if (!res.ok) {
+    const err = await res.text();
+    console.log('[Spotify] token error:', err);
+    return false;
+  }
 
   const data = await res.json();
   localStorage.setItem('spotify_access_token', data.access_token);
