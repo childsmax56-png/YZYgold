@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { MessageCircle, X, Send, Loader2 } from 'lucide-react';
 import { TrackerData, Era, Song } from '../types';
+import { useSettings } from '../SettingsContext';
 
 interface ChatMessage {
   role: 'user' | 'model';
@@ -93,6 +94,7 @@ function renderMessage(text: string) {
 }
 
 export function ChatBubble({ data, screenContext, showPlayer }: ChatBubbleProps) {
+  const { settings } = useSettings();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -136,7 +138,11 @@ export function ChatBubble({ data, screenContext, showPlayer }: ChatBubbleProps)
       });
 
       const json = await res.json() as { reply?: string; error?: string; details?: string };
-      const reply = json.reply ?? (json.details ? `Error: ${json.details}` : json.error) ?? 'Something went wrong.';
+      const reply = json.reply
+        ?? (settings.aiErrorDetails
+          ? (json.details ? `Error: ${json.details}` : json.error)
+          : (json.error ? 'Something went wrong. Please try again.' : undefined))
+        ?? 'Something went wrong. Please try again.';
       setMessages([...nextHistory, { role: 'model', content: reply }]);
     } catch {
       setMessages([...nextHistory, { role: 'model', content: 'Failed to get a response. Please try again.' }]);

@@ -50,6 +50,7 @@ export interface AppSettings {
   googleSheetsUrl: string;
   downloadAsOgFilename: boolean;
   embedMetadata: boolean;
+  aiErrorDetails: boolean;
 }
 
 interface SettingsContextType {
@@ -86,6 +87,7 @@ export const defaultSettings: AppSettings = {
   googleSheetsUrl: '',
   downloadAsOgFilename: false,
   embedMetadata: true,
+  aiErrorDetails: false,
 };
 
 const SettingsContext = createContext<SettingsContextType>({
