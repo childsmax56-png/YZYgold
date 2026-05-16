@@ -631,6 +631,8 @@ export async function handleDownloadFile(url: string, suggestedName: string, tag
             }
         }
     } else if (url.includes('pillows.su/f/')) {
+        isImage = true;
+        ext = '.png';
         const hash = url.split('/f/')[1]?.split('/')[0]?.split('?')[0];
         if (hash) {
             finalUrl = `https://api.pillows.su/api/get/${hash}`;
