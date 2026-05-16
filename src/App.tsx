@@ -212,6 +212,10 @@ export default function App() {
   const [isShuffle, setIsShuffle] = useState(settings.startupShuffle);
   const [shuffledQueue, setShuffledQueue] = useState<number[]>([]);
   const [loopMode, setLoopMode] = useState(settings.startupLoop || 0);
+
+  const isShuffleRef = useRef(settings.startupShuffle);
+  const currentSongIndexRef = useRef(-1);
+  const playlistRef = useRef<Song[]>([]);
   const [hasLoopedOnce, setHasLoopedOnce] = useState(false);
 
   const [favoriteKeys, setFavoriteKeys] = useState<{ songName: string, eraName: string, url: string, song?: Song }[]>(() => {
@@ -404,6 +408,10 @@ export default function App() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
+
+  isShuffleRef.current = isShuffle;
+  currentSongIndexRef.current = currentSongIndex;
+  playlistRef.current = playlist;
 
   useEffect(() => {
     if (audioRef.current) {
@@ -1468,22 +1476,25 @@ export default function App() {
   }, [selectedAlbum, currentSong]);
 
   const playNext = () => {
-    if (playlist.length === 0 || !currentEra) return;
-    let nextIndex = currentSongIndex + 1;
-    if (isShuffle && playlist.length > 1) {
+    const pl = playlistRef.current;
+    const idx = currentSongIndexRef.current;
+    const shuffle = isShuffleRef.current;
+    if (pl.length === 0 || !currentEra) return;
+    let nextIndex = idx + 1;
+    if (shuffle && pl.length > 1) {
       let randomIndex;
       do {
-        randomIndex = Math.floor(Math.random() * playlist.length);
-      } while (randomIndex === currentSongIndex);
+        randomIndex = Math.floor(Math.random() * pl.length);
+      } while (randomIndex === idx);
       nextIndex = randomIndex;
-    } else if (nextIndex >= playlist.length) {
+    } else if (nextIndex >= pl.length) {
       nextIndex = 0;
     }
 
-    const nextSong = playlist[nextIndex];
+    const nextSong = pl[nextIndex];
     if (nextSong) {
       const eraToPass = (nextSong as any).realEra || currentEra;
-      handlePlaySong(nextSong, eraToPass, playlist, false, true, isRandomMode);
+      handlePlaySong(nextSong, eraToPass, pl, false, true, isRandomMode);
     }
   };
 
