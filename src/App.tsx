@@ -1543,6 +1543,8 @@ export default function App() {
         setHasLoopedOnce(false);
         playNext();
       }
+    } else if (isShuffleRef.current) {
+      handleRandomSongClick();
     } else {
       playNext();
     }
