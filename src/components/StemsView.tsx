@@ -64,13 +64,11 @@ function parseStemsToEras(stemsData: StemEntry[], allEras: Era[]): { eraName: st
     } catch { return d; }
   };
 
-  const CATEGORY_NAMES = ['Instrumentals', 'Acapellas', 'Studio Stems', 'Sessions', 'Live Acapellas', 'Live Stems', 'TV Tracks', 'Stems', 'Samples', 'Session', 'Other', 'Others', 'Instrumental'];
+  const CATEGORY_NAMES = ['Instrumentals', 'Acapellas', 'Studio Stems', 'Sessions', 'Live Acapellas', 'Live Stems', 'TV Tracks'];
 
   for (const item of stemsData) {
     const isBrokenEra = typeof item.Era === 'string' && (item.Era.includes('OG File') || item.Era.includes('Unavailable'));
-    // Carti CSV format: era headers have empty Era, non-category Name, no Quality/Link
-    const isSimpleEraHeader = !item.Era && item.Name && !item.Quality && !item["Link(s)"] && !CATEGORY_NAMES.includes(item.Name);
-    const isEraHeader = (!item.Era || isBrokenEra) && item.Name && (typeof item["Leak Date"] === 'object' || (item["Full Length"] && typeof item["Full Length"] === 'string' && item["Full Length"].length > 50) || isSimpleEraHeader);
+    const isEraHeader = (!item.Era || isBrokenEra) && item.Name && (typeof item["Leak Date"] === 'object' || (item["Full Length"] && typeof item["Full Length"] === 'string' && item["Full Length"].length > 50));
     const isCategoryHeader = !item.Era && item.Name && !item.Quality && !item["Link(s)"] && CATEGORY_NAMES.includes(item.Name);
 
     if (isEraHeader && !isCategoryHeader) {
