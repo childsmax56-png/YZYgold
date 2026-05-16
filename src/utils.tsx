@@ -608,6 +608,28 @@ export async function resolveUrl(url: string): Promise<{ fetchUrl: string; isIma
   return { fetchUrl: url, isImage: false };
 }
 
+async function compressImageBlob(blob: Blob, maxDim = 2048, quality = 0.85): Promise<Blob> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const objUrl = URL.createObjectURL(blob);
+    img.onload = () => {
+      URL.revokeObjectURL(objUrl);
+      let { width, height } = img;
+      if (width > maxDim || height > maxDim) {
+        if (width > height) { height = Math.round(height * maxDim / width); width = maxDim; }
+        else { width = Math.round(width * maxDim / height); height = maxDim; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
+      canvas.toBlob(out => resolve(out ?? blob), 'image/jpeg', quality);
+    };
+    img.onerror = () => { URL.revokeObjectURL(objUrl); resolve(blob); };
+    img.src = objUrl;
+  });
+}
+
 export async function handleDownloadFile(url: string, suggestedName: string, tagsAsEmojis: boolean, meta?: SongMeta, description?: string) {
   if (!url) return;
   try {
@@ -712,7 +734,10 @@ export async function handleDownloadFile(url: string, suggestedName: string, tag
         }
       }
       blob = await response.blob();
-      if (!isImage) {
+      if (isImage) {
+        blob = await compressImageBlob(blob);
+        fileName = fileName.replace(/\.(png|jpeg|jpg)$/i, '') + '.jpg';
+      } else {
         const actualExt = await detectAudioExt(blob);
         if (actualExt !== '.mp3' && fileName.endsWith('.mp3')) {
           fileName = fileName.slice(0, -4) + actualExt;
