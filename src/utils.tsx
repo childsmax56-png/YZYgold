@@ -80,7 +80,8 @@ export const CUSTOM_IMAGES: Record<string, string> = {
   "Child Rebel Soldier": "https://i.ibb.co/QFLpkFcz/IMG-3998.png",
   "BULLY": "https://a5.mzstatic.com/us/r1000/0/Music221/v4/4b/38/d1/4b38d146-381d-ace2-73df-24074576e62b/656465138828_cover.jpg",
   "Live": "https://i.ibb.co/zhhhyDVq/hq720.jpg",
-  "Other": "https://i.ibb.co/G3VqQV3t/IMG-3890.jpg"
+  "Other": "https://i.ibb.co/G3VqQV3t/IMG-3890.jpg",
+  "YE-I": "https://i.ibb.co/Z6HqbBph/IMG-4069.jpg"
 };
 
 export const ALBUM_RELEASE_DATES: Record<string, string> = {
@@ -132,10 +133,11 @@ export const ALBUM_RELEASE_DATES: Record<string, string> = {
   "CUCK": "03/06/2025",
   "DONDA 2 (2025)": "04/29/2025",
   "NEVER STOP": "06/27/2025",
-  "IN A PERFECT WORLD": "06/22/2025"
+  "IN A PERFECT WORLD": "06/22/2025",
+  "YE-I": "10/16/2023"
 };
 
-export const HIDDEN_ALBUMS = ['NASIR', 'K.T.S.E.', 'NEVER STOP', 'DAYTONA', 'The Elementary School Dropout', 'Jesus Is Born', 'Sunday Service Choir'];
+export const HIDDEN_ALBUMS = ['NASIR', 'K.T.S.E.', 'NEVER STOP', 'DAYTONA', 'The Elementary School Dropout', 'Jesus Is Born', 'Sunday Service Choir', 'YE-I'];
 
 export const ALBUM_DESCRIPTIONS: Record<string, string> = {
   "DAYTONA": "DAYTONA is the third studio album by American rapper Pusha T. It was released on May 25, 2018, by G.O.O.D. Music and Def Jam Recordings. DAYTONA was announced by Kanye West via Twitter on April 19, 2018, alongside the album's release date. It was one of the Wyoming projects worked on during 2018 by Kanye.",
@@ -189,7 +191,8 @@ export const ALBUM_DESCRIPTIONS: Record<string, string> = {
   "DONDA 2 (2025)": "After releasing Donda 2 via the Stem Player in 2022, Ye would eventually move onto other projects. However, the project never left his mind, with some songs continuing to be considered in the Vultures era. 2025 would see Ye enter a new era of creative fuel, once again working on multiple projects at once. With plans to release BULLY and CUCK, Ye also spoke of plans to \"officially\" release Donda 2, repeatedly saying he planned to rerecord verses and upload a \"finished\" version of the album.",
   "IN A PERFECT WORLD": "After taking to Twitter in May 2025 to \"denounce\" his antisemitism, Ye would go return to being mostly absent from social media/public eye. Around this same time, he and Bianca would admit themselves into a wellness retreat, with Bianca posting a snippet to her Instagram of Ye in his DROAM-ified home, backed by a new song that suggested a possible return/shift to religious themes once again. In late-June, Ye would announce another album name change to \"In A Perfect World\".",
   "BULLY [V2]": "After leaking the BULLY V1 visual albums on Twitter, Ye would promise to record over all the album's AI vocals. Throughout 2025, Ye would continue working on the album while teasing numerous release dates that would come and go. On June 20th, 2025, three singles would drop for the album, alongside two more dropping the following week; only one of these songs did not contain AI, being the previously unheard \"DAMN\". Later in 2025 into early 2026, YEEZY and its associates would repeatedly claim the album was now fully recorded, and that no AI would be used on its release. The album would finally drop on March 28th, 2026 with YEEZY only being partially truthful as some songs still contained AI, most prominent on the second half of the album.",
-  "Ongoing": ""
+  "Ongoing": "",
+  "YE-I": "Fully AI album made by damn james! and Gabe Shaddow in October 2023. Was completely unknown until damn james! revealed it existed and played the full album on his Instagram Live November 22nd, 2025. Somehow, Ye never knew the album existed. damn james! uploaded the album to YouTube on February 23rd, 2025. An updated SoundCloud version was teased but ultimately never released."
 };
 
 export const FILTER_TOOLTIPS: Record<string, string> = {

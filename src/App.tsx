@@ -29,6 +29,7 @@ const CUSTOM_ALBUM_INFO: Record<string, string[]> = {
   "Turbo Grafx 16": ["20 OG File(s)", "11 Full", "0 Tagged", "0 Partial", "6 Snippet(s)", "2 Stem Bounce(s)", "50 Unavailable"],
   "The Elementary School Dropout": ["0 OG File(s)", "0 Full", "0 Tagged", "0 Partial", "3 Snippet(s)", "0 Stem Bounce(s)", "15 Unavailable"],
   "Wolves": ["1 OG File(s)", "8 Full", "0 Tagged", "1 Partial", "0 Snippet(s)", "0 Stem Bounce(s)", "8 Unavailable"],
+  "YE-I": ["1 OG File(s)", "11 Full", "0 Tagged", "0 Partial", "0 Snippet(s)", "0 Stem Bounce(s)", "5 Unavailable"],
 };
 
 export interface MvEntry {
@@ -698,6 +699,15 @@ export default function App() {
             };
           }
 
+          if (!nextJson.eras["YE-I"]) {
+            nextJson.eras["YE-I"] = {
+              name: "YE-I",
+              extra: "by damn james! & Gabe Shaddow",
+              image: "",
+              data: { "OG File(s)": [], "Full": [], "Unavailable": [] }
+            };
+          }
+
           mykData.forEach((mykItem: any) => {
             const originalEraName = mykItem.Era;
             const matchedMapKey = Object.keys(ERA_MAPPINGS).find(k => k.toLowerCase() === originalEraName?.toLowerCase());
@@ -782,6 +792,16 @@ export default function App() {
               data: { "Featured": [] }
             };
           }
+
+          if (!baseJson.eras["YE-I"]) {
+            baseJson.eras["YE-I"] = {
+              name: "YE-I",
+              extra: "by damn james! & Gabe Shaddow",
+              image: "",
+              data: { "OG File(s)": [], "Full": [], "Unavailable": [] }
+            };
+          }
+
           applyLocalSongs(baseJson, localRes.data);
           applyTrackerSheetSongs(baseJson, sheetsRes.data);
           setData(baseJson);
