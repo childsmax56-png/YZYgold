@@ -54,7 +54,9 @@ function buildTrackerSummary(data: TrackerData): string {
     lines.push(...allSongs);
   }
 
-  return lines.join('\n');
+  const result = lines.join('\n');
+  // Cap at 80k chars to stay well within Gemini's context window
+  return result.length > 80000 ? result.slice(0, 80000) + '\n...[truncated]' : result;
 }
 
 function renderMessage(text: string) {
@@ -140,10 +142,9 @@ export function ChatBubble({ data, screenContext, showPlayer }: ChatBubbleProps)
 
       const json = await res.json() as { reply?: string; error?: string; details?: string };
       const reply = json.reply
-        ?? (settings.aiErrorDetails
-          ? (json.details ? `Error: ${json.details}` : json.error)
-          : (json.error ? 'Something went wrong. Please try again.' : undefined))
-        ?? 'Something went wrong. Please try again.';
+        || (settings.aiErrorDetails
+          ? (json.details ? `Error: ${json.details}` : json.error || 'Something went wrong.')
+          : 'Something went wrong. Please try again.');
       setMessages([...nextHistory, { role: 'model', content: reply }]);
     } catch {
       setMessages([...nextHistory, { role: 'model', content: 'Failed to get a response. Please try again.' }]);
