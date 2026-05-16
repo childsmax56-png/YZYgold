@@ -1008,7 +1008,7 @@ export default function App() {
         console.error("Failed to fetch Art data:", err);
       });
 
-    axios.get('https://yzygold-test.vercel.app/Stems.json')
+    axios.get('/api/stems')
       .then(res => {
         setStemsData(normalizeEraField(res.data) as StemEntry[]);
       })
@@ -1032,7 +1032,7 @@ export default function App() {
         console.error("Failed to fetch Released data:", err);
       });
 
-    axios.get('https://yzygold-test.vercel.app/Fakes.json')
+    axios.get('/api/fakes')
       .then(res => {
         const rawFakes = normalizeEraField(res.data) as any[];
         const mappedFakes = rawFakes.map(item => {
