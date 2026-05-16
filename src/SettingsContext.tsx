@@ -92,7 +92,7 @@ export const defaultSettings: AppSettings = {
   downloadAsOgFilename: false,
   embedMetadata: true,
   yzyGoldMode: false,
-  dropdownNav: false,
+  dropdownNav: true,
   lastfmEraOverrides: {},
   videosMiniPlayer: true,
   aiErrorDetails: false,
