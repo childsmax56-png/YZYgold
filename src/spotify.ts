@@ -30,8 +30,8 @@ export async function startSpotifyAuth(): Promise<void> {
   const codeChallenge = base64URLEncode(await sha256(codeVerifier));
   const state = randomString(16);
 
-  sessionStorage.setItem('spotify_code_verifier', codeVerifier);
-  sessionStorage.setItem('spotify_state', state);
+  localStorage.setItem('spotify_code_verifier', codeVerifier);
+  localStorage.setItem('spotify_state', state);
 
   const params = new URLSearchParams({
     response_type: 'code',
@@ -41,6 +41,7 @@ export async function startSpotifyAuth(): Promise<void> {
     state,
     code_challenge_method: 'S256',
     code_challenge: codeChallenge,
+    show_dialog: 'true',
   });
 
   window.location.href = `https://accounts.spotify.com/authorize?${params}`;
@@ -53,12 +54,12 @@ export async function handleSpotifyCallback(): Promise<boolean> {
 
   if (params.get('error') || !code) return false;
 
-  const storedState = sessionStorage.getItem('spotify_state');
-  const codeVerifier = sessionStorage.getItem('spotify_code_verifier');
+  const storedState = localStorage.getItem('spotify_state');
+  const codeVerifier = localStorage.getItem('spotify_code_verifier');
   if (state !== storedState || !codeVerifier) return false;
 
-  sessionStorage.removeItem('spotify_state');
-  sessionStorage.removeItem('spotify_code_verifier');
+  localStorage.removeItem('spotify_state');
+  localStorage.removeItem('spotify_code_verifier');
   window.history.replaceState({}, '', window.location.pathname);
 
   const res = await fetch('https://accounts.spotify.com/api/token', {

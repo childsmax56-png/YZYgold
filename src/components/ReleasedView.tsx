@@ -36,6 +36,7 @@ interface ReleasedViewProps {
   soundcloudReady?: boolean;
   onPlaySoundCloud?: (url: string) => void;
   onPlayArchive?: (archiveId: string, title: string, eraName: string) => void;
+  onEmbed?: () => void;
 }
 
 // ─── embed helpers ───────────────────────────────────────────────────────────
@@ -210,7 +211,7 @@ function groupByEra(data: ReleasedEntry[], allEras: Era[]): ReleasedEraGroup[] {
 
 // ─── main component ───────────────────────────────────────────────────────────
 
-export function ReleasedView({ eras, releasedData, searchQuery, spotifyLoggedIn, spotifyReady, onPlaySpotify, youtubeReady, onPlayYoutube, onPlayAudio, soundcloudReady, onPlaySoundCloud, onPlayArchive }: ReleasedViewProps) {
+export function ReleasedView({ eras, releasedData, searchQuery, spotifyLoggedIn, spotifyReady, onPlaySpotify, youtubeReady, onPlayYoutube, onPlayAudio, soundcloudReady, onPlaySoundCloud, onPlayArchive, onEmbed }: ReleasedViewProps) {
   const [selectedEra, setSelectedEra] = useState<string | null>(null);
   const [isDescExpanded, setIsDescExpanded] = useState(false);
   // key: `${trackIdx}-${linkIdx}`
@@ -365,7 +366,7 @@ export function ReleasedView({ eras, releasedData, searchQuery, spotifyLoggedIn,
                       const isOpen = openEmbed === key;
 
                       // Spotify: use SDK player if logged in + ready
-                      const useSpotifySDK = link.platform === 'spotify' && spotifyLoggedIn && spotifyReady && onPlaySpotify;
+                      const useSpotifySDK = false;
                       const spotifyUri = useSpotifySDK
                         ? (link.url.match(/open\.spotify\.com(?:\/intl-[a-z]+)?\/(track|album)\/([A-Za-z0-9]+)/)
                             ? `spotify:${link.url.match(/open\.spotify\.com(?:\/intl-[a-z]+)?\/(track|album)\/([A-Za-z0-9]+)/)![1]}:${link.url.match(/open\.spotify\.com(?:\/intl-[a-z]+)?\/(track|album)\/([A-Za-z0-9]+)/)![2]}`
@@ -399,12 +400,13 @@ export function ReleasedView({ eras, releasedData, searchQuery, spotifyLoggedIn,
                             } else if (useArchiveSDK && archiveIdMatch) {
                               onPlayArchive!(archiveIdMatch, track.Name.split('\n')[0], selectedGroup.eraName);
                             } else if (canEmbed) {
+                              if (!isOpen) onEmbed?.();
                               setOpenEmbed(isOpen ? null : key);
                             } else {
                               window.open(link.url, '_blank');
                             }
                           }}
-                          title={useSpotifySDK ? 'Play via Spotify' : useYoutubeSDK ? 'Play via YouTube' : useAudioSDK ? 'Play' : useSoundCloudSDK ? 'Play via SoundCloud' : useArchiveSDK ? 'Play via Archive.org' : link.label}
+                          title={useSpotifySDK && !spotifyReady ? 'Spotify connecting...' : useSpotifySDK ? 'Play via Spotify' : useYoutubeSDK ? 'Play via YouTube' : useAudioSDK ? 'Play' : useSoundCloudSDK ? 'Play via SoundCloud' : useArchiveSDK ? 'Play via Archive.org' : link.label}
                           className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-semibold border border-white/10 bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
                           style={{ color: PLATFORM_COLOR[link.platform] }}
                         >

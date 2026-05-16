@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { Play, Pause, Volume2, Maximize2, MoreHorizontal, Download, X, SkipBack, SkipForward, Shuffle, Repeat, Repeat1, Star, Mic2, ListMusic } from 'lucide-react';
+import { Play, Pause, Volume2, Maximize2, MoreHorizontal, Download, X, SkipBack, SkipForward, Shuffle, Repeat, Repeat1, Star, Mic2, ListMusic, Square } from 'lucide-react';
 import { parseArtistFromSong } from '../lastfm';
 import { Song, Era } from '../types';
 import { useState, useRef, useEffect } from 'react';
@@ -287,6 +287,19 @@ export function PlayerBar({
               <Maximize2 className="w-4 h-4" />
             </button>
           )}
+
+          <button
+            onClick={() => {
+              setShowMenu(false);
+              if (setShowQueue) setShowQueue(false);
+              setShowLyrics(false);
+              onClose();
+            }}
+            className="text-white/40 hover:text-white transition-colors cursor-pointer"
+            title="Stop"
+          >
+            <Square className="w-4 h-4" />
+          </button>
 
           <div className="relative" ref={menuRef}>
             <button

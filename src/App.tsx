@@ -1763,14 +1763,14 @@ export default function App() {
   };
 
   const handlePlaySpotifyTrack = async (uri: string) => {
-    if (!spotifyState.isReady) return;
+    const ok = await spotifyControls.playUri(uri);
+    if (!ok) return;
     if (audioRef.current) {
       audioRef.current.pause();
       setIsPlaying(false);
     }
     setActivePlayer('spotify');
     setIsPlayerClosed(false);
-    await spotifyControls.playUri(uri);
   };
 
   const handlePlayReleasedAudio = (url: string, name: string, eraName: string, length?: string) => {
@@ -2354,7 +2354,7 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
                   favoriteKeys={favoriteKeys}
                 />
               ) : activeCategory === 'comps' ? (
-                <CompsView key="comps" eras={erasArray} searchQuery={searchQuery} />
+                <CompsView key="comps" eras={erasArray} searchQuery={searchQuery} onNavigateToYedits={() => setActiveCategory('yedits')} />
               ) : activeCategory === 'videos' ? (
                 <VideosView
                   key="videos"
@@ -2377,6 +2377,7 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
                   soundcloudReady={soundcloudState.isReady}
                   onPlaySoundCloud={handlePlaySoundCloudTrack}
                   onPlayArchive={handlePlayArchiveTrack}
+                  onEmbed={() => { audioRef.current?.pause(); setIsPlaying(false); }}
                 />
               ) : activeCategory === 'recent' ? (
                 <EraDetail

@@ -1,5 +1,6 @@
-import { motion } from 'motion/react';
-import { Search, DollarSign, LogIn, LogOut, Settings, Dice5, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Search, DollarSign, LogIn, LogOut, Settings, Dice5, X, ChevronDown } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
 import { SiLastdotfm, SiSpotify, SiDiscord } from 'react-icons/si';
 import { FilterMenu } from './FilterMenu';
 import { SearchFilters } from '../types';
@@ -42,6 +43,24 @@ const NAV_CATEGORIES: { key: Category; label: string }[] = [
 
 export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHomeClick, activeCategory, onCategoryChange, lastfmLoggedIn, onLastfmLogout, onRandomSongClick, isRandomMode, spotifyLoggedIn, onSpotifyLogin, onSpotifyLogout }: NavbarProps) {
   const { settings } = useSettings();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const mobileDropdownRef = useRef<HTMLDivElement>(null);
+  const desktopDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!dropdownOpen) return;
+    const handler = (e: MouseEvent) => {
+      const target = e.target as Node;
+      const insideMobile = mobileDropdownRef.current?.contains(target);
+      const insideDesktop = desktopDropdownRef.current?.contains(target);
+      if (!insideMobile && !insideDesktop) setDropdownOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [dropdownOpen]);
+
+  const visibleCategories = NAV_CATEGORIES.filter(({ key }) => !(settings.yzyGoldMode && key === 'yedits'));
+  const activeLabel = visibleCategories.find(c => c.key === activeCategory)?.label ?? 'Navigate';
 
   const handleCategoryClick = (cat: Category) => {
     onCategoryChange(cat);
@@ -128,19 +147,53 @@ export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHom
           className="md:hidden w-full flex flex-wrap gap-x-4 gap-y-2 items-center"
           style={{ marginTop: '12px' }}
         >
-          {NAV_CATEGORIES.map(({ key, label }) => (
-            <div className="relative" key={key}>
+          {settings.dropdownNav ? (
+            <div className="relative w-full" ref={mobileDropdownRef}>
               <button
-                onClick={() => handleCategoryClick(key)}
-                className={`text-xs font-semibold uppercase tracking-widest pb-1 transition-all duration-300 cursor-pointer ${activeCategory === key ? 'text-[var(--theme-color)]' : 'text-white/50 hover:text-white'}`}
+                onClick={() => setDropdownOpen(o => !o)}
+                className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-white/90 text-sm font-semibold uppercase tracking-widest transition-colors hover:bg-white/10"
+                style={dropdownOpen ? { borderColor: 'var(--theme-color)', color: 'var(--theme-color)' } : {}}
               >
-                {label}
+                <span>{activeLabel}</span>
+                <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} />
               </button>
-              {activeCategory === key && (
-                <motion.div layoutId="nav-indicator-mobile" className="absolute bottom-0 left-0 right-0 h-[2px] bg-[var(--theme-color)]" />
-              )}
+              <AnimatePresence>
+                {dropdownOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute top-full left-0 right-0 mt-1 z-50 bg-[#111] border border-white/10 rounded-lg overflow-hidden shadow-xl"
+                  >
+                    {visibleCategories.map(({ key, label }) => (
+                      <button
+                        key={key}
+                        onClick={() => { handleCategoryClick(key); setDropdownOpen(false); }}
+                        className={`w-full text-left px-4 py-2.5 text-sm font-semibold uppercase tracking-widest transition-colors ${activeCategory === key ? 'text-[var(--theme-color)] bg-[var(--theme-color)]/10' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
-          ))}
+          ) : (
+            visibleCategories.map(({ key, label }) => (
+              <div className="relative" key={key}>
+                <button
+                  onClick={() => handleCategoryClick(key)}
+                  className={`text-xs font-semibold uppercase tracking-widest pb-1 transition-all duration-300 cursor-pointer ${activeCategory === key ? 'text-[var(--theme-color)]' : 'text-white/50 hover:text-white'}`}
+                >
+                  {label}
+                </button>
+                {activeCategory === key && (
+                  <motion.div layoutId="nav-indicator-mobile" className="absolute bottom-0 left-0 right-0 h-[2px] bg-[var(--theme-color)]" />
+                )}
+              </div>
+            ))
+          )}
           <div className="flex items-center gap-4 w-full border-t border-white/10 pt-3 mt-1">
             <button onClick={() => handleCategoryClick('settings')} className={`flex items-center p-2.5 rounded-full transition-all bg-white/5 text-white/50 hover:bg-white/10 hover:text-white ${activeCategory === 'settings' ? 'text-white bg-white/10' : ''}`}>
                <Settings className="w-5 h-5" />
@@ -195,21 +248,55 @@ export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHom
               </button>
             )}
           </div>
-          <div className="flex items-center gap-6 min-w-max">
-            {NAV_CATEGORIES.map(({ key, label }) => (
-              <div className="relative" key={key}>
-                <button
-                  onClick={() => handleCategoryClick(key)}
-                  className={`text-sm font-semibold uppercase tracking-widest pb-1.5 transition-all duration-300 cursor-pointer whitespace-nowrap ${activeCategory === key ? 'text-[var(--theme-color)]' : 'text-white/50 hover:text-white'}`}
-                >
-                  {label}
-                </button>
-                {activeCategory === key && (
-                  <motion.div layoutId="nav-indicator-desktop" className="absolute bottom-0 left-0 right-0 h-[2px] bg-[var(--theme-color)]" />
+          {settings.dropdownNav ? (
+            <div className="relative" ref={desktopDropdownRef}>
+              <button
+                onClick={() => setDropdownOpen(o => !o)}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white/90 text-sm font-semibold uppercase tracking-widest transition-colors hover:bg-white/10 whitespace-nowrap"
+                style={dropdownOpen ? { borderColor: 'var(--theme-color)', color: 'var(--theme-color)' } : {}}
+              >
+                <span>{activeLabel}</span>
+                <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+              <AnimatePresence>
+                {dropdownOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute top-full left-0 mt-1 z-50 bg-[#111] border border-white/10 rounded-lg overflow-hidden shadow-xl min-w-[180px]"
+                  >
+                    {visibleCategories.map(({ key, label }) => (
+                      <button
+                        key={key}
+                        onClick={() => { handleCategoryClick(key); setDropdownOpen(false); }}
+                        className={`w-full text-left px-4 py-2.5 text-sm font-semibold uppercase tracking-widest transition-colors ${activeCategory === key ? 'text-[var(--theme-color)] bg-[var(--theme-color)]/10' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </motion.div>
                 )}
-              </div>
-            ))}
-          </div>
+              </AnimatePresence>
+            </div>
+          ) : (
+            <div className="flex items-center gap-6 min-w-max">
+              {visibleCategories.map(({ key, label }) => (
+                <div className="relative" key={key}>
+                  <button
+                    onClick={() => handleCategoryClick(key)}
+                    className={`text-sm font-semibold uppercase tracking-widest pb-1.5 transition-all duration-300 cursor-pointer whitespace-nowrap ${activeCategory === key ? 'text-[var(--theme-color)]' : 'text-white/50 hover:text-white'}`}
+                  >
+                    {label}
+                  </button>
+                  {activeCategory === key && (
+                    <motion.div layoutId="nav-indicator-desktop" className="absolute bottom-0 left-0 right-0 h-[2px] bg-[var(--theme-color)]" />
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
