@@ -65,6 +65,7 @@ function renderMessage(text: string) {
       <span key={li}>
         {li > 0 && <br />}
         {tokens.map((token, ti) => {
+          if (!token) return null;
           const linkMatch = token.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
           if (linkMatch) {
             return (
