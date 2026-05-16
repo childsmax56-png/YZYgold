@@ -78,6 +78,8 @@ import { FakesView } from './components/FakesView';
 import { CompsView } from './components/CompsView';
 import { ReleasedView, ReleasedEntry } from './components/ReleasedView';
 import { YEditsView } from './components/YEditsView';
+import { VideosView, VideoRawEntry } from './components/VideosView';
+import { ChatBubble } from './components/ChatBubble';
 import { useSettings, LOADING_SCREENS } from './SettingsContext';
 import { recordListeningHistory } from './history';
 
@@ -117,6 +119,7 @@ export default function App() {
   const [fakesData, setFakesData] = useState<FakesEntry[]>([]);
   const [tracklistsData, setTracklistsData] = useState<TracklistAlbum[]>([]);
   const [releasedData, setReleasedData] = useState<ReleasedEntry[]>([]);
+  const [videosData, setVideosData] = useState<VideoRawEntry[]>([]);
   const [isRandomMode, setIsRandomMode] = useState(false);
   const [popupUrl, setPopupUrl] = useState<string | null>(null);
 
@@ -140,6 +143,7 @@ export default function App() {
     if (path.startsWith('/tracklists')) return 'tracklists';
     if (path.startsWith('/yedits')) return 'yedits';
     if (path.startsWith('/comps')) return 'comps';
+    if (path.startsWith('/videos')) return 'videos';
     return 'music';
   });
 
@@ -946,6 +950,14 @@ export default function App() {
         console.error("Failed to fetch MV data:", err);
       });
 
+    axios.get('/api/music-videos')
+      .then(res => {
+        setVideosData(res.data as VideoRawEntry[]);
+      })
+      .catch(err => {
+        console.error("Failed to fetch music videos data:", err);
+      });
+
     axios.get('https://yzygold-test.vercel.app/Remixes.json')
       .then(res => {
         setRemixData(normalizeEraField(res.data) as RemixEntry[]);
@@ -1138,6 +1150,10 @@ export default function App() {
     } else if (activeCategory === 'comps') {
       if (currentPath !== '/comps') {
         window.history.pushState({ category: 'comps' }, '', '/comps');
+      }
+    } else if (activeCategory === 'videos') {
+      if (!currentPath.startsWith('/videos')) {
+        window.history.pushState({ category: 'videos' }, '', '/videos');
       }
     } else {
       if (selectedAlbum) {
@@ -1403,14 +1419,14 @@ export default function App() {
   useEffect(() => {
     if (lastfmLoggedIn && isPlaying && currentSong && currentEra) {
       const actualEraName = (currentSong as any).realEra?.name || currentEra.name;
-      const cleanActualEraName = cleanAlbumName(actualEraName).replace(/ \[Fake\]$/i, '');
+      const cleanActualEraName = settings.lastfmEraOverrides[actualEraName] ?? cleanAlbumName(actualEraName).replace(/ \[Fake\]$/i, '');
       const cleanRealTrackName = currentSong.name.replace(/ \[Fake\]$/i, '');
       const lfmArtist = parseArtistFromSong(cleanRealTrackName, currentSong.extra, actualEraName);
-      
+
       const lfmTrack = cleanTrackName(cleanRealTrackName, currentSong.extra, settings.lastfmShowVersion, settings.lastfmShowTags, settings.lastfmShowFeats);
       updateNowPlaying(lfmTrack, lfmArtist, cleanActualEraName);
     }
-  }, [isPlaying, currentSong, currentEra, lastfmLoggedIn, settings.lastfmShowVersion, settings.lastfmShowTags, settings.lastfmShowFeats]);
+  }, [isPlaying, currentSong, currentEra, lastfmLoggedIn, settings.lastfmShowVersion, settings.lastfmShowTags, settings.lastfmShowFeats, settings.lastfmEraOverrides]);
 
   useEffect(() => {
     if (selectedAlbum) {
@@ -1711,7 +1727,7 @@ export default function App() {
         if (dur > 30 && (cur > dur / 2 || cur > 240)) {
           scrobbledRef.current = true;
           const actualEraName = (currentSong as any).realEra?.name || currentEra.name;
-          const cleanActualEraName = cleanAlbumName(actualEraName).replace(/ \[Fake\]$/i, '');
+          const cleanActualEraName = settings.lastfmEraOverrides[actualEraName] ?? cleanAlbumName(actualEraName).replace(/ \[Fake\]$/i, '');
           const cleanRealTrackName = currentSong.name.replace(/ \[Fake\]$/i, '');
           const lfmTrack = cleanTrackName(cleanRealTrackName, currentSong.extra, settings.lastfmShowVersion, settings.lastfmShowTags, settings.lastfmShowFeats);
           const lfmArtist = parseArtistFromSong(cleanRealTrackName, currentSong.extra, actualEraName);
@@ -2339,6 +2355,13 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
                 />
               ) : activeCategory === 'comps' ? (
                 <CompsView key="comps" eras={erasArray} searchQuery={searchQuery} onNavigateToYedits={() => setActiveCategory('yedits')} />
+              ) : activeCategory === 'videos' ? (
+                <VideosView
+                  key="videos"
+                  eras={erasArray}
+                  videosData={videosData}
+                  searchQuery={searchQuery}
+                />
               ) : activeCategory === 'released' ? (
                 <ReleasedView
                   key="released"
@@ -2769,6 +2792,17 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
         </AnimatePresence>,
         document.body
       )}
+
+      <ChatBubble
+        data={data}
+        screenContext={{
+          activeCategory,
+          selectedAlbumName: selectedAlbum?.name,
+          currentSongName: currentSong?.name,
+          currentEraName: currentEra?.name,
+        }}
+        showPlayer={showPlayer}
+      />
     </div>
   );
 }
