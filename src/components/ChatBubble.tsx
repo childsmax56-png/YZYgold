@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { MessageCircle, X, Send, Loader2 } from 'lucide-react';
+import { X, Send, Loader2 } from 'lucide-react';
 import { TrackerData, Era, Song } from '../types';
 import { useSettings } from '../SettingsContext';
 
@@ -171,9 +171,12 @@ export function ChatBubble({ data, screenContext, showPlayer }: ChatBubbleProps)
             }}
           >
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-[#181818]">
-              <div>
-                <p className="text-white text-sm font-semibold leading-tight">YZYGOLD Assistant</p>
-                <p className="text-white/40 text-[10px]">Ask anything about Ye's music</p>
+              <div className="flex items-center gap-3">
+                <img src="https://i.ibb.co/TMFsFsSp/YE-I-01.png" alt="YE-I" className="w-9 h-9 rounded-full object-cover bg-black" />
+                <div>
+                  <p className="text-white text-sm font-semibold leading-tight">YE-I</p>
+                  <p className="text-white/40 text-[10px]">Ask anything about Ye's music</p>
+                </div>
               </div>
               <button
                 onClick={() => setOpen(false)}
@@ -237,18 +240,18 @@ export function ChatBubble({ data, screenContext, showPlayer }: ChatBubbleProps)
 
       <motion.button
         onClick={() => setOpen(v => !v)}
-        className={`fixed right-6 ${bottomOffset} z-[9000] w-12 h-12 rounded-full bg-[var(--theme-color)] text-white shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-transform cursor-pointer`}
-        title="Ask AI about music"
+        className={`fixed right-6 ${bottomOffset} z-[9000] w-14 h-14 rounded-full shadow-lg overflow-hidden hover:scale-105 active:scale-95 transition-transform cursor-pointer bg-black`}
+        title="Ask YE-I"
         whileTap={{ scale: 0.92 }}
       >
         <AnimatePresence mode="wait">
           {open ? (
-            <motion.span key="x" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.15 }}>
-              <X className="w-5 h-5" />
+            <motion.span key="x" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.15 }} className="flex items-center justify-center w-full h-full">
+              <X className="w-5 h-5 text-white" />
             </motion.span>
           ) : (
-            <motion.span key="msg" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.15 }}>
-              <MessageCircle className="w-5 h-5" />
+            <motion.span key="logo" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.15 }} className="flex items-center justify-center w-full h-full">
+              <img src="https://i.ibb.co/TMFsFsSp/YE-I-01.png" alt="YE-I" className="w-full h-full object-cover" />
             </motion.span>
           )}
         </AnimatePresence>
