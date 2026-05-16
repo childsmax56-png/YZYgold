@@ -93,7 +93,6 @@ export function useSpotify(enabled: boolean): { state: SpotifyState; controls: S
 
     const init = async () => {
       const token = await getSpotifyToken();
-      console.log('[Spotify SDK] init, token present:', !!token);
       if (!token) return;
 
       const player = new window.Spotify.Player({
@@ -105,17 +104,14 @@ export function useSpotify(enabled: boolean): { state: SpotifyState; controls: S
         volume: 0.5,
       });
 
-      console.log('[Spotify SDK] player created:', !!player);
       playerRef.current = player;
 
       player.addListener('ready', ({ device_id }: { device_id: string }) => {
-        console.log('[Spotify SDK] ready, device_id:', device_id);
         deviceIdRef.current = device_id;
         setState(s => ({ ...s, isReady: true, deviceId: device_id, error: null }));
       });
 
       player.addListener('not_ready', () => {
-        console.log('[Spotify SDK] not_ready');
         setState(s => ({ ...s, isReady: false }));
       });
 
@@ -141,26 +137,21 @@ export function useSpotify(enabled: boolean): { state: SpotifyState; controls: S
       });
 
       player.addListener('initialization_error', ({ message }: { message: string }) => {
-        console.log('[Spotify SDK] initialization_error:', message);
         setState(s => ({ ...s, error: message }));
       });
 
-      player.addListener('authentication_error', ({ message }: { message: string }) => {
-        console.log('[Spotify SDK] authentication_error:', message);
+      player.addListener('authentication_error', () => {
         clearSpotifySession();
         setState(s => ({ ...s, error: 'Spotify authentication failed. Please reconnect.' }));
       });
 
-      player.addListener('account_error', ({ message }: { message: string }) => {
-        console.log('[Spotify SDK] account_error:', message);
+      player.addListener('account_error', () => {
         setState(s => ({ ...s, error: 'Spotify Premium is required to use the player.' }));
       });
 
-      const connected = await player.connect();
-      console.log('[Spotify SDK] connect() result:', connected);
+      await player.connect();
     };
 
-    console.log('[Spotify SDK] window.Spotify present:', !!window.Spotify);
     if (window.Spotify) {
       init();
     } else {
