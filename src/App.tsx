@@ -1470,13 +1470,12 @@ export default function App() {
   const playNext = () => {
     if (playlist.length === 0 || !currentEra) return;
     let nextIndex = currentSongIndex + 1;
-    if (isShuffle && shuffledQueue.length > 0) {
-      const idx = shuffledQueue.indexOf(currentSongIndex);
-      if (idx !== -1 && idx < shuffledQueue.length - 1) {
-        nextIndex = shuffledQueue[idx + 1];
-      } else {
-        nextIndex = shuffledQueue[0];
-      }
+    if (isShuffle && playlist.length > 1) {
+      let randomIndex;
+      do {
+        randomIndex = Math.floor(Math.random() * playlist.length);
+      } while (randomIndex === currentSongIndex);
+      nextIndex = randomIndex;
     } else if (nextIndex >= playlist.length) {
       nextIndex = 0;
     }
