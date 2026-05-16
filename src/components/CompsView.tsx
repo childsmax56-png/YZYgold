@@ -3,6 +3,7 @@ import { ArrowLeft, ExternalLink, Star } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { CUSTOM_IMAGES } from '../utils';
 import { Era } from '../types';
+import { useSettings } from '../SettingsContext';
 
 interface LinkEntry {
   text: string;
@@ -28,6 +29,7 @@ interface EraGroup {
 interface CompsViewProps {
   eras: Era[];
   searchQuery: string;
+  onNavigateToYedits?: () => void;
 }
 
 function isHighlight(name: string) {
@@ -65,7 +67,8 @@ function LinkGroup({ label, links }: { label: string; links: LinkEntry[] }) {
   );
 }
 
-export function CompsView({ eras, searchQuery }: CompsViewProps) {
+export function CompsView({ eras, searchQuery, onNavigateToYedits }: CompsViewProps) {
+  const { settings } = useSettings();
   const [allComps, setAllComps] = useState<CompEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedEra, setSelectedEra] = useState<string | null>(null);
@@ -246,8 +249,20 @@ export function CompsView({ eras, searchQuery }: CompsViewProps) {
       animate={{ opacity: 1, filter: 'blur(0px)' }}
       exit={{ opacity: 0, filter: 'blur(10px)' }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
-      className="p-6 md:p-8 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6 pb-32"
+      className="p-6 md:p-8 pb-32"
     >
+      {settings.yzyGoldMode && onNavigateToYedits && (
+        <div className="mb-6">
+          <button
+            onClick={onNavigateToYedits}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[var(--theme-color)]/10 border border-[var(--theme-color)]/20 text-[var(--theme-color)] text-sm font-semibold hover:bg-[var(--theme-color)]/20 transition-colors"
+          >
+            <ExternalLink className="w-4 h-4" />
+            Yedit Affiliates
+          </button>
+        </div>
+      )}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
       {filteredGroups.map((group, i) => (
         <motion.div
           key={group.eraName}
@@ -281,6 +296,7 @@ export function CompsView({ eras, searchQuery }: CompsViewProps) {
           </div>
         </motion.div>
       ))}
+      </div>
     </motion.div>
   );
 }

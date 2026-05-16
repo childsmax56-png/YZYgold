@@ -127,7 +127,7 @@ export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHom
           className="md:hidden w-full flex flex-wrap gap-x-4 gap-y-2 items-center"
           style={{ marginTop: '12px' }}
         >
-          {NAV_CATEGORIES.map(({ key, label }) => (
+          {NAV_CATEGORIES.filter(({ key }) => !(settings.yzyGoldMode && key === 'yedits')).map(({ key, label }) => (
             <div className="relative" key={key}>
               <button
                 onClick={() => handleCategoryClick(key)}
@@ -195,7 +195,7 @@ export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHom
             )}
           </div>
           <div className="flex items-center gap-6 min-w-max">
-            {NAV_CATEGORIES.map(({ key, label }) => (
+            {NAV_CATEGORIES.filter(({ key }) => !(settings.yzyGoldMode && key === 'yedits')).map(({ key, label }) => (
               <div className="relative" key={key}>
                 <button
                   onClick={() => handleCategoryClick(key)}

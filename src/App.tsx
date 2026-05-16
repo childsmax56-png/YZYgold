@@ -2338,7 +2338,7 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
                   favoriteKeys={favoriteKeys}
                 />
               ) : activeCategory === 'comps' ? (
-                <CompsView key="comps" eras={erasArray} searchQuery={searchQuery} />
+                <CompsView key="comps" eras={erasArray} searchQuery={searchQuery} onNavigateToYedits={() => setActiveCategory('yedits')} />
               ) : activeCategory === 'released' ? (
                 <ReleasedView
                   key="released"
