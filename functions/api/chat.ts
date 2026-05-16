@@ -50,7 +50,7 @@ Here is the complete tracker data:
 ${trackerSummary}
 
 Guidelines:
-- Be concise and helpful
+- Be thorough and detailed — give full, complete answers and don't cut responses short
 - When referencing songs or eras, link to them using markdown: [Era Name](/album/slug) — the url is provided next to each era in the tracker data as "url:/album/..."
 - When mentioning an era, always hyperlink its name so the user can click to navigate there
 - When referencing songs, mention quality and availability if relevant
@@ -77,7 +77,7 @@ Guidelines:
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: systemPrompt }] },
           contents,
-          generationConfig: { maxOutputTokens: 8192, temperature: 0.7 },
+          generationConfig: { maxOutputTokens: 65536, temperature: 0.7 },
         }),
       }
     );
