@@ -50,6 +50,8 @@ export interface AppSettings {
   googleSheetsUrl: string;
   downloadAsOgFilename: boolean;
   embedMetadata: boolean;
+  lastfmEraOverrides: Record<string, string>;
+  videosMiniPlayer: boolean;
   aiErrorDetails: boolean;
 }
 
@@ -87,6 +89,8 @@ export const defaultSettings: AppSettings = {
   googleSheetsUrl: '',
   downloadAsOgFilename: false,
   embedMetadata: true,
+  lastfmEraOverrides: {},
+  videosMiniPlayer: true,
   aiErrorDetails: false,
 };
 

@@ -28,7 +28,7 @@ const CUSTOM_ALBUM_INFO: Record<string, string[]> = {
   "The Life Of Pablo": ["51 OG File(s)", "23 Full", "3 Tagged", "7 Partial", "19 Snippet(s)", "2 Stem Bounce(s)", "35 Unavailable"],
   "Turbo Grafx 16": ["20 OG File(s)", "11 Full", "0 Tagged", "0 Partial", "6 Snippet(s)", "2 Stem Bounce(s)", "50 Unavailable"],
   "The Elementary School Dropout": ["0 OG File(s)", "0 Full", "0 Tagged", "0 Partial", "3 Snippet(s)", "0 Stem Bounce(s)", "15 Unavailable"],
-  "Wolves": ["1 OG File(s)", "4 Full", "0 Tagged", "1 Partial", "0 Snippet(s)", "0 Stem Bounce(s)", "12 Unavailable"]
+  "Wolves": ["1 OG File(s)", "8 Full", "0 Tagged", "1 Partial", "0 Snippet(s)", "0 Stem Bounce(s)", "8 Unavailable"],
 };
 
 export interface MvEntry {
@@ -78,6 +78,7 @@ import { FakesView } from './components/FakesView';
 import { CompsView } from './components/CompsView';
 import { ReleasedView, ReleasedEntry } from './components/ReleasedView';
 import { YEditsView } from './components/YEditsView';
+import { VideosView, VideoRawEntry } from './components/VideosView';
 import { ChatBubble } from './components/ChatBubble';
 import { useSettings, LOADING_SCREENS } from './SettingsContext';
 import { recordListeningHistory } from './history';
@@ -118,6 +119,7 @@ export default function App() {
   const [fakesData, setFakesData] = useState<FakesEntry[]>([]);
   const [tracklistsData, setTracklistsData] = useState<TracklistAlbum[]>([]);
   const [releasedData, setReleasedData] = useState<ReleasedEntry[]>([]);
+  const [videosData, setVideosData] = useState<VideoRawEntry[]>([]);
   const [isRandomMode, setIsRandomMode] = useState(false);
   const [popupUrl, setPopupUrl] = useState<string | null>(null);
 
@@ -141,6 +143,7 @@ export default function App() {
     if (path.startsWith('/tracklists')) return 'tracklists';
     if (path.startsWith('/yedits')) return 'yedits';
     if (path.startsWith('/comps')) return 'comps';
+    if (path.startsWith('/videos')) return 'videos';
     return 'music';
   });
 
@@ -670,18 +673,6 @@ export default function App() {
         if (Array.isArray(mykData)) {
           const nextJson = JSON.parse(JSON.stringify(json));
           
-          if (!nextJson.eras["Wolves"]) {
-            nextJson.eras["Wolves"] = {
-              name: "Wolves",
-              image: "https://i.ibb.co/ydSS4sG/Wolves.png",
-              extra: "(Collaboration with Drake) (New Abu Dhabi, Calabasas Is The New Abu Dhabi)",
-              data: {
-                "Main Tracks": [],
-                "Snippets & Leaks": []
-              }
-            };
-          }
-
           if (!nextJson.eras["Ongoing"]) {
             nextJson.eras["Ongoing"] = {
               name: "Ongoing",
@@ -762,12 +753,6 @@ export default function App() {
                 }
               }
 
-              if (!matched && eraName === "Wolves") {
-                if (!categories["Main Tracks"]) {
-                  categories["Main Tracks"] = [];
-                }
-                categories["Main Tracks"].push(newSong);
-              }
             }
           });
           applyLocalSongs(nextJson, localRes.data);
@@ -775,14 +760,6 @@ export default function App() {
           setData(nextJson);
         } else {
           const baseJson = JSON.parse(JSON.stringify(json));
-          if (!baseJson.eras["Wolves"]) {
-            baseJson.eras["Wolves"] = {
-              name: "Wolves",
-              image: "https://i.ibb.co/ydSS4sG/Wolves.png",
-              extra: "(Collaboration with Drake) (New Abu Dhabi, Calabasas Is The New Abu Dhabi)",
-              data: { "Main Tracks": [], "Snippets & Leaks": [] }
-            };
-          }
           if (!baseJson.eras["Ongoing"]) {
             baseJson.eras["Ongoing"] = {
               name: "Ongoing",
@@ -971,6 +948,14 @@ export default function App() {
       })
       .catch(err => {
         console.error("Failed to fetch MV data:", err);
+      });
+
+    axios.get('/api/music-videos')
+      .then(res => {
+        setVideosData(res.data as VideoRawEntry[]);
+      })
+      .catch(err => {
+        console.error("Failed to fetch music videos data:", err);
       });
 
     axios.get('https://yzygold-test.vercel.app/Remixes.json')
@@ -1165,6 +1150,10 @@ export default function App() {
     } else if (activeCategory === 'comps') {
       if (currentPath !== '/comps') {
         window.history.pushState({ category: 'comps' }, '', '/comps');
+      }
+    } else if (activeCategory === 'videos') {
+      if (!currentPath.startsWith('/videos')) {
+        window.history.pushState({ category: 'videos' }, '', '/videos');
       }
     } else {
       if (selectedAlbum) {
@@ -1430,14 +1419,14 @@ export default function App() {
   useEffect(() => {
     if (lastfmLoggedIn && isPlaying && currentSong && currentEra) {
       const actualEraName = (currentSong as any).realEra?.name || currentEra.name;
-      const cleanActualEraName = cleanAlbumName(actualEraName).replace(/ \[Fake\]$/i, '');
+      const cleanActualEraName = settings.lastfmEraOverrides[actualEraName] ?? cleanAlbumName(actualEraName).replace(/ \[Fake\]$/i, '');
       const cleanRealTrackName = currentSong.name.replace(/ \[Fake\]$/i, '');
       const lfmArtist = parseArtistFromSong(cleanRealTrackName, currentSong.extra, actualEraName);
-      
+
       const lfmTrack = cleanTrackName(cleanRealTrackName, currentSong.extra, settings.lastfmShowVersion, settings.lastfmShowTags, settings.lastfmShowFeats);
       updateNowPlaying(lfmTrack, lfmArtist, cleanActualEraName);
     }
-  }, [isPlaying, currentSong, currentEra, lastfmLoggedIn, settings.lastfmShowVersion, settings.lastfmShowTags, settings.lastfmShowFeats]);
+  }, [isPlaying, currentSong, currentEra, lastfmLoggedIn, settings.lastfmShowVersion, settings.lastfmShowTags, settings.lastfmShowFeats, settings.lastfmEraOverrides]);
 
   useEffect(() => {
     if (selectedAlbum) {
@@ -1738,7 +1727,7 @@ export default function App() {
         if (dur > 30 && (cur > dur / 2 || cur > 240)) {
           scrobbledRef.current = true;
           const actualEraName = (currentSong as any).realEra?.name || currentEra.name;
-          const cleanActualEraName = cleanAlbumName(actualEraName).replace(/ \[Fake\]$/i, '');
+          const cleanActualEraName = settings.lastfmEraOverrides[actualEraName] ?? cleanAlbumName(actualEraName).replace(/ \[Fake\]$/i, '');
           const cleanRealTrackName = currentSong.name.replace(/ \[Fake\]$/i, '');
           const lfmTrack = cleanTrackName(cleanRealTrackName, currentSong.extra, settings.lastfmShowVersion, settings.lastfmShowTags, settings.lastfmShowFeats);
           const lfmArtist = parseArtistFromSong(cleanRealTrackName, currentSong.extra, actualEraName);
@@ -1943,11 +1932,11 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
 }
 
 // Turbo Grafx 16 and Wolves can end up out of position (Turbo gets renamed from
-// "Turbo Grafx 16", Wolves has no CSV entry). Pull both out and reinsert right after
-// Cruel Winter [V2] so the order is always: CW[V2] → Turbo Grafx 16 → Wolves.
+// "TurboGrafx 16" via ERA_MAPPINGS, Wolves may be appended after myk merge).
+// Reinsert both right after Cruel Winter [V2]: CW[V2] → Turbo Grafx 16 → Wolves.
 {
   const cwV2Idx = erasArray.findIndex(e => e.name === "Cruel Winter [V2]");
-  const turboIdx = erasArray.findIndex(e => e.name === "Turbo Grafx 16" || e.name === "Turbo Grafx 16");
+  const turboIdx = erasArray.findIndex(e => e.name === "Turbo Grafx 16");
   const wolvesIdx = erasArray.findIndex(e => e.name === "Wolves");
 
   if (cwV2Idx !== -1 && turboIdx !== -1 && wolvesIdx !== -1) {
@@ -2366,6 +2355,13 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
                 />
               ) : activeCategory === 'comps' ? (
                 <CompsView key="comps" eras={erasArray} searchQuery={searchQuery} />
+              ) : activeCategory === 'videos' ? (
+                <VideosView
+                  key="videos"
+                  eras={erasArray}
+                  videosData={videosData}
+                  searchQuery={searchQuery}
+                />
               ) : activeCategory === 'released' ? (
                 <ReleasedView
                   key="released"
