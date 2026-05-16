@@ -55,8 +55,8 @@ function buildTrackerSummary(data: TrackerData): string {
   }
 
   const result = lines.join('\n');
-  // Cap at 80k chars to stay well within Gemini's context window
-  return result.length > 80000 ? result.slice(0, 80000) + '\n...[truncated]' : result;
+  // Cap at 600k chars — well within Gemini 2.5 Flash's 1M token context window
+  return result.length > 600000 ? result.slice(0, 600000) + '\n...[truncated]' : result;
 }
 
 function renderMessage(text: string) {
