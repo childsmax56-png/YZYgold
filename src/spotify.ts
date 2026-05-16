@@ -41,6 +41,7 @@ export async function startSpotifyAuth(): Promise<void> {
     state,
     code_challenge_method: 'S256',
     code_challenge: codeChallenge,
+    show_dialog: 'true',
   });
 
   window.location.href = `https://accounts.spotify.com/authorize?${params}`;
