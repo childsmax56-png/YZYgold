@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { saveAs } from 'file-saver';
 import { useSettings } from './SettingsContext';
-import { ID3Writer } from 'browser-id3-writer';
 
 export const TAG_TOOLTIP_MAP: Record<string, string> = {
   'Best Of': 'some of the best leaks hosted on the tracker.',
@@ -525,31 +524,99 @@ async function fetchArtworkBuffer(artworkUrl: string): Promise<ArrayBuffer | nul
   return null;
 }
 
+// Minimal ID3v2.3 writer using Latin-1 encoding so Windows Explorer can edit the Details tab.
+// browser-id3-writer writes UTF-16 text frames (encoding 0x01) which Windows can read but not edit.
+function latin1Bytes(text: string): Uint8Array {
+  return new Uint8Array(Array.from(text).map(c => { const n = c.charCodeAt(0); return n <= 0xFF ? n : 63; }));
+}
+
+function id3TextFrame(id: string, text: string): Uint8Array {
+  const textBytes = latin1Bytes(text);
+  const content = new Uint8Array(1 + textBytes.length); // encoding byte + text
+  content[0] = 0x00; // Latin-1
+  content.set(textBytes, 1);
+  return id3Frame(id, content);
+}
+
+function id3ApicFrame(imageData: ArrayBuffer, mimeType: string): Uint8Array {
+  const mimeBytes = latin1Bytes(mimeType);
+  // encoding(1) + mime + null(1) + picType(1) + description null(1) + imageData
+  const content = new Uint8Array(1 + mimeBytes.length + 1 + 1 + 1 + imageData.byteLength);
+  let i = 0;
+  content[i++] = 0x00; // Latin-1
+  content.set(mimeBytes, i); i += mimeBytes.length;
+  content[i++] = 0x00; // null terminator for MIME
+  content[i++] = 0x03; // picture type: Cover front
+  content[i++] = 0x00; // empty description (null terminator)
+  content.set(new Uint8Array(imageData), i);
+  return id3Frame('APIC', content);
+}
+
+function id3Frame(id: string, content: Uint8Array): Uint8Array {
+  const frame = new Uint8Array(10 + content.length);
+  const view = new DataView(frame.buffer);
+  for (let i = 0; i < 4; i++) frame[i] = id.charCodeAt(i);
+  view.setUint32(4, content.length, false);
+  // bytes 8-9 are flags, left as 0x00 0x00
+  frame.set(content, 10);
+  return frame;
+}
+
+function stripID3v2(buffer: ArrayBuffer): ArrayBuffer {
+  const b = new Uint8Array(buffer);
+  if (b[0] === 0x49 && b[1] === 0x44 && b[2] === 0x33 && b[3] >= 2 && b[3] <= 4) {
+    const size = ((b[6] & 0x7F) << 21) | ((b[7] & 0x7F) << 14) | ((b[8] & 0x7F) << 7) | (b[9] & 0x7F);
+    return buffer.slice(10 + size);
+  }
+  return buffer;
+}
+
+function detectMime(buf: ArrayBuffer): string {
+  const b = new Uint8Array(buf, 0, 4);
+  if (b[0] === 0xFF && b[1] === 0xD8 && b[2] === 0xFF) return 'image/jpeg';
+  if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4E && b[3] === 0x47) return 'image/png';
+  return 'image/jpeg';
+}
+
 export async function embedID3Tags(blob: Blob, meta: SongMeta, cleanTitle: string): Promise<Blob> {
   const audioBuffer = await blob.arrayBuffer();
-  const writer = new ID3Writer(audioBuffer);
+  const audio = stripID3v2(audioBuffer);
 
-  if (meta.title || cleanTitle) writer.setFrame('TIT2', meta.title || cleanTitle);
-  if (meta.artist) writer.setFrame('TPE1', [meta.artist]);
-  if (meta.album) writer.setFrame('TALB', meta.album);
+  const frames: Uint8Array[] = [];
+  const title = meta.title || cleanTitle;
+  if (title) frames.push(id3TextFrame('TIT2', title));
+  if (meta.artist) frames.push(id3TextFrame('TPE1', meta.artist));
+  if (meta.album) frames.push(id3TextFrame('TALB', meta.album));
   if (meta.year) {
-    const yearNum = parseInt(meta.year, 10);
-    if (!isNaN(yearNum)) writer.setFrame('TYER', yearNum);
+    const y = parseInt(meta.year, 10);
+    if (!isNaN(y)) frames.push(id3TextFrame('TYER', String(y)));
   }
 
   if (meta.artworkUrl) {
     const artBuffer = await fetchArtworkBuffer(meta.artworkUrl);
     if (artBuffer) {
-      writer.setFrame('APIC', {
-        type: 3,
-        data: artBuffer,
-        description: 'Cover',
-      });
+      frames.push(id3ApicFrame(artBuffer, detectMime(artBuffer)));
     }
   }
 
-  writer.addTag();
-  return writer.getBlob();
+  const framesSize = frames.reduce((s, f) => s + f.length, 0);
+  const tag = new Uint8Array(10 + framesSize);
+  const view = new DataView(tag.buffer);
+  tag[0] = 0x49; tag[1] = 0x44; tag[2] = 0x33; // "ID3"
+  tag[3] = 0x03; tag[4] = 0x00; // version 2.3.0
+  tag[5] = 0x00; // no flags
+  // synchsafe tag body size
+  view.setUint8(6, (framesSize >> 21) & 0x7F);
+  view.setUint8(7, (framesSize >> 14) & 0x7F);
+  view.setUint8(8, (framesSize >> 7) & 0x7F);
+  view.setUint8(9, framesSize & 0x7F);
+  let offset = 10;
+  for (const f of frames) { tag.set(f, offset); offset += f.length; }
+
+  const out = new Uint8Array(tag.length + audio.byteLength);
+  out.set(tag, 0);
+  out.set(new Uint8Array(audio), tag.length);
+  return new Blob([out], { type: 'audio/mpeg' });
 }
 
 function openFallback(url: string) {
