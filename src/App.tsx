@@ -1078,7 +1078,7 @@ export default function App() {
     const userAgent = navigator.userAgent.toLowerCase();
     const isBrowserSafari = userAgent.includes('safari') && !userAgent.includes('chrome') && !userAgent.includes('crios') && !userAgent.includes('android');
 
-    if (!localStorage.getItem('v1_8_5_seen')) {
+    if (!localStorage.getItem('v1_9_seen')) {
       setShowChangelog(true);
     } else if (isBrowserSafari) {
       setShowSafariWarning(true);
@@ -2456,7 +2456,7 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
               YƵYGOLD does not host or hold any illegal files. All links are external and provided as-is for educational and archival purposes only.
             </p>
             <p className="text-[10px] text-white/30 leading-relaxed">
-              YZYGOLD 2026 © [V1.8.5]
+              YZYGOLD 2026 © [V1.9]
             </p>
             <p className="text-[10px] text-white/30 leading-relaxed mt-1">
               Logo created by Nr7th on discord
@@ -2667,34 +2667,40 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
               className="bg-[#111] border border-white/10 rounded-xl max-w-lg w-full p-6 md:p-8"
             >
               <h2 className="text-2xl font-bold text-white mb-1 tracking-tight font-display">
-                Version 1.8.5
+                Version 1.9
               </h2>
               <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-6">What's New</p>
 
               <div className="space-y-4 mb-8 text-sm text-white/70 leading-relaxed">
                 <ul className="space-y-4">
                   <li>
-                    <strong className="text-white">YZYgold YEdits tab</strong>
-                    <br />This is a tab dedicated to YEdit creators who give the YZYgold team permission to host their works on the site
+                    <strong className="text-white">Music videos tab</strong>
+                    <br />View, watch, and download music videos in the new "videos tab"
                   </li>
                   <li>
-                    <strong className="text-white">Sophies Comps tab</strong>
-                    <br />This tab goes upon the Sophies comps sheet which is open source. Unfortunately you can not play songs from this tracker directly, it mostly serves as an alternative to find yedits that aren't affiliates
+                    <strong className="text-white">YE-I chatbot assistant</strong>
+                    <br />A new AI chat bot you can ask questions about the site
                   </li>
                   <li>
-                    <strong className="text-white">Thank you to Nr7th on discord for creating the new YZYgold logo, YOU DID A GREAT JOB</strong>
+                    <strong className="text-white">And a lot more smaller additions</strong>
+                    <br />All of which can be viewed in the{' '}
+                    <a href="https://docs.google.com/document/d/1b8aidNuSLLHfzgzrJ0uGdWHPuo-uNk6wI21Vscwzid4/edit?usp=sharing" target="_blank" rel="noopener noreferrer" className="text-[var(--theme-color)] hover:underline">
+                      change log
+                    </a>
                   </li>
                 </ul>
 
                 <div className="border-t border-white/10 pt-4 space-y-2 text-white/50 text-xs">
-                  <p>
-                    <a href="https://docs.google.com/document/d/1b8aidNuSLLHfzgzrJ0uGdWHPuo-uNk6wI21Vscwzid4/edit?usp=sharing" target="_blank" rel="noopener noreferrer" className="text-[var(--theme-color)] hover:underline">
-                      Full changelog here
-                    </a>
+                  <p className="text-white/70 font-semibold uppercase tracking-wider text-xs">
+                    COME BACK TO THE SITE SUNDAY FOR A BIG ANNOUNCEMENT
                   </p>
                   <p>
                     <a href="https://discord.gg/TYqdey3B" target="_blank" rel="noopener noreferrer" className="text-[var(--theme-color)] hover:underline">
-                      Join the Discord here
+                      Join the Discord
+                    </a>
+                    {' · '}
+                    <a href="https://docs.google.com/document/d/1b8aidNuSLLHfzgzrJ0uGdWHPuo-uNk6wI21Vscwzid4/edit?usp=sharing" target="_blank" rel="noopener noreferrer" className="text-[var(--theme-color)] hover:underline">
+                      Changelog
                     </a>
                   </p>
                 </div>
@@ -2703,7 +2709,7 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
               <button
                 onClick={() => {
                   setShowChangelog(false);
-                  localStorage.setItem('v1_8_5_seen', 'true');
+                  localStorage.setItem('v1_9_seen', 'true');
 
                   const userAgent = navigator.userAgent.toLowerCase();
                   const isBrowserSafari = userAgent.includes('safari') && !userAgent.includes('chrome') && !userAgent.includes('crios') && !userAgent.includes('android');
