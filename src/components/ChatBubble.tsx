@@ -75,13 +75,6 @@ function renderMessage(text: string) {
             key={m.index}
             href={href}
             className="underline text-[var(--theme-color)] hover:opacity-80"
-            onClick={e => {
-              if (href.startsWith('/')) {
-                e.preventDefault();
-                window.history.pushState({}, '', href);
-                window.dispatchEvent(new PopStateEvent('popstate'));
-              }
-            }}
           >
             {m[1]}
           </a>
