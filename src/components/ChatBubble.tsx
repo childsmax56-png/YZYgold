@@ -171,10 +171,10 @@ export function ChatBubble({ data, screenContext, showPlayer }: ChatBubbleProps)
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.97 }}
             transition={{ duration: 0.2, ease: [0.2, 0, 0, 1] }}
-            className={`fixed right-6 z-[9000] w-80 flex flex-col rounded-2xl overflow-hidden shadow-2xl border border-white/10 bg-[#111]`}
+            className={`fixed right-6 z-[9000] w-96 flex flex-col rounded-2xl overflow-hidden shadow-2xl border border-white/10 bg-[#111]`}
             style={{
               bottom: showPlayer ? 'calc(5.5rem + 1.5rem)' : '5rem',
-              maxHeight: '480px',
+              maxHeight: '600px',
             }}
           >
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-[#181818]">
@@ -192,14 +192,14 @@ export function ChatBubble({ data, screenContext, showPlayer }: ChatBubbleProps)
 
             <div className="flex-1 overflow-y-auto px-3 py-3 space-y-3 min-h-0">
               {messages.length === 0 && (
-                <div className="text-white/30 text-xs text-center py-6 leading-relaxed">
+                <div className="text-white/30 text-sm text-center py-6 leading-relaxed">
                   Ask about any Ye song, era, leak, or quality rating.
                 </div>
               )}
               {messages.map((msg, i) => (
                 <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div
-                    className={`max-w-[85%] px-3 py-2 rounded-xl text-xs leading-relaxed ${
+                    className={`max-w-[85%] px-3 py-2 rounded-xl text-sm leading-relaxed ${
                       msg.role === 'user'
                         ? 'bg-[var(--theme-color)] text-white rounded-br-sm'
                         : 'bg-white/8 text-white/85 rounded-bl-sm border border-white/8'
@@ -227,7 +227,7 @@ export function ChatBubble({ data, screenContext, showPlayer }: ChatBubbleProps)
                 onKeyDown={handleKeyDown}
                 placeholder="Ask something..."
                 rows={1}
-                className="flex-1 bg-white/6 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-white/30 resize-none focus:outline-none focus:border-[var(--theme-color)]/50 transition-colors"
+                className="flex-1 bg-white/6 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-white/30 resize-none focus:outline-none focus:border-[var(--theme-color)]/50 transition-colors"
                 style={{ maxHeight: '80px', overflowY: 'auto' }}
               />
               <button
