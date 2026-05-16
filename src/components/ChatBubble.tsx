@@ -58,39 +58,39 @@ function buildTrackerSummary(data: TrackerData): string {
 }
 
 function renderMessage(text: string) {
-  const lines = text.split('\n');
-  return lines.map((line, li) => {
-    const tokens = line.split(/(\[([^\]]+)\]\(([^)]+)\)|\*\*([^*]+)\*\*)/);
-    return (
-      <span key={li}>
-        {li > 0 && <br />}
-        {tokens.map((token, ti) => {
-          if (!token) return null;
-          const linkMatch = token.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
-          if (linkMatch) {
-            return (
-              <a
-                key={ti}
-                href={linkMatch[2]}
-                className="underline text-[var(--theme-color)] hover:opacity-80"
-                onClick={e => {
-                  if (linkMatch[2].startsWith('/')) {
-                    e.preventDefault();
-                    window.history.pushState({}, '', linkMatch[2]);
-                    window.dispatchEvent(new PopStateEvent('popstate'));
-                  }
-                }}
-              >
-                {linkMatch[1]}
-              </a>
-            );
-          }
-          const boldMatch = token.match(/^\*\*([^*]+)\*\*$/);
-          if (boldMatch) return <strong key={ti}>{boldMatch[1]}</strong>;
-          return token;
-        })}
-      </span>
-    );
+  const pattern = /\[([^\]]+)\]\(([^)]+)\)|\*\*([^*]+)\*\*/g;
+  return text.split('\n').map((line, li) => {
+    const nodes: React.ReactNode[] = [];
+    let last = 0;
+    let m: RegExpExecArray | null;
+    pattern.lastIndex = 0;
+    while ((m = pattern.exec(line)) !== null) {
+      if (m.index > last) nodes.push(line.slice(last, m.index));
+      if (m[1] !== undefined) {
+        const href = m[2];
+        nodes.push(
+          <a
+            key={m.index}
+            href={href}
+            className="underline text-[var(--theme-color)] hover:opacity-80"
+            onClick={e => {
+              if (href.startsWith('/')) {
+                e.preventDefault();
+                window.history.pushState({}, '', href);
+                window.dispatchEvent(new PopStateEvent('popstate'));
+              }
+            }}
+          >
+            {m[1]}
+          </a>
+        );
+      } else if (m[3] !== undefined) {
+        nodes.push(<strong key={m.index}>{m[3]}</strong>);
+      }
+      last = m.index + m[0].length;
+    }
+    if (last < line.length) nodes.push(line.slice(last));
+    return <span key={li}>{li > 0 && <br />}{nodes}</span>;
   });
 }
 
