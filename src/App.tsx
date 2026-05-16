@@ -216,6 +216,7 @@ export default function App() {
   const isShuffleRef = useRef(settings.startupShuffle);
   const currentSongIndexRef = useRef(-1);
   const playlistRef = useRef<Song[]>([]);
+  const randomSongRef = useRef<() => void>(() => {});
   const [hasLoopedOnce, setHasLoopedOnce] = useState(false);
 
   const [favoriteKeys, setFavoriteKeys] = useState<{ songName: string, eraName: string, url: string, song?: Song }[]>(() => {
@@ -1544,7 +1545,7 @@ export default function App() {
         playNext();
       }
     } else if (isShuffleRef.current) {
-      handleRandomSongClick();
+      randomSongRef.current();
     } else {
       playNext();
     }
@@ -2187,6 +2188,8 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
 
     handlePlaySong(randomSong, randomSong.realEra, contextPlaylist, true, true, true);
   };
+
+  randomSongRef.current = handleRandomSongClick;
 
   const isSpotifyActive = activePlayer === 'spotify';
   const isYoutubeActive = activePlayer === 'youtube';
