@@ -1008,7 +1008,7 @@ export default function App() {
         console.error("Failed to fetch Art data:", err);
       });
 
-    axios.get('https://yzygold-test.vercel.app/Stems.json')
+    axios.get('/api/stems')
       .then(res => {
         setStemsData(normalizeEraField(res.data) as StemEntry[]);
       })
