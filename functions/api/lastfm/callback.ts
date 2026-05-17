@@ -20,5 +20,5 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       302
     );
   }
-  return new Response("Failed to get session", { status: 400 });
+  return new Response(`Failed to get session: ${JSON.stringify(data)}`, { status: 400 });
 };
