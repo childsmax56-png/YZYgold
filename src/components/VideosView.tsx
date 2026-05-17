@@ -111,6 +111,7 @@ function getLinkLabel(url: string): string {
 }
 
 function parseVideosData(rows: VideoRawEntry[], allEras: Era[]): VideoEraGroup[] {
+  let currentSection: 'Unreleased' | 'Released' = 'Unreleased';
   const eraGroups: Record<string, { unreleased: VideoEntry[]; released: VideoEntry[] }> = {};
   const eraOrder: string[] = [];
 
@@ -118,16 +119,11 @@ function parseVideosData(rows: VideoRawEntry[], allEras: Era[]): VideoEraGroup[]
     const era = row.Era?.trim() || '';
     const name = row.Name?.trim() || '';
 
-    // Skip rows with no era (legacy section markers or Kendrick era-header rows)
-    if (!era) continue;
-
-    // Skip count/stats rows — Era contains newlines (Kendrick format: "3 Released\n0 Unreleased...")
-    if (era.includes('\n')) continue;
-
-    // Skip special marker rows
-    if (era === 'Under Construction!!!' || era === 'Links') continue;
-
-    // Skip rows with no name
+    if (!era) {
+      if (name === 'Unreleased') currentSection = 'Unreleased';
+      else if (name === 'Released') currentSection = 'Released';
+      continue;
+    }
     if (!name) continue;
 
     if (!eraGroups[era]) {
@@ -139,13 +135,7 @@ function parseVideosData(rows: VideoRawEntry[], allEras: Era[]): VideoEraGroup[]
     const links = rawLinks
       .split('\n')
       .map((l: string) => l.trim())
-      .filter((l: string) => l && l.toLowerCase() !== 'n/a' && !l.toLowerCase().includes('link needed') && !l.toLowerCase().includes('source needed'));
-
-    const type = row.Type?.trim() || '';
-    // Kendrick CSV uses Type field ("Released","Unreleased","BTS","Film","Other")
-    // Legacy YZY CSV uses sentinel rows + Available Length field
-    const isUnreleased = type === 'Unreleased';
-    const section: 'Unreleased' | 'Released' = isUnreleased ? 'Unreleased' : 'Released';
+      .filter((l: string) => l && !l.toLowerCase().includes('link needed') && !l.toLowerCase().includes('source needed'));
 
     const entry: VideoEntry = {
       era,
@@ -153,16 +143,14 @@ function parseVideosData(rows: VideoRawEntry[], allEras: Era[]): VideoEraGroup[]
       notes: row.Notes?.trim() || '',
       length: row.Length?.trim() || '',
       dateMade: row['Date Made']?.trim() || '',
-      type,
-      // For Kendrick: show Type as the availability badge (BTS, Film, Released, etc.)
-      // For YZY: Available Length was Full/Snippet/OG File etc.
-      availableLength: row['Available Length']?.trim() || type,
+      type: row.Type?.trim() || '',
+      availableLength: row['Available Length']?.trim() || '',
       quality: row.Quality?.trim() || '',
       links,
-      section,
+      section: currentSection,
     };
 
-    if (isUnreleased) {
+    if (currentSection === 'Unreleased') {
       eraGroups[era].unreleased.push(entry);
     } else {
       eraGroups[era].released.push(entry);
@@ -185,13 +173,6 @@ function parseVideosData(rows: VideoRawEntry[], allEras: Era[]): VideoEraGroup[]
 }
 
 const AVAILABLE_LENGTH_COLORS: Record<string, string> = {
-  // Kendrick MV types
-  'Released': 'text-green-400 border-green-500/20 bg-green-500/5',
-  'Unreleased': 'text-orange-400 border-orange-500/20 bg-orange-500/5',
-  'BTS': 'text-blue-400 border-blue-500/20 bg-blue-500/5',
-  'Film': 'text-purple-400 border-purple-500/20 bg-purple-500/5',
-  'Other': 'text-white/40 border-white/10 bg-white/5',
-  // Legacy YZY types
   'Full': 'text-green-400 border-green-500/20 bg-green-500/5',
   'OG File': 'text-yellow-400 border-yellow-500/20 bg-yellow-500/5',
   'Snippet': 'text-blue-400 border-blue-500/20 bg-blue-500/5',
