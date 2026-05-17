@@ -88,12 +88,23 @@ function buildIndexes(eras: Era[]): SongIndexes {
   return { byEra, byName };
 }
 
-function findMatch(trackName: string, parentEraNames: string[], idx: SongIndexes): SongMatch | null {
+function extractErasFromDescription(description: string, allEras: Era[]): string[] {
+  if (!description) return [];
+  const lower = description.toLowerCase();
+  return allEras
+    .filter(era => {
+      const eraLower = era.name.toLowerCase();
+      return eraLower.length >= 4 && lower.includes(eraLower);
+    })
+    .map(era => era.name);
+}
+
+function findMatch(trackName: string, searchEraNames: string[], idx: SongIndexes): SongMatch | null {
   const normTrack = normalizeName(trackName);
   if (!normTrack) return null;
 
-  // Search each parent era first
-  for (const eraName of parentEraNames) {
+  // Search description-derived + parent eras first (most specific)
+  for (const eraName of searchEraNames) {
     const candidates = idx.byEra.get(normalizeName(eraName)) || [];
     for (const c of candidates) {
       if (namesMatch(normTrack, normalizeName(c.song.name))) return c;
@@ -267,10 +278,12 @@ export function SubAlbumsView({ data, searchQuery, eras, onPlaySong, currentSong
   const idx = useMemo(() => buildIndexes(eras), [eras]);
 
   const allMatches = useMemo(() =>
-    data.map(entry =>
-      entry.tracks.map(track => findMatch(track.name, entry.parentEras, idx))
-    ),
-    [data, idx]
+    data.map(entry => {
+      const descEras = extractErasFromDescription(entry.description, eras);
+      const searchEras = [...entry.parentEras, ...descEras.filter(e => !entry.parentEras.includes(e))];
+      return entry.tracks.map(track => findMatch(track.name, searchEras, idx));
+    }),
+    [data, eras, idx]
   );
 
   const filtered = useMemo(() => {
