@@ -1,6 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, Play, Pause } from 'lucide-react';
+import { Era, Song } from '../types';
+import { isSongNotAvailable } from '../utils';
 
 export interface SubAlbumTrack {
   num?: string;
@@ -19,10 +21,121 @@ export interface SubAlbumEntry {
 interface SubAlbumsViewProps {
   data: SubAlbumEntry[];
   searchQuery: string;
+  eras: Era[];
+  onPlaySong: (song: Song, era: Era, contextTracks?: Song[]) => void;
+  currentSong?: Song | null;
+  isPlaying?: boolean;
 }
 
-function SubAlbumCard({ entry }: { entry: SubAlbumEntry }) {
+// ── Song matching (adapted from TracklistsView) ───────────────────────────────
+
+const EMOJI_RE = /[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu;
+
+function normalizeName(s: string): string {
+  return s
+    .replace(EMOJI_RE, '')
+    .replace(/️/g, '')
+    .replace(/\[.*?\]/g, '')
+    .replace(/\(feat\..*?\)/gi, '')
+    .replace(/\(ft\..*?\)/gi, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function namesMatch(a: string, b: string): boolean {
+  if (!a || !b) return false;
+  if (a === b) return true;
+  if (a.length >= 5 && b.startsWith(a)) return true;
+  if (b.length >= 5 && a.startsWith(b)) return true;
+  return false;
+}
+
+interface SongMatch { song: Song; era: Era }
+
+interface SongIndexes {
+  byEra: Map<string, SongMatch[]>;
+  byName: Map<string, SongMatch>;
+}
+
+function buildIndexes(eras: Era[]): SongIndexes {
+  const byEra = new Map<string, SongMatch[]>();
+  const byName = new Map<string, SongMatch>();
+
+  for (const era of eras) {
+    const eraKey = normalizeName(era.name);
+    const eraMatches: SongMatch[] = [];
+
+    for (const songs of Object.values(era.data || {})) {
+      for (const song of songs as Song[]) {
+        const rawUrl = song.url || (song.urls?.[0]) || '';
+        if (isSongNotAvailable(song, rawUrl) || !rawUrl) continue;
+
+        const match: SongMatch = { song, era };
+        eraMatches.push(match);
+
+        const normSong = normalizeName(song.name);
+        if (normSong && !byName.has(normSong)) {
+          byName.set(normSong, match);
+        }
+      }
+    }
+
+    if (eraMatches.length) byEra.set(eraKey, eraMatches);
+  }
+
+  return { byEra, byName };
+}
+
+function findMatch(trackName: string, parentEraNames: string[], idx: SongIndexes): SongMatch | null {
+  const normTrack = normalizeName(trackName);
+  if (!normTrack) return null;
+
+  // Search each parent era first
+  for (const eraName of parentEraNames) {
+    const candidates = idx.byEra.get(normalizeName(eraName)) || [];
+    for (const c of candidates) {
+      if (namesMatch(normTrack, normalizeName(c.song.name))) return c;
+    }
+  }
+
+  // Exact global name lookup
+  const exact = idx.byName.get(normTrack);
+  if (exact) return exact;
+
+  // Prefix scan
+  if (normTrack.length >= 5) {
+    for (const [key, match] of idx.byName) {
+      if (namesMatch(normTrack, key)) return match;
+    }
+  }
+
+  return null;
+}
+
+// ── Card ─────────────────────────────────────────────────────────────────────
+
+interface SubAlbumCardProps {
+  entry: SubAlbumEntry;
+  matches: (SongMatch | null)[];
+  onPlaySong: (song: Song, era: Era, contextTracks?: Song[]) => void;
+  currentSong?: Song | null;
+  isPlaying?: boolean;
+}
+
+function SubAlbumCard({ entry, matches, onPlaySong, currentSong, isPlaying }: SubAlbumCardProps) {
   const [open, setOpen] = useState(false);
+
+  const playableSongs = useMemo(
+    () => matches.filter((m): m is SongMatch => m !== null).map(m => m.song),
+    [matches]
+  );
+
+  const handlePlay = useCallback((match: SongMatch, e: React.MouseEvent) => {
+    e.stopPropagation();
+    onPlaySong(match.song, match.era, playableSongs);
+  }, [onPlaySong, playableSongs]);
 
   return (
     <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl overflow-hidden">
@@ -47,7 +160,13 @@ function SubAlbumCard({ entry }: { entry: SubAlbumEntry }) {
         </div>
         <div className="flex items-center gap-2 shrink-0 mt-0.5">
           {entry.tracks.length > 0 && (
-            <span className="text-white/30 text-xs">{entry.tracks.length} tracks</span>
+            <span className="text-white/30 text-xs">
+              {playableSongs.length > 0 ? (
+                <span><span className="text-[var(--theme-color)]/60">{playableSongs.length}</span>/{entry.tracks.length}</span>
+              ) : (
+                entry.tracks.length
+              )}{' '}tracks
+            </span>
           )}
           {open ? <ChevronUp className="w-4 h-4 text-white/30" /> : <ChevronDown className="w-4 h-4 text-white/30" />}
         </div>
@@ -63,36 +182,74 @@ function SubAlbumCard({ entry }: { entry: SubAlbumEntry }) {
             transition={{ duration: 0.18, ease: 'easeInOut' }}
             className="overflow-hidden"
           >
-            <div className="border-t border-white/[0.05] px-4 py-3 space-y-3">
+            <div className="border-t border-white/[0.05]">
               {entry.description && (
-                <p className="text-white/55 text-xs leading-relaxed">{entry.description}</p>
+                <p className="text-white/55 text-xs leading-relaxed px-4 py-3">{entry.description}</p>
               )}
               {entry.tracks.length > 0 && (
-                <div className="divide-y divide-white/[0.04]">
-                  {entry.tracks.map((track, i) => (
-                    <div key={i} className="flex items-center gap-3 py-1.5">
-                      {(track.num !== undefined) && (
-                        <span className="text-white/25 text-xs w-6 text-right shrink-0 font-mono">{track.num}</span>
-                      )}
-                      <span className={`text-sm flex-1 min-w-0 truncate ${track.status === 'released' ? 'text-emerald-400/80' : track.status === 'unreleased' ? 'text-white/40' : 'text-white/70'}`}>
-                        {track.name}
-                      </span>
-                      <div className="flex items-center gap-2 shrink-0">
-                        {track.status && (
-                          <span className={`text-[10px] font-medium ${track.status === 'released' ? 'text-emerald-400/60' : 'text-white/25'}`}>
-                            {track.status}
-                          </span>
-                        )}
-                        {track.length && (
-                          <span className="text-white/25 text-xs font-mono">{track.length}</span>
-                        )}
+                <div className={`divide-y divide-white/[0.04] ${entry.description ? 'border-t border-white/[0.04]' : ''}`}>
+                  {entry.tracks.map((track, i) => {
+                    const match = matches[i] ?? null;
+                    const rawUrl = match ? (match.song.url || match.song.urls?.[0] || '') : '';
+                    const isCurrentlyPlaying =
+                      isPlaying && currentSong && match &&
+                      currentSong.name === match.song.name &&
+                      (currentSong.url || currentSong.urls?.[0] || '') === rawUrl;
+
+                    return (
+                      <div
+                        key={i}
+                        onClick={match ? (e) => handlePlay(match, e as React.MouseEvent) : undefined}
+                        className={`flex items-center gap-3 px-4 py-2 transition-colors group
+                          ${match ? 'hover:bg-white/[0.05] cursor-pointer' : 'cursor-default'}
+                          ${isCurrentlyPlaying ? 'bg-white/[0.06]' : ''}`}
+                      >
+                        <span className="text-white/25 text-xs w-6 text-right shrink-0 font-mono relative">
+                          {match ? (
+                            <>
+                              <span className={`transition-opacity ${isCurrentlyPlaying ? 'opacity-0' : 'group-hover:opacity-0'}`}>
+                                {track.num ?? '·'}
+                              </span>
+                              <span className={`absolute inset-0 flex items-center justify-end transition-opacity
+                                ${isCurrentlyPlaying ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                                {isCurrentlyPlaying
+                                  ? <Pause className="w-3 h-3 text-[var(--theme-color)]" />
+                                  : <Play className="w-3 h-3 text-[var(--theme-color)]" />}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="opacity-40">{track.num ?? '·'}</span>
+                          )}
+                        </span>
+
+                        <span className={`text-sm flex-1 min-w-0 truncate transition-colors
+                          ${isCurrentlyPlaying
+                            ? 'text-[var(--theme-color)] font-medium'
+                            : match
+                            ? 'text-white/80 group-hover:text-white'
+                            : track.status === 'released'
+                            ? 'text-emerald-400/70'
+                            : 'text-white/35'}`}>
+                          {track.name}
+                        </span>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          {track.status && !match && (
+                            <span className={`text-[10px] font-medium ${track.status === 'released' ? 'text-emerald-400/50' : 'text-white/20'}`}>
+                              {track.status}
+                            </span>
+                          )}
+                          {track.length && (
+                            <span className="text-white/25 text-xs font-mono">{track.length}</span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
               {entry.tracks.length === 0 && !entry.description && (
-                <p className="text-white/30 text-xs italic">No additional details available.</p>
+                <p className="text-white/30 text-xs italic px-4 py-3">No additional details available.</p>
               )}
             </div>
           </motion.div>
@@ -102,18 +259,37 @@ function SubAlbumCard({ entry }: { entry: SubAlbumEntry }) {
   );
 }
 
-export function SubAlbumsView({ data, searchQuery }: SubAlbumsViewProps) {
+// ── Main View ─────────────────────────────────────────────────────────────────
+
+export function SubAlbumsView({ data, searchQuery, eras, onPlaySong, currentSong, isPlaying }: SubAlbumsViewProps) {
   const q = searchQuery.toLowerCase().trim();
 
+  const idx = useMemo(() => buildIndexes(eras), [eras]);
+
+  const allMatches = useMemo(() =>
+    data.map(entry =>
+      entry.tracks.map(track => findMatch(track.name, entry.parentEras, idx))
+    ),
+    [data, idx]
+  );
+
   const filtered = useMemo(() => {
-    if (!q) return data;
-    return data.filter(entry =>
-      entry.name.toLowerCase().includes(q) ||
-      entry.description.toLowerCase().includes(q) ||
-      entry.parentEras.some(e => e.toLowerCase().includes(q)) ||
-      entry.tracks.some(t => t.name.toLowerCase().includes(q))
-    );
-  }, [data, q]);
+    if (!q) return data.map((entry, i) => ({ entry, origIdx: i }));
+    return data
+      .map((entry, i) => ({ entry, origIdx: i }))
+      .filter(({ entry, origIdx }) =>
+        entry.name.toLowerCase().includes(q) ||
+        entry.description.toLowerCase().includes(q) ||
+        entry.parentEras.some(e => e.toLowerCase().includes(q)) ||
+        entry.tracks.some(t => t.name.toLowerCase().includes(q)) ||
+        (allMatches[origIdx] || []).some(m => m && m.song.name.toLowerCase().includes(q))
+      );
+  }, [data, allMatches, q]);
+
+  const totalPlayable = useMemo(() =>
+    allMatches.reduce((sum, ms) => sum + ms.filter(Boolean).length, 0),
+    [allMatches]
+  );
 
   return (
     <motion.div
@@ -127,7 +303,11 @@ export function SubAlbumsView({ data, searchQuery }: SubAlbumsViewProps) {
       <div className="mb-6">
         <h2 className="text-white font-display font-bold text-xl tracking-tight">Sub Albums</h2>
         <p className="text-white/40 text-xs mt-1">
-          {filtered.length} entr{filtered.length !== 1 ? 'ies' : 'y'} · Descriptions and tracklists sourced from the Kanye West Wiki
+          {filtered.length} entr{filtered.length !== 1 ? 'ies' : 'y'}
+          {totalPlayable > 0 && (
+            <> · <span className="text-[var(--theme-color)]/70">{totalPlayable} playable</span></>
+          )}
+          {' '}· Descriptions and tracklists sourced from the Kanye West Wiki
         </p>
       </div>
 
@@ -135,8 +315,15 @@ export function SubAlbumsView({ data, searchQuery }: SubAlbumsViewProps) {
         <div className="text-center py-20 text-white/30 text-sm">No results for "{searchQuery}"</div>
       ) : (
         <div className="space-y-2">
-          {filtered.map((entry, i) => (
-            <SubAlbumCard key={`${entry.name}-${i}`} entry={entry} />
+          {filtered.map(({ entry, origIdx }) => (
+            <SubAlbumCard
+              key={`${entry.name}-${origIdx}`}
+              entry={entry}
+              matches={allMatches[origIdx] ?? []}
+              onPlaySong={onPlaySong}
+              currentSong={currentSong}
+              isPlaying={isPlaying}
+            />
           ))}
         </div>
       )}

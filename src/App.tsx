@@ -2421,6 +2421,10 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
                   key="subalbums"
                   data={subAlbumsData}
                   searchQuery={searchQuery}
+                  eras={[...erasArray, ...relatedErasArray]}
+                  onPlaySong={handlePlaySong}
+                  currentSong={currentSong}
+                  isPlaying={isPlaying}
                 />
               ) : activeCategory === 'released' ? (
                 <ReleasedView
