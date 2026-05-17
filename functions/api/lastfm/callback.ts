@@ -5,12 +5,17 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const token = url.searchParams.get("token");
   if (!token) return new Response("Missing token", { status: 400 });
 
-  const apiKey = context.env.LASTFM_API_KEY;
+  const apiKey = context.env.LASTFM_API_KEY?.trim();
+  const secret = context.env.LASTFM_SHARED_SECRET?.trim();
   const params = { api_key: apiKey, method: "auth.getSession", token };
-  const api_sig = await createLastfmSignature(params, context.env.LASTFM_SHARED_SECRET);
+  const api_sig = await createLastfmSignature(params, secret);
 
-  const qs = new URLSearchParams({ ...params, api_sig, format: "json" });
-  const res = await fetch(`https://ws.audioscrobbler.com/2.0/?${qs}`);
+  const body = new URLSearchParams({ ...params, api_sig, format: "json" });
+  const res = await fetch(`https://ws.audioscrobbler.com/2.0/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body,
+  });
   const data: any = await res.json();
 
   if (data.session) {
