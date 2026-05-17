@@ -11,7 +11,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const token = tokenData.token;
   if (!token) return new Response(`Failed to get token: ${JSON.stringify(tokenData)}`, { status: 500 });
 
-  const callbackUrl = `${url.origin}/api/lastfm/callback`;
+  const callbackUrl = `${url.origin}/api/lastfm/callback?token=${encodeURIComponent(token)}`;
   const authUrl = `https://www.last.fm/api/auth/?api_key=${apiKey}&token=${token}&cb=${encodeURIComponent(callbackUrl)}`;
 
   return Response.redirect(authUrl, 302);
