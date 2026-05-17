@@ -720,8 +720,6 @@ export async function handleDownloadFile(url: string, suggestedName: string, tag
             }
         }
     } else if (url.includes('pillows.su/f/')) {
-        isImage = true;
-        ext = '.png';
         const hash = url.split('/f/')[1]?.split('/')[0]?.split('?')[0];
         if (hash) {
             finalUrl = `https://api.pillows.su/api/get/${hash}`;
@@ -779,7 +777,7 @@ export async function handleDownloadFile(url: string, suggestedName: string, tag
       };
 
       let response = await getWithTimeout(finalUrl, 3000);
-      
+
       if (!response || !response.ok) {
         if (isImage) {
           const proxies = [
@@ -787,12 +785,12 @@ export async function handleDownloadFile(url: string, suggestedName: string, tag
             `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(finalUrl)}`,
             `https://api.allorigins.win/raw?url=${encodeURIComponent(finalUrl)}`
           ];
-          
+
           for (const proxy of proxies) {
             response = await getWithTimeout(proxy, 4000);
             if (response && response.ok) break;
           }
-          
+
           if (!response || !response.ok) {
              throw new Error("All proxies failed");
           }
@@ -800,6 +798,17 @@ export async function handleDownloadFile(url: string, suggestedName: string, tag
           throw new Error("Network error");
         }
       }
+
+      // For pillows.su, detect image vs audio from Content-Type since the URL alone doesn't distinguish them
+      if (url.includes('pillows.su/f/') && response) {
+        const ct = response.headers.get('content-type') ?? '';
+        if (ct.startsWith('image/')) {
+          isImage = true;
+          // Strip any .mp3 suffix that was pre-assigned, then use image extension
+          fileName = fileName.replace(/\.mp3$/i, '');
+        }
+      }
+
       blob = await response.blob();
       if (isImage) {
         blob = await compressImageBlob(blob);
