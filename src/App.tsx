@@ -80,6 +80,7 @@ import { CompsView } from './components/CompsView';
 import { ReleasedView, ReleasedEntry } from './components/ReleasedView';
 import { YEditsView } from './components/YEditsView';
 import { VideosView, VideoRawEntry } from './components/VideosView';
+import { SubAlbumsView, SubAlbumEntry } from './components/SubAlbumsView';
 import { ChatBubble } from './components/ChatBubble';
 import { useSettings, LOADING_SCREENS } from './SettingsContext';
 import { recordListeningHistory } from './history';
@@ -121,6 +122,7 @@ export default function App() {
   const [tracklistsData, setTracklistsData] = useState<TracklistAlbum[]>([]);
   const [releasedData, setReleasedData] = useState<ReleasedEntry[]>([]);
   const [videosData, setVideosData] = useState<VideoRawEntry[]>([]);
+  const [subAlbumsData, setSubAlbumsData] = useState<SubAlbumEntry[]>([]);
   const [isRandomMode, setIsRandomMode] = useState(false);
   const [popupUrl, setPopupUrl] = useState<string | null>(null);
 
@@ -145,6 +147,7 @@ export default function App() {
     if (path.startsWith('/yedits')) return 'yedits';
     if (path.startsWith('/comps')) return 'comps';
     if (path.startsWith('/videos')) return 'videos';
+    if (path.startsWith('/subalbums')) return 'subalbums';
     return 'music';
   });
 
@@ -931,6 +934,8 @@ export default function App() {
           setActiveCategory('tracklists');
         } else if (path.startsWith('/yedits')) {
           setActiveCategory('yedits');
+        } else if (path.startsWith('/subalbums')) {
+          setActiveCategory('subalbums');
         } else if (path.startsWith('/related/')) {
           setActiveCategory('related');
           const slug = path.split('/related/')[1];
@@ -1084,6 +1089,14 @@ export default function App() {
         console.error("Failed to fetch Tracklists data:", err);
       });
 
+    axios.get('/data/subalbums.json')
+      .then(res => {
+        setSubAlbumsData(res.data as SubAlbumEntry[]);
+      })
+      .catch(err => {
+        console.error("Failed to fetch Sub Albums data:", err);
+      });
+
     const userAgent = navigator.userAgent.toLowerCase();
     const isBrowserSafari = userAgent.includes('safari') && !userAgent.includes('chrome') && !userAgent.includes('crios') && !userAgent.includes('android');
 
@@ -1184,6 +1197,10 @@ export default function App() {
       if (!currentPath.startsWith('/videos')) {
         window.history.pushState({ category: 'videos' }, '', '/videos');
       }
+    } else if (activeCategory === 'subalbums') {
+      if (!currentPath.startsWith('/subalbums')) {
+        window.history.pushState({ category: 'subalbums' }, '', '/subalbums');
+      }
     } else {
       if (selectedAlbum) {
         const newPath = `/album/${createSlug(selectedAlbum.name)}`;
@@ -1259,6 +1276,8 @@ export default function App() {
         setActiveCategory('history');
       } else if (path.startsWith('/yedits')) {
         setActiveCategory('yedits');
+      } else if (path.startsWith('/subalbums')) {
+        setActiveCategory('subalbums');
       }
     };
     window.addEventListener('popstate', handlePopState);
@@ -2395,6 +2414,12 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
                   key="videos"
                   eras={erasArray}
                   videosData={videosData}
+                  searchQuery={searchQuery}
+                />
+              ) : activeCategory === 'subalbums' ? (
+                <SubAlbumsView
+                  key="subalbums"
+                  data={subAlbumsData}
                   searchQuery={searchQuery}
                 />
               ) : activeCategory === 'released' ? (

@@ -7,7 +7,7 @@ import { SearchFilters } from '../types';
 import { isLastfmLoggedIn, getLastfmUsername, clearLastfmSession, startLastfmAuth } from '../lastfm';
 import { useSettings } from '../SettingsContext';
 
-export type Category = 'music' | 'art' | 'recent' | 'stems' | 'misc' | 'fakes' | 'related' | 'settings' | 'history' | 'tracklists' | 'released' | 'yedits' | 'comps' | 'videos';
+export type Category = 'music' | 'art' | 'recent' | 'stems' | 'misc' | 'fakes' | 'related' | 'settings' | 'history' | 'tracklists' | 'released' | 'yedits' | 'comps' | 'videos' | 'subalbums';
 
 interface NavbarProps {
   searchQuery: string;
@@ -39,6 +39,7 @@ const NAV_CATEGORIES: { key: Category; label: string }[] = [
   { key: 'yedits', label: 'Yedit Affiliates' },
   { key: 'comps', label: 'Comps' },
   { key: 'videos', label: 'Videos' },
+  { key: 'subalbums', label: 'Sub Albums' },
 ];
 
 export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHomeClick, activeCategory, onCategoryChange, lastfmLoggedIn, onLastfmLogout, onRandomSongClick, isRandomMode, spotifyLoggedIn, onSpotifyLogin, onSpotifyLogout }: NavbarProps) {
