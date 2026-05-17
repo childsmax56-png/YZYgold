@@ -24,6 +24,8 @@ interface NavbarProps {
   spotifyLoggedIn?: boolean;
   onSpotifyLogin?: () => void;
   onSpotifyLogout?: () => void;
+  yeiOpen: boolean;
+  onYEIClick: () => void;
 }
 
 const NAV_CATEGORIES: { key: Category; label: string }[] = [
@@ -41,7 +43,7 @@ const NAV_CATEGORIES: { key: Category; label: string }[] = [
   { key: 'videos', label: 'Videos' },
 ];
 
-export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHomeClick, activeCategory, onCategoryChange, lastfmLoggedIn, onLastfmLogout, onRandomSongClick, isRandomMode, spotifyLoggedIn, onSpotifyLogin, onSpotifyLogout }: NavbarProps) {
+export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHomeClick, activeCategory, onCategoryChange, lastfmLoggedIn, onLastfmLogout, onRandomSongClick, isRandomMode, spotifyLoggedIn, onSpotifyLogin, onSpotifyLogout, yeiOpen, onYEIClick }: NavbarProps) {
   const { settings } = useSettings();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const mobileDropdownRef = useRef<HTMLDivElement>(null);
@@ -229,6 +231,15 @@ export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHom
             >
               <SiLastdotfm className="w-5 h-5" />
             </button>
+            <button
+              onClick={onYEIClick}
+              className={`flex items-center justify-center p-2.5 rounded-full transition-all duration-300 cursor-pointer overflow-hidden ${
+                yeiOpen ? 'bg-white/10' : 'bg-white/5 hover:bg-white/10'
+              }`}
+              title="Ask YE-I"
+            >
+              <img src="https://i.ibb.co/TMFsFsSp/YE-I-01.png" alt="YE-I" className="w-5 h-5 rounded-full object-cover" />
+            </button>
           </div>
         </div>
       </div>
@@ -345,6 +356,18 @@ export function Navbar({ searchQuery, setSearchQuery, filters, setFilters, onHom
               'Log In'
             )}
           </span>
+        </button>
+        <button
+          onClick={onYEIClick}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+            yeiOpen
+              ? 'bg-white/10 text-white hover:bg-white/15 hover:scale-105'
+              : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white hover:scale-105'
+          }`}
+          title="Ask YE-I"
+        >
+          <img src="https://i.ibb.co/TMFsFsSp/YE-I-01.png" alt="YE-I" className="w-4 h-4 rounded-full object-cover" />
+          <span className="text-xs font-semibold uppercase tracking-wider whitespace-nowrap">YE-I</span>
         </button>
         <button
           onClick={() => {
