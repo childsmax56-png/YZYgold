@@ -30,5 +30,10 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     </script></body></html>`;
     return new Response(html, { headers: { 'Content-Type': 'text/html' } });
   }
-  return new Response(`Failed to get session: ${JSON.stringify(data)}`, { status: 400 });
+  const html = `<!DOCTYPE html><html><body style="background:#111;color:#fff;font-family:monospace;padding:20px">
+    <p>Last.fm auth failed</p>
+    <pre>${JSON.stringify(data, null, 2)}</pre>
+    <p>token: ${token}</p>
+  </body></html>`;
+  return new Response(html, { headers: { 'Content-Type': 'text/html' } });
 };
