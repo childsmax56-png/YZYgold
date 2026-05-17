@@ -20,10 +20,15 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   if (data.session) {
     const { key, name } = data.session;
-    return Response.redirect(
-      `${url.origin}/?lastfm_session=${encodeURIComponent(key)}&lastfm_user=${encodeURIComponent(name)}`,
-      302
-    );
+    const html = `<!DOCTYPE html><html><body><script>
+      if (window.opener) {
+        window.opener.postMessage({ type: 'lastfm-auth', session: ${JSON.stringify(key)}, user: ${JSON.stringify(name)} }, '*');
+        window.close();
+      } else {
+        window.location.href = '/?lastfm_session=${encodeURIComponent(key)}&lastfm_user=${encodeURIComponent(name)}';
+      }
+    </script></body></html>`;
+    return new Response(html, { headers: { 'Content-Type': 'text/html' } });
   }
   return new Response(`Failed to get session: ${JSON.stringify(data)}`, { status: 400 });
 };

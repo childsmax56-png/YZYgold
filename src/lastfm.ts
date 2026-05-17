@@ -26,7 +26,7 @@ export function clearLastfmSession() {
 }
 
 export function startLastfmAuth() {
-  window.location.href = '/api/lastfm/auth';
+  window.open('/api/lastfm/auth', '_blank', 'width=600,height=700');
 }
 
 const STRIP_EMOJIS = Object.keys(TAG_MAP);

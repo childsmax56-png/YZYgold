@@ -23,14 +23,7 @@ import { useSpotify, SpotifyTrack } from './useSpotify';
 import { useYoutube } from './useYoutube';
 import { useSoundCloud } from './useSoundCloud';
 
-const CUSTOM_ALBUM_INFO: Record<string, string[]> = {
-  "The College Dropout": ["1 OG File(s)", "49 Full", "9 Tagged", "2 Partial", "7 Snippet(s)", "0 Stem Bounce(s)", "46 Unavailable"],
-  "The Life Of Pablo": ["51 OG File(s)", "23 Full", "3 Tagged", "7 Partial", "19 Snippet(s)", "2 Stem Bounce(s)", "35 Unavailable"],
-  "Turbo Grafx 16": ["20 OG File(s)", "11 Full", "0 Tagged", "0 Partial", "6 Snippet(s)", "2 Stem Bounce(s)", "50 Unavailable"],
-  "The Elementary School Dropout": ["0 OG File(s)", "0 Full", "0 Tagged", "0 Partial", "3 Snippet(s)", "0 Stem Bounce(s)", "15 Unavailable"],
-  "Wolves": ["1 OG File(s)", "8 Full", "0 Tagged", "1 Partial", "0 Snippet(s)", "0 Stem Bounce(s)", "8 Unavailable"],
-  "YE-I": ["1 OG File(s)", "11 Full", "0 Tagged", "0 Partial", "0 Snippet(s)", "0 Stem Bounce(s)", "5 Unavailable"],
-};
+const CUSTOM_ALBUM_INFO: Record<string, string[]> = {};
 
 export interface MvEntry {
   Era: string;
@@ -76,31 +69,13 @@ export interface FakesEntry {
 import { SettingsView } from './components/SettingsView';
 import { HistoryView } from './components/HistoryView';
 import { FakesView } from './components/FakesView';
-import { CompsView } from './components/CompsView';
 import { ReleasedView, ReleasedEntry } from './components/ReleasedView';
-import { YEditsView } from './components/YEditsView';
 import { VideosView, VideoRawEntry } from './components/VideosView';
 import { ChatBubble } from './components/ChatBubble';
 import { useSettings, LOADING_SCREENS } from './SettingsContext';
 import { recordListeningHistory } from './history';
 
-const ERA_MAPPINGS: Record<string, string> = {
-  "TurboGrafx 16": "Turbo Grafx 16",
-  "TurboGrafx16": "Turbo Grafx 16",
-  "TurboGrafx-16": "Turbo Grafx 16",
-  "TurboGrafix 16": "Turbo Grafx 16",
-  "Turbo Grafx 16": "Turbo Grafx 16",
-  "Turbo Grafx-16": "Turbo Grafx 16",
-  "Turbo Grafix 16": "Turbo Grafx 16",
-  "Turbo Grafix-16": "Turbo Grafx 16",
-  "Donda [V1]": "DONDA [V1]",
-  "KIDSSEEGHOSTS": "KIDS SEE GHOSTS",
-  "Kids See Ghosts": "KIDS SEE GHOSTS",
-  "KIDS SEE GHOSTS": "KIDS SEE GHOSTS",
-  "KIDS SEE GHOST": "KIDS SEE GHOSTS",
-  "Bully": "BULLY [V1]",
-  "BULLY": "BULLY [V1]"
-};
+const ERA_MAPPINGS: Record<string, string> = {};
 
 export default function App() {
   const { settings } = useSettings();
@@ -142,8 +117,6 @@ export default function App() {
     if (path.startsWith('/settings')) return 'settings';
     if (path.startsWith('/history')) return 'history';
     if (path.startsWith('/tracklists')) return 'tracklists';
-    if (path.startsWith('/yedits')) return 'yedits';
-    if (path.startsWith('/comps')) return 'comps';
     if (path.startsWith('/videos')) return 'videos';
     return 'music';
   });
@@ -212,16 +185,11 @@ export default function App() {
   const [isShuffle, setIsShuffle] = useState(settings.startupShuffle);
   const [shuffledQueue, setShuffledQueue] = useState<number[]>([]);
   const [loopMode, setLoopMode] = useState(settings.startupLoop || 0);
-
-  const isShuffleRef = useRef(settings.startupShuffle);
-  const currentSongIndexRef = useRef(-1);
-  const playlistRef = useRef<Song[]>([]);
-  const randomSongRef = useRef<() => void>(() => {});
   const [hasLoopedOnce, setHasLoopedOnce] = useState(false);
 
   const [favoriteKeys, setFavoriteKeys] = useState<{ songName: string, eraName: string, url: string, song?: Song }[]>(() => {
     if (typeof localStorage !== 'undefined') {
-      const saved = localStorage.getItem('yzygold_favorite_keys');
+      const saved = localStorage.getItem('vampgold_favorite_keys');
       if (saved) {
         try {
           return JSON.parse(saved);
@@ -235,7 +203,7 @@ export default function App() {
 
   useEffect(() => {
     if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('yzygold_favorite_keys', JSON.stringify(favoriteKeys));
+      localStorage.setItem('vampgold_favorite_keys', JSON.stringify(favoriteKeys));
     }
   }, [favoriteKeys]);
 
@@ -270,7 +238,7 @@ export default function App() {
     }
     if (typeof localStorage !== 'undefined') {
       try {
-        const saved = localStorage.getItem('yzygold_playback_state');
+        const saved = localStorage.getItem('vampgold_playback_state');
         if (saved) {
           const parsed = JSON.parse(saved);
           if (typeof parsed.volume === 'number' && parsed.volume >= 0 && parsed.volume <= 1) {
@@ -307,7 +275,7 @@ export default function App() {
         volume: volume,
         currentTime: currentTime
       };
-      localStorage.setItem('yzygold_playback_state', JSON.stringify(stateToSave));
+      localStorage.setItem('vampgold_playback_state', JSON.stringify(stateToSave));
     }
   }, [currentSong, currentEra, volume, currentTime]);
 
@@ -315,7 +283,7 @@ export default function App() {
     if (data && recentData.length > 0 && !initialLoadRef.current) {
       initialLoadRef.current = true;
       if (typeof localStorage !== 'undefined') {
-        const saved = localStorage.getItem('yzygold_playback_state');
+        const saved = localStorage.getItem('vampgold_playback_state');
         if (saved) {
           try {
             const parsed = JSON.parse(saved);
@@ -352,7 +320,7 @@ export default function App() {
                   handlePlaySong(songToRestore as Song, eraToRestore as Era, undefined, false, false);
                 }
               } else if (savedEraName === 'Favorites') {
-                const savedFavs = localStorage.getItem('yzygold_favorite_keys');
+                const savedFavs = localStorage.getItem('vampgold_favorite_keys');
                 if (savedFavs) {
                    const favKeys = JSON.parse(savedFavs);
                    const favEra = {
@@ -410,10 +378,6 @@ export default function App() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
-
-  isShuffleRef.current = isShuffle;
-  currentSongIndexRef.current = currentSongIndex;
-  playlistRef.current = playlist;
 
   useEffect(() => {
     if (audioRef.current) {
@@ -616,10 +580,7 @@ export default function App() {
     const FETCH_TIMEOUT = 20000;
     Promise.all([
       axios.get('/api/a', { timeout: FETCH_TIMEOUT }),
-      axios.get('https://yzygold-test.vercel.app/MyK.json', { timeout: FETCH_TIMEOUT }).catch(err => {
-        console.error("Failed to fetch MyK data", err);
-        return { data: [] };
-      }),
+      Promise.resolve({ data: [] }),
       axios.get('/local-songs.json', { timeout: FETCH_TIMEOUT }).catch(err => {
         console.error("Failed to fetch local songs", err);
         return { data: [] };
@@ -684,40 +645,6 @@ export default function App() {
         if (Array.isArray(mykData)) {
           const nextJson = JSON.parse(JSON.stringify(json));
           
-          if (!nextJson.eras["Ongoing"]) {
-            nextJson.eras["Ongoing"] = {
-              name: "Ongoing",
-              image: "https://i.ibb.co/dwZ4cwmd/image-2026-04-27-185921217.png",
-              extra: "",
-              data: { "Unreleased Tracks": [] }
-            };
-          }
-
-          if (!nextJson.eras["Jesus Is Born"]) {
-            nextJson.eras["Jesus Is Born"] = {
-              name: "Jesus Is Born",
-              extra: "Sunday Service Choir",
-              data: { "Released Tracks": [] }
-            };
-          }
-
-          if (!nextJson.eras["Sunday Service Choir"]) {
-            nextJson.eras["Sunday Service Choir"] = {
-              name: "Sunday Service Choir",
-              extra: "Yandhi / JESUS IS KING / God's Country / DONDA",
-              data: { "Featured": [] }
-            };
-          }
-
-          if (!nextJson.eras["YE-I"]) {
-            nextJson.eras["YE-I"] = {
-              name: "YE-I",
-              extra: "by damn james! & Gabe Shaddow",
-              image: "",
-              data: { "OG File(s)": [], "Full": [], "Unavailable": [] }
-            };
-          }
-
           mykData.forEach((mykItem: any) => {
             const originalEraName = mykItem.Era;
             const matchedMapKey = Object.keys(ERA_MAPPINGS).find(k => k.toLowerCase() === originalEraName?.toLowerCase());
@@ -780,38 +707,6 @@ export default function App() {
           setData(nextJson);
         } else {
           const baseJson = JSON.parse(JSON.stringify(json));
-          if (!baseJson.eras["Ongoing"]) {
-            baseJson.eras["Ongoing"] = {
-              name: "Ongoing",
-              image: "https://i.ibb.co/dwZ4cwmd/image-2026-04-27-185921217.png",
-              extra: "",
-              data: { "Unreleased Tracks": [] }
-            };
-          }
-          if (!baseJson.eras["Jesus Is Born"]) {
-            baseJson.eras["Jesus Is Born"] = {
-              name: "Jesus Is Born",
-              extra: "Sunday Service Choir",
-              data: { "Released Tracks": [] }
-            };
-          }
-          if (!baseJson.eras["Sunday Service Choir"]) {
-            baseJson.eras["Sunday Service Choir"] = {
-              name: "Sunday Service Choir",
-              extra: "Yandhi / JESUS IS KING / God's Country / DONDA",
-              data: { "Featured": [] }
-            };
-          }
-
-          if (!baseJson.eras["YE-I"]) {
-            baseJson.eras["YE-I"] = {
-              name: "YE-I",
-              extra: "by damn james! & Gabe Shaddow",
-              image: "",
-              data: { "OG File(s)": [], "Full": [], "Unavailable": [] }
-            };
-          }
-
           applyLocalSongs(baseJson, localRes.data);
           applyTrackerSheetSongs(baseJson, sheetsRes.data);
           setData(baseJson);
@@ -930,8 +825,6 @@ export default function App() {
           }
         } else if (path.startsWith('/tracklists')) {
           setActiveCategory('tracklists');
-        } else if (path.startsWith('/yedits')) {
-          setActiveCategory('yedits');
         } else if (path.startsWith('/related/')) {
           setActiveCategory('related');
           const slug = path.split('/related/')[1];
@@ -972,7 +865,7 @@ export default function App() {
       });
     };
 
-    axios.get('https://yzygold-test.vercel.app/MV.json')
+    axios.get('/api/music-videos')
       .then(res => {
         setMvData(normalizeEraField(res.data) as MvEntry[]);
       })
@@ -988,7 +881,7 @@ export default function App() {
         console.error("Failed to fetch music videos data:", err);
       });
 
-    axios.get('https://yzygold-test.vercel.app/Remixes.json')
+    Promise.resolve({ data: [] })
       .then(res => {
         setRemixData(normalizeEraField(res.data) as RemixEntry[]);
       })
@@ -1009,7 +902,7 @@ export default function App() {
         console.error("Failed to fetch Art data:", err);
       });
 
-    axios.get('https://yzygold-test.vercel.app/Stems.json')
+    axios.get('/api/stems')
       .then(res => {
         setStemsData(normalizeEraField(res.data) as StemEntry[]);
       })
@@ -1033,7 +926,7 @@ export default function App() {
         console.error("Failed to fetch Released data:", err);
       });
 
-    axios.get('https://yzygold-test.vercel.app/Fakes.json')
+    axios.get('/api/fakes')
       .then(res => {
         const rawFakes = normalizeEraField(res.data) as any[];
         const mappedFakes = rawFakes.map(item => {
@@ -1069,7 +962,7 @@ export default function App() {
         console.error("Failed to fetch Fakes data:", err);
       });
 
-    axios.get('https://yzygold-test.vercel.app/Samples.json')
+    Promise.resolve({ data: [] })
       .then(res => {
         setSamplesData(res.data as SampleEntry[]);
       })
@@ -1088,7 +981,7 @@ export default function App() {
     const userAgent = navigator.userAgent.toLowerCase();
     const isBrowserSafari = userAgent.includes('safari') && !userAgent.includes('chrome') && !userAgent.includes('crios') && !userAgent.includes('android');
 
-    if (!localStorage.getItem('v1_9_seen')) {
+    if (!localStorage.getItem('v1_8_5_seen')) {
       setShowChangelog(true);
     } else if (isBrowserSafari) {
       setShowSafariWarning(true);
@@ -1103,6 +996,14 @@ export default function App() {
       window.history.replaceState({}, '', window.location.pathname);
     }
 
+    const handleLastfmMessage = (e: MessageEvent) => {
+      if (e.data?.type === 'lastfm-auth' && e.data.session && e.data.user) {
+        saveLastfmSession(e.data.session, e.data.user);
+        setLastfmLoggedIn(true);
+      }
+    };
+    window.addEventListener('message', handleLastfmMessage);
+
     const handleLastfmApiError = () => {
       setShowLastfmErrorModal(true);
       clearLastfmSession();
@@ -1111,6 +1012,7 @@ export default function App() {
 
     window.addEventListener('lastfm-api-error', handleLastfmApiError);
     return () => {
+      window.removeEventListener('message', handleLastfmMessage);
       window.removeEventListener('lastfm-api-error', handleLastfmApiError);
     };
   }, []);
@@ -1172,14 +1074,6 @@ export default function App() {
         if (currentPath !== '/tracklists') {
           window.history.pushState({ category: 'tracklists' }, '', '/tracklists');
         }
-      }
-    } else if (activeCategory === 'yedits') {
-      if (!currentPath.startsWith('/yedits')) {
-        window.history.pushState({ category: 'yedits' }, '', '/yedits');
-      }
-    } else if (activeCategory === 'comps') {
-      if (currentPath !== '/comps') {
-        window.history.pushState({ category: 'comps' }, '', '/comps');
       }
     } else if (activeCategory === 'videos') {
       if (!currentPath.startsWith('/videos')) {
@@ -1258,8 +1152,6 @@ export default function App() {
         setActiveCategory('settings');
       } else if (path.startsWith('/history')) {
         setActiveCategory('history');
-      } else if (path.startsWith('/yedits')) {
-        setActiveCategory('yedits');
       }
     };
     window.addEventListener('popstate', handlePopState);
@@ -1478,25 +1370,23 @@ export default function App() {
   }, [selectedAlbum, currentSong]);
 
   const playNext = () => {
-    const pl = playlistRef.current;
-    const idx = currentSongIndexRef.current;
-    const shuffle = isShuffleRef.current;
-    if (pl.length === 0 || !currentEra) return;
-    let nextIndex = idx + 1;
-    if (shuffle && pl.length > 1) {
-      let randomIndex;
-      do {
-        randomIndex = Math.floor(Math.random() * pl.length);
-      } while (randomIndex === idx);
-      nextIndex = randomIndex;
-    } else if (nextIndex >= pl.length) {
+    if (playlist.length === 0 || !currentEra) return;
+    let nextIndex = currentSongIndex + 1;
+    if (isShuffle && shuffledQueue.length > 0) {
+      const idx = shuffledQueue.indexOf(currentSongIndex);
+      if (idx !== -1 && idx < shuffledQueue.length - 1) {
+        nextIndex = shuffledQueue[idx + 1];
+      } else {
+        nextIndex = shuffledQueue[0];
+      }
+    } else if (nextIndex >= playlist.length) {
       nextIndex = 0;
     }
 
-    const nextSong = pl[nextIndex];
+    const nextSong = playlist[nextIndex];
     if (nextSong) {
       const eraToPass = (nextSong as any).realEra || currentEra;
-      handlePlaySong(nextSong, eraToPass, pl, false, true, isRandomMode);
+      handlePlaySong(nextSong, eraToPass, playlist, false, true, isRandomMode);
     }
   };
 
@@ -1545,8 +1435,6 @@ export default function App() {
         setHasLoopedOnce(false);
         playNext();
       }
-    } else if (isShuffleRef.current) {
-      randomSongRef.current();
     } else {
       playNext();
     }
@@ -1950,21 +1838,6 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
     fileInfo: CUSTOM_ALBUM_INFO[era.name] || era.fileInfo
   })) as Era[];
 
-// Order in Related tab: K.T.S.E. → Jesus Is Born → Sunday Service Choir → The Elementary School Dropout
-{
-  const jibIdx = relatedErasArray.findIndex(e => e.name === "Jesus Is Born");
-  const sscIdx = relatedErasArray.findIndex(e => e.name === "Sunday Service Choir");
-
-  const toInsert: Era[] = [];
-  if (jibIdx !== -1) toInsert.push(relatedErasArray[jibIdx]);
-  if (sscIdx !== -1) toInsert.push(relatedErasArray[sscIdx]);
-  [jibIdx, sscIdx].filter(i => i !== -1).sort((a, b) => b - a).forEach(i => relatedErasArray.splice(i, 1));
-
-  // Reinsert after K.T.S.E.
-  const anchor = relatedErasArray.findIndex(e => e.name === "K.T.S.E.");
-  if (anchor !== -1 && toInsert.length > 0) relatedErasArray.splice(anchor + 1, 0, ...toInsert);
-}
-
 // Turbo Grafx 16 and Wolves can end up out of position (Turbo gets renamed from
 // "TurboGrafx 16" via ERA_MAPPINGS, Wolves may be appended after myk merge).
 // Reinsert both right after Cruel Winter [V2]: CW[V2] → Turbo Grafx 16 → Wolves.
@@ -1997,15 +1870,6 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
   }
 }
 
-// Ongoing should always be the last era. Re-pin it in case it shifted.
-{
-  const ongoingIdx = erasArray.findIndex(e => e.name === "Ongoing");
-  if (ongoingIdx !== -1 && ongoingIdx !== erasArray.length - 1) {
-    const ongoingEra = erasArray[ongoingIdx];
-    erasArray.splice(ongoingIdx, 1);
-    erasArray.push(ongoingEra);
-  }
-}
 
 
   const favoritesEra: Era | null = favoriteKeys.length > 0 ? {
@@ -2189,8 +2053,6 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
 
     handlePlaySong(randomSong, randomSong.realEra, contextPlaylist, true, true, true);
   };
-
-  randomSongRef.current = handleRandomSongClick;
 
   const isSpotifyActive = activePlayer === 'spotify';
   const isYoutubeActive = activePlayer === 'youtube';
@@ -2391,8 +2253,6 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
                   toggleFavorite={toggleFavorite}
                   favoriteKeys={favoriteKeys}
                 />
-              ) : activeCategory === 'comps' ? (
-                <CompsView key="comps" eras={erasArray} searchQuery={searchQuery} onNavigateToYedits={() => setActiveCategory('yedits')} />
               ) : activeCategory === 'videos' ? (
                 <VideosView
                   key="videos"
@@ -2453,14 +2313,6 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
                   favoriteKeys={favoriteKeys}
                   toggleFavorite={toggleFavorite}
                 />
-              ) : activeCategory === 'yedits' ? (
-                <YEditsView
-                  key="yedits"
-                  searchQuery={searchQuery}
-                  onPlaySong={handlePlaySong}
-                  currentSong={currentSong}
-                  isPlaying={isPlaying}
-                />
               ) : activeCategory === 'related' ? (
                 <EraGrid key="related-grid" eras={filteredRelatedEras} onSelectEra={setSelectedAlbum} />
               ) : (
@@ -2471,10 +2323,10 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
 
           <div className="mt-auto px-6 py-8 text-center border-t border-white/5">
             <p className="text-[10px] text-white/30 leading-relaxed">
-              YƵYGOLD does not host or hold any illegal files. All links are external and provided as-is for educational and archival purposes only.
+              VAMPGOLD does not host or hold any illegal files. All links are external and provided as-is for educational and archival purposes only.
             </p>
             <p className="text-[10px] text-white/30 leading-relaxed">
-              YZYGOLD 2026 © [V1.9]
+              VAMPGOLD 2026 ©
             </p>
             <p className="text-[10px] text-white/30 leading-relaxed mt-1">
               Logo created by Nr7th on discord
@@ -2685,40 +2537,26 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
               className="bg-[#111] border border-white/10 rounded-xl max-w-lg w-full p-6 md:p-8"
             >
               <h2 className="text-2xl font-bold text-white mb-1 tracking-tight font-display">
-                Version 1.9
+                Version 1.8.5
               </h2>
               <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-6">What's New</p>
 
               <div className="space-y-4 mb-8 text-sm text-white/70 leading-relaxed">
                 <ul className="space-y-4">
                   <li>
-                    <strong className="text-white">Music videos tab</strong>
-                    <br />View, watch, and download music videos in the new "videos tab"
-                  </li>
-                  <li>
-                    <strong className="text-white">YE-I chatbot assistant</strong>
-                    <br />A new AI chat bot you can ask questions about the site
-                  </li>
-                  <li>
-                    <strong className="text-white">And a lot more smaller additions</strong>
-                    <br />All of which can be viewed in the{' '}
-                    <a href="https://docs.google.com/document/d/1b8aidNuSLLHfzgzrJ0uGdWHPuo-uNk6wI21Vscwzid4/edit?usp=sharing" target="_blank" rel="noopener noreferrer" className="text-[var(--theme-color)] hover:underline">
-                      change log
-                    </a>
+                    <strong className="text-white">Thank you to Nr7th on discord for creating the new YZYgold logo, YOU DID A GREAT JOB</strong>
                   </li>
                 </ul>
 
                 <div className="border-t border-white/10 pt-4 space-y-2 text-white/50 text-xs">
-                  <p className="text-white/70 font-semibold uppercase tracking-wider text-xs">
-                    COME BACK TO THE SITE SUNDAY FOR A BIG ANNOUNCEMENT
+                  <p>
+                    <a href="https://docs.google.com/document/d/1b8aidNuSLLHfzgzrJ0uGdWHPuo-uNk6wI21Vscwzid4/edit?usp=sharing" target="_blank" rel="noopener noreferrer" className="text-[var(--theme-color)] hover:underline">
+                      Full changelog here
+                    </a>
                   </p>
                   <p>
                     <a href="https://discord.gg/TYqdey3B" target="_blank" rel="noopener noreferrer" className="text-[var(--theme-color)] hover:underline">
-                      Join the Discord
-                    </a>
-                    {' · '}
-                    <a href="https://docs.google.com/document/d/1b8aidNuSLLHfzgzrJ0uGdWHPuo-uNk6wI21Vscwzid4/edit?usp=sharing" target="_blank" rel="noopener noreferrer" className="text-[var(--theme-color)] hover:underline">
-                      Changelog
+                      Join the Discord here
                     </a>
                   </p>
                 </div>
@@ -2727,7 +2565,7 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
               <button
                 onClick={() => {
                   setShowChangelog(false);
-                  localStorage.setItem('v1_9_seen', 'true');
+                  localStorage.setItem('v1_8_5_seen', 'true');
 
                   const userAgent = navigator.userAgent.toLowerCase();
                   const isBrowserSafari = userAgent.includes('safari') && !userAgent.includes('chrome') && !userAgent.includes('crios') && !userAgent.includes('android');
