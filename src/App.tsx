@@ -2422,6 +2422,7 @@ let relatedErasArray = (Object.values(data.eras || {}) as Era[])
                   data={subAlbumsData}
                   searchQuery={searchQuery}
                   eras={[...erasArray, ...relatedErasArray]}
+                  releasedData={releasedData}
                   onPlaySong={handlePlaySong}
                   currentSong={currentSong}
                   isPlaying={isPlaying}

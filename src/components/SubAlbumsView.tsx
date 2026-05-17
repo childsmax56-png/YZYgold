@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { ChevronDown, ChevronUp, Play, Pause } from 'lucide-react';
 import { Era, Song } from '../types';
 import { isSongNotAvailable } from '../utils';
+import { ReleasedEntry } from './ReleasedView';
 
 export interface SubAlbumTrack {
   num?: string;
@@ -22,6 +23,7 @@ interface SubAlbumsViewProps {
   data: SubAlbumEntry[];
   searchQuery: string;
   eras: Era[];
+  releasedData: ReleasedEntry[];
   onPlaySong: (song: Song, era: Era, contextTracks?: Song[]) => void;
   currentSong?: Song | null;
   isPlaying?: boolean;
@@ -88,6 +90,48 @@ function buildIndexes(eras: Era[]): SongIndexes {
   return { byEra, byName };
 }
 
+function extractSongTitleFromReleased(name: string): string {
+  const firstLine = name.split('\n')[0].trim();
+  const dashIdx = firstLine.indexOf(' - ');
+  return dashIdx !== -1 ? firstLine.slice(dashIdx + 3).trim() : firstLine;
+}
+
+function extractBestPlayableUrl(linksField: string): string {
+  const urls = linksField.split('\n').map(l => l.trim()).filter(l => l && !l.toLowerCase().includes('link needed') && !l.toLowerCase().includes('source needed'));
+  for (const u of urls) {
+    if (u.includes('pillows.su/f/') || u.includes('temp.imgur.gg/f/')) return u;
+  }
+  for (const u of urls) {
+    if (/\.(mp3|m4a|wav|ogg|flac|aac)(\?|$)/i.test(u)) return u;
+  }
+  for (const u of urls) {
+    if (u.includes('youtube.com') || u.includes('youtu.be')) return u;
+  }
+  for (const u of urls) {
+    if (u.includes('soundcloud.com')) return u;
+  }
+  for (const u of urls) {
+    if (u.includes('archive.org')) return u;
+  }
+  return '';
+}
+
+function buildReleasedIndex(releasedData: ReleasedEntry[], eras: Era[]): Map<string, SongMatch> {
+  const idx = new Map<string, SongMatch>();
+  const erasMap = new Map(eras.map(e => [e.name.toLowerCase(), e]));
+  for (const entry of releasedData) {
+    const url = extractBestPlayableUrl(entry['Link(s)'] || '');
+    if (!url) continue;
+    const songTitle = extractSongTitleFromReleased(entry.Name || '');
+    if (!songTitle) continue;
+    const era = erasMap.get((entry.Era || '').toLowerCase()) ?? { name: entry.Era || '', image: undefined, data: {} } as Era;
+    const song: Song = { name: songTitle, url, urls: [url], track_length: entry.Length };
+    const norm = normalizeName(songTitle);
+    if (norm && !idx.has(norm)) idx.set(norm, { song, era });
+  }
+  return idx;
+}
+
 function extractErasFromDescription(description: string, allEras: Era[]): string[] {
   if (!description) return [];
   const lower = description.toLowerCase();
@@ -99,7 +143,7 @@ function extractErasFromDescription(description: string, allEras: Era[]): string
     .map(era => era.name);
 }
 
-function findMatch(trackName: string, searchEraNames: string[], idx: SongIndexes): SongMatch | null {
+function findMatch(trackName: string, searchEraNames: string[], idx: SongIndexes, releasedIdx?: Map<string, SongMatch>): SongMatch | null {
   const normTrack = normalizeName(trackName);
   if (!normTrack) return null;
 
@@ -111,14 +155,25 @@ function findMatch(trackName: string, searchEraNames: string[], idx: SongIndexes
     }
   }
 
-  // Exact global name lookup
+  // Exact global unreleased name lookup
   const exact = idx.byName.get(normTrack);
   if (exact) return exact;
 
-  // Prefix scan
+  // Prefix scan across unreleased
   if (normTrack.length >= 5) {
     for (const [key, match] of idx.byName) {
       if (namesMatch(normTrack, key)) return match;
+    }
+  }
+
+  // Fall back to released tab
+  if (releasedIdx) {
+    const rel = releasedIdx.get(normTrack);
+    if (rel) return rel;
+    if (normTrack.length >= 5) {
+      for (const [key, match] of releasedIdx) {
+        if (namesMatch(normTrack, key)) return match;
+      }
     }
   }
 
@@ -272,18 +327,19 @@ function SubAlbumCard({ entry, matches, onPlaySong, currentSong, isPlaying }: Su
 
 // ── Main View ─────────────────────────────────────────────────────────────────
 
-export function SubAlbumsView({ data, searchQuery, eras, onPlaySong, currentSong, isPlaying }: SubAlbumsViewProps) {
+export function SubAlbumsView({ data, searchQuery, eras, releasedData, onPlaySong, currentSong, isPlaying }: SubAlbumsViewProps) {
   const q = searchQuery.toLowerCase().trim();
 
   const idx = useMemo(() => buildIndexes(eras), [eras]);
+  const releasedIdx = useMemo(() => buildReleasedIndex(releasedData, eras), [releasedData, eras]);
 
   const allMatches = useMemo(() =>
     data.map(entry => {
       const descEras = extractErasFromDescription(entry.description, eras);
       const searchEras = [...entry.parentEras, ...descEras.filter(e => !entry.parentEras.includes(e))];
-      return entry.tracks.map(track => findMatch(track.name, searchEras, idx));
+      return entry.tracks.map(track => findMatch(track.name, searchEras, idx, releasedIdx));
     }),
-    [data, eras, idx]
+    [data, eras, idx, releasedIdx]
   );
 
   const filtered = useMemo(() => {
